@@ -3,13 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 
-type Props = {
-  params: {
-    id: string;
-  };
-};
-
-export default function ArtworkDetailPage({ params }: Props) {
+export default function ArtworkDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   const id = params?.id ?? "default";
 
   // 더미 아트워크
