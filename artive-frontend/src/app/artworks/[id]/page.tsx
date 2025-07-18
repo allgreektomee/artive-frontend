@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 // import { useEffect, useState } from "react";
-import { useState } from "react";
+// import { useState } from "react";
 
 export default function ArtworkDetailPage({ params }: { params: any }) {
   const id = (params as { id: string }).id ?? "default";
