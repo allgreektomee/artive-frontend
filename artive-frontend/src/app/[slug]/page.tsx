@@ -6,22 +6,28 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const artworks = Array.from({ length: 12 }).map((_, i) => ({
+// ✅ 명시적 타입 지정 (에러 방지용)
+type Artwork = {
+  id: number;
+  thumbnailUrl: string;
+};
+
+const artworks: Artwork[] = Array.from({ length: 12 }).map((_, i) => ({
   id: i,
-  // thumbnailUrl: `https://source.unsplash.com/300x300/?art,${i}`,
   thumbnailUrl: `https://picsum.photos/300/200`,
 }));
-// ✅ 1번: 기본 artworks 배열 (더미 데이터)
 
 export default function MainPage() {
   const backEndUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   const router = useRouter();
+  const pathname = usePathname();
 
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<{ name?: string; slug?: string } | null>(
+    null
+  );
   const [isOwner, setIsOwner] = useState(false);
 
-  // 현재 URL에서 slug 추출 (예: /jaeyoung -> 'jaeyoung')
-  const currentSlug = usePathname()?.split("/")[1];
+  const currentSlug = pathname?.split("/")[1]; // e.g., '/jaeyoung'
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -38,32 +44,31 @@ export default function MainPage() {
         const data = await res.json();
         console.log("🔍 유저 정보", data);
         setUser(data);
-        setIsOwner(data.slug === currentSlug); // 슬러그 비교
+        setIsOwner(data.slug === currentSlug);
       } catch (err: unknown) {
-        if (err instanceof Error) {
-          console.error(err.message);
-        }
+        if (err instanceof Error) console.error(err.message);
         setUser(null);
         setIsOwner(false);
       }
     };
     fetchUser();
-  }, [currentSlug]);
+  }, [currentSlug, backEndUrl]);
 
   const handleProfileClick = () => {
     router.push("/edit-profile");
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-4  text-gray-900">
+    <div className="max-w-5xl mx-auto px-4 py-4 text-gray-900">
       <h2 className="text-2xl font-semibold mb-4">artive.com</h2>
+
       {/* 작가 소개 */}
       <div className="space-y-2 py-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold ">JAEYOUNG PARK {user?.name}</h1>
+          <h1 className="text-2xl font-bold">
+            JAEYOUNG PARK {user?.name && `(${user.name})`}
+          </h1>
           <div className="flex space-x-3">
-            <br></br>
-
             <a
               href="https://blog.naver.com/example"
               target="_blank"
@@ -78,7 +83,6 @@ export default function MainPage() {
             >
               <FaInstagram className="text-gray-700 hover:text-black text-2xl" />
             </a>
-
             {isOwner && (
               <button onClick={handleProfileClick} title="프로필 편집">
                 <FaUser className="text-gray-700 hover:text-black text-2xl" />
@@ -86,15 +90,14 @@ export default function MainPage() {
             )}
           </div>
         </div>
-
         <p className="text-gray-600">
-          Contemporary abstract artist exploring color and form Contemporary
-          abstract artist exploring color and form Contemporary abstract artist
-          exploring color and form
+          Contemporary abstract artist exploring color and form. Contemporary
+          abstract artist exploring color and form.
         </p>
       </div>
 
-      <div className="w-full aspect-video rounded overflow-hidden ">
+      {/* 유튜브 영상 */}
+      <div className="w-full aspect-video rounded overflow-hidden">
         <iframe
           width="100%"
           height="100%"
@@ -106,36 +109,11 @@ export default function MainPage() {
         />
       </div>
 
-      {/* 메뉴버튼 */}
-      {/* <div className="py-6">
-        <div className="flex gap-2 gap-y-2 flex-wrap mb-0">
-          <button
-            onClick={() => scrollTo("artworks")}
-            className="px-2 py-2 bg-gray-200 hover:bg-gray-300 rounded text-sm"
-          >
-            Artworks
-          </button>
-          <button
-            onClick={() => scrollTo("about")}
-            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded text-sm"
-          >
-            About
-          </button>
-          <button
-            onClick={() => scrollTo("associations")}
-            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded text-sm"
-          >
-            Associations
-          </button>
-        </div>
-      </div> */}
-
-      {/* 작품 섹션 */}
+      {/* Artworks */}
       <div id="artworks" className="py-8">
         <h2 className="text-2xl font-semibold mb-4">Artworks</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-4">
           {artworks.slice(0, 6).map((art) => (
-            // {artworks.map((art) => (
             <Link
               key={art.id}
               href={`/artworks`}
@@ -150,20 +128,9 @@ export default function MainPage() {
             </Link>
           ))}
         </div>
-
-        {/* 조건부 렌더링 */}
-        {/* {artworks.length > 8 && (
-          <div className="mt-4 text-right">
-            <Link href="/artworks">
-              <button className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded text-sm">
-                View All
-              </button>
-            </Link>
-          </div>
-        )} */}
       </div>
 
-      {/* About 섹션 */}
+      {/* About */}
       <div id="about" className="space-y-2">
         <h2 className="text-2xl font-semibold">About</h2>
         <p className="text-gray-700">
@@ -173,13 +140,12 @@ export default function MainPage() {
         </p>
       </div>
 
-      {/* 협회 소개 */}
+      {/* 협회 */}
       <div id="associations" className="py-8 space-y-4">
         <h2 className="text-2xl font-semibold">Associations</h2>
 
         <div className="p-4 bg-gray-100 rounded-lg">
           <div className="flex flex-row items-start gap-4">
-            {/* 이미지 */}
             <div className="w-16 h-16 relative rounded-full overflow-hidden border shrink-0">
               <Image
                 src="/open-art-society-logo.png"
@@ -189,10 +155,7 @@ export default function MainPage() {
                 loading="lazy"
               />
             </div>
-
-            {/* 텍스트 및 아이콘 */}
             <div className="flex-1 min-w-0">
-              {/* 이름 + 아이콘들 */}
               <div className="flex items-center gap-2 flex-wrap">
                 <p className="font-semibold text-sm whitespace-nowrap">
                   Open Art Society
@@ -214,8 +177,6 @@ export default function MainPage() {
                   </a>
                 </div>
               </div>
-
-              {/* 설명 */}
               <p className="text-sm text-gray-600 mt-1">
                 An organization dedicated to promoting contemporary art and
                 artists.
