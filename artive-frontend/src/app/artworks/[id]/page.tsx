@@ -2,13 +2,17 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+// import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export default function ArtworkDetailPage({ params }: { params: any }) {
   const id = (params as { id: string }).id ?? "default";
 
-  const [artwork, setArtwork] = useState(() => getArtworkById(id));
-  const [histories, setHistories] = useState(() => getArtworkHistories(id));
+  // const [artwork, setArtwork] = useState(() => getArtworkById(id));
+  // const [histories, setHistories] = useState(() => getArtworkHistories(id));
+
+  const artwork = getArtworkById(id);
+  const histories = getArtworkHistories(id);
 
   // (선택 사항) 비동기 작업 있다면 useEffect 사용
 
