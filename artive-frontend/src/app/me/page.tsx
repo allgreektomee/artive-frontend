@@ -43,7 +43,7 @@ export default function MyPage() {
         onChange={(e) => {
           if (e.target.files?.[0]) {
             setThumbnailFile(e.target.files[0]);
-            setPreviewUrl(URL.createObjectURL(e.target.files[0]));
+            // setPreviewUrl(URL.createObjectURL(e.target.files[0]));
           }
         }}
       />
