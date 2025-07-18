@@ -8,11 +8,8 @@ export default function ArtworkDetailPage({
 }: {
   params: { id: string };
 }) {
-  const id = params?.id ?? "default";
+  const id = params.id;
 
-  console.log("Artwork page rendering: ", id);
-
-  // 더미 아트워크
   const getArtworkById = (id: string) => ({
     id,
     title: `Untitled #${id}`,
@@ -22,122 +19,31 @@ export default function ArtworkDetailPage({
     imageUrl: `https://picsum.photos/seed/${id}/800/600`,
   });
 
-  // 히스토리
-  const getArtworkHistories = (id: string) => [
-    {
-      id: 1,
-      type: "image",
-      url: `https://picsum.photos/seed/${id}a/600/400`,
-      caption: "Initial sketch layer",
-      date: "2024-06-01",
-    },
-    {
-      id: 2,
-      type: "youtube",
-      url: "https://www.youtube.com/embed/7yQ7PBHCUsc",
-      caption: "Interview during painting process",
-      date: "2024-06-03",
-    },
-    {
-      id: 3,
-      type: "text",
-      caption:
-        "The piece began intuitively with broad strokes of ultramarine. Layering was spontaneous and emotional, responding to memories of ocean cliffs.",
-      date: "2024-06-04",
-    },
-    {
-      id: 4,
-      type: "image",
-      url: `https://picsum.photos/seed/${id}b/600/400`,
-      caption: "Final touch with deep red to enhance contrast",
-      date: "2024-06-05",
-    },
-  ];
-
   const artwork = getArtworkById(id);
-  const histories = getArtworkHistories(id);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-      <h1 className="text-3xl font-bold mb-6">Artwork Detail</h1>
+    <div className="max-w-4xl mx-auto px-4 py-6">
+      <h1 className="text-3xl font-bold mb-4">{artwork.title}</h1>
+      <Image
+        src={artwork.imageUrl}
+        alt={artwork.title}
+        width={800}
+        height={600}
+        className="rounded shadow"
+      />
+      <p className="text-gray-500 mt-4">{artwork.subtitle}</p>
+      <p className="mt-2 text-gray-700">{artwork.description}</p>
 
-      {/* 내비게이션 */}
-      <div className="flex gap-2 flex-wrap">
+      <div className="mt-6 flex gap-4">
         <Link href="/">
-          <button className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded text-sm">
-            Home
-          </button>
+          <button className="px-4 py-2 bg-gray-200 rounded">Home</button>
         </Link>
         <Link href="/artworks">
-          <button className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded text-sm">
+          <button className="px-4 py-2 bg-gray-200 rounded">
             All Artworks
           </button>
         </Link>
       </div>
-
-      {/* 대표 이미지 */}
-      <div className="relative w-full aspect-video overflow-hidden rounded shadow">
-        <Image
-          src={artwork.imageUrl}
-          alt={artwork.title}
-          fill
-          className="object-cover"
-        />
-      </div>
-
-      {/* 타이틀/설명 */}
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">{artwork.title}</h2>
-        <p className="text-sm text-gray-500">{artwork.subtitle}</p>
-        <p className="mt-2 text-gray-700 leading-relaxed">
-          {artwork.description}
-        </p>
-      </div>
-
-      {/* 히스토리 */}
-      {histories.length > 0 && (
-        <div className="mt-10 space-y-6">
-          <h2 className="text-xl font-semibold text-gray-800">
-            Artwork History
-          </h2>
-          {histories.map((h) => (
-            <div key={h.id} className="space-y-2 border-b pb-6">
-              <p className="text-sm text-gray-500">{h.date}</p>
-
-              {h.type === "image" && h.url && (
-                <div className="relative w-full aspect-[4/3] rounded overflow-hidden">
-                  <Image
-                    src={h.url}
-                    alt={h.caption ?? "history image"}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              )}
-
-              {h.type === "youtube" && h.url && (
-                <div className="w-full aspect-video rounded overflow-hidden">
-                  <iframe
-                    src={h.url}
-                    width="100%"
-                    height="100%"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    title={`History video ${h.id}`}
-                    className="w-full h-full"
-                  />
-                </div>
-              )}
-
-              {h.caption && (
-                <p className="text-gray-700 text-base whitespace-pre-line">
-                  {h.caption}
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
