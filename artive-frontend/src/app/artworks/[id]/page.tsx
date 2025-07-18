@@ -2,59 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
-// ✅ async 함수 + 직접 타입 지정 ← 핵심!
-export default async function ArtworkDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const id = params?.id ?? "default";
+export default function ArtworkDetailPage({ params }: { params: any }) {
+  const id = (params as { id: string }).id ?? "default";
 
-  // 더미 아트워크
-  const getArtworkById = (id: string) => ({
-    id,
-    title: `Untitled #${id}`,
-    subtitle: "Acrylic on canvas 35x23 3호",
-    description:
-      "This is a sample description of the artwork. It explores abstract color forms and emotional depth using layered acrylics.",
-    imageUrl: `https://picsum.photos/seed/${id}/800/600`,
-  });
+  const [artwork, setArtwork] = useState(() => getArtworkById(id));
+  const [histories, setHistories] = useState(() => getArtworkHistories(id));
 
-  // 히스토리
-  const getArtworkHistories = (id: string) => [
-    {
-      id: 1,
-      type: "image",
-      url: `https://picsum.photos/seed/${id}a/600/400`,
-      caption: "Initial sketch layer",
-      date: "2024-06-01",
-    },
-    {
-      id: 2,
-      type: "youtube",
-      url: "https://www.youtube.com/embed/7yQ7PBHCUsc",
-      caption: "Interview during painting process",
-      date: "2024-06-03",
-    },
-    {
-      id: 3,
-      type: "text",
-      caption:
-        "The piece began intuitively with broad strokes of ultramarine. Layering was spontaneous and emotional, responding to memories of ocean cliffs.",
-      date: "2024-06-04",
-    },
-    {
-      id: 4,
-      type: "image",
-      url: `https://picsum.photos/seed/${id}b/600/400`,
-      caption: "Final touch with deep red to enhance contrast",
-      date: "2024-06-05",
-    },
-  ];
-
-  const artwork = getArtworkById(id);
-  const histories = getArtworkHistories(id);
+  // (선택 사항) 비동기 작업 있다면 useEffect 사용
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
@@ -139,4 +95,49 @@ export default async function ArtworkDetailPage({
       )}
     </div>
   );
+}
+
+// 👇 아래 두 유틸 함수는 바깥에 위치 (동기 로직이므로 문제 없음)
+function getArtworkById(id: string) {
+  return {
+    id,
+    title: `Untitled #${id}`,
+    subtitle: "Acrylic on canvas 35x23 3호",
+    description:
+      "This is a sample description of the artwork. It explores abstract color forms and emotional depth using layered acrylics.",
+    imageUrl: `https://picsum.photos/seed/${id}/800/600`,
+  };
+}
+
+function getArtworkHistories(id: string) {
+  return [
+    {
+      id: 1,
+      type: "image",
+      url: `https://picsum.photos/seed/${id}a/600/400`,
+      caption: "Initial sketch layer",
+      date: "2024-06-01",
+    },
+    {
+      id: 2,
+      type: "youtube",
+      url: "https://www.youtube.com/embed/7yQ7PBHCUsc",
+      caption: "Interview during painting process",
+      date: "2024-06-03",
+    },
+    {
+      id: 3,
+      type: "text",
+      caption:
+        "The piece began intuitively with broad strokes of ultramarine. Layering was spontaneous and emotional, responding to memories of ocean cliffs.",
+      date: "2024-06-04",
+    },
+    {
+      id: 4,
+      type: "image",
+      url: `https://picsum.photos/seed/${id}b/600/400`,
+      caption: "Final touch with deep red to enhance contrast",
+      date: "2024-06-05",
+    },
+  ];
 }
