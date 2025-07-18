@@ -9,50 +9,51 @@ type Props = {
   };
 };
 
-// 더미 아트워크
-const getArtworkById = (id: string) => ({
-  id,
-  title: `Untitled #${id}`,
-  subtitle: "Acrylic on canvas 35x23 3호",
-  description:
-    "This is a sample description of the artwork. It explores abstract color forms and emotional depth using layered acrylics.",
-  imageUrl: `https://picsum.photos/seed/${id}/800/600`,
-});
-
-// 히스토리: 이미지, 유튜브, 텍스트 타입 포함
-const getArtworkHistories = (id: string) => [
-  {
-    id: 1,
-    type: "image",
-    url: `https://picsum.photos/seed/${id}a/600/400`,
-    caption: "Initial sketch layer",
-    date: "2024-06-01",
-  },
-  {
-    id: 2,
-    type: "youtube",
-    url: "https://www.youtube.com/embed/7yQ7PBHCUsc",
-    caption: "Interview during painting process",
-    date: "2024-06-03",
-  },
-  {
-    id: 3,
-    type: "text",
-    caption:
-      "The piece began intuitively with broad strokes of ultramarine. Layering was spontaneous and emotional, responding to memories of ocean cliffs.",
-    date: "2024-06-04",
-  },
-  {
-    id: 4,
-    type: "image",
-    url: `https://picsum.photos/seed/${id}b/600/400`,
-    caption: "Final touch with deep red to enhance contrast",
-    date: "2024-06-05",
-  },
-];
-
 export default function ArtworkDetailPage({ params }: Props) {
-  const { id } = params;
+  const id = params?.id ?? "default";
+
+  // 더미 아트워크
+  const getArtworkById = (id: string) => ({
+    id,
+    title: `Untitled #${id}`,
+    subtitle: "Acrylic on canvas 35x23 3호",
+    description:
+      "This is a sample description of the artwork. It explores abstract color forms and emotional depth using layered acrylics.",
+    imageUrl: `https://picsum.photos/seed/${id}/800/600`,
+  });
+
+  // 히스토리
+  const getArtworkHistories = (id: string) => [
+    {
+      id: 1,
+      type: "image",
+      url: `https://picsum.photos/seed/${id}a/600/400`,
+      caption: "Initial sketch layer",
+      date: "2024-06-01",
+    },
+    {
+      id: 2,
+      type: "youtube",
+      url: "https://www.youtube.com/embed/7yQ7PBHCUsc",
+      caption: "Interview during painting process",
+      date: "2024-06-03",
+    },
+    {
+      id: 3,
+      type: "text",
+      caption:
+        "The piece began intuitively with broad strokes of ultramarine. Layering was spontaneous and emotional, responding to memories of ocean cliffs.",
+      date: "2024-06-04",
+    },
+    {
+      id: 4,
+      type: "image",
+      url: `https://picsum.photos/seed/${id}b/600/400`,
+      caption: "Final touch with deep red to enhance contrast",
+      date: "2024-06-05",
+    },
+  ];
+
   const artwork = getArtworkById(id);
   const histories = getArtworkHistories(id);
 
