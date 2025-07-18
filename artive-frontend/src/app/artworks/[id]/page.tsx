@@ -10,6 +10,8 @@ export default function ArtworkDetailPage({
 }) {
   const id = params?.id ?? "default";
 
+  console.log("Artwork page rendering: ", id);
+
   // 더미 아트워크
   const getArtworkById = (id: string) => ({
     id,
