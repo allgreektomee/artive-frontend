@@ -5,8 +5,12 @@ import Link from "next/link";
 // import { useEffect, useState } from "react";
 // import { useState } from "react";
 
-export default function ArtworkDetailPage({ params }: { params: any }) {
-  const id = (params as { id: string }).id ?? "default";
+export default function ArtworkDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const id = params.id ?? "default";
 
   // const [artwork, setArtwork] = useState(() => getArtworkById(id));
   // const [histories, setHistories] = useState(() => getArtworkHistories(id));
