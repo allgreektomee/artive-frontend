@@ -82,6 +82,8 @@ export default function SignupPage() {
     setEmailStatus("checking");
 
     try {
+      console.log("✅ backEndUrl =", backEndUrl);
+
       const res = await fetch(
         `${backEndUrl}/auth/check-email?email=${encodeURIComponent(
           form.email.trim()
