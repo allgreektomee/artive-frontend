@@ -8,7 +8,7 @@ import { FaInstagram, FaYoutube } from "react-icons/fa";
 // ✅ 더미 데이터 (title, subtitle 포함)
 const allArtworks = Array.from({ length: 20 }).map((_, i) => ({
   id: i,
-  thumbnailUrl: `https://picsum.photos/seed/${i}/400/500`,
+  thumbnailUrl: `https://picsum.photos/seed/${i}/400/${i}00`,
   title: `Untitled #${i + 1}`,
   subtitle: "Acrylic on canvas",
 }));
