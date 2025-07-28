@@ -55,25 +55,25 @@ export default function AllArtworksPage() {
       </div>
 
       {/* artworks 소개 */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 py-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 py-4">
         {visibleArtworks.map((art) => (
           <Link
             key={art.id}
             href={`/artworks/${art.id}`}
-            className="block group"
+            className="group flex flex-col bg-white border rounded overflow-hidden"
           >
-            <div className="relative aspect-square w-full overflow-hidden rounded">
+            <div className="relative w-full">
               <Image
                 src={art.thumbnailUrl}
                 alt={art.title}
-                fill
-                className="object-cover group-hover:scale-105 transition-transform"
+                width={400}
+                height={500}
+                className="w-full h-auto object-cover"
               />
             </div>
-            <div className="mt-1">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {art.title}
-              </p>
+
+            <div className="p-3">
+              <p className="text-sm font-medium text-gray-900">{art.title}</p>
               <p className="text-xs text-gray-500">{art.subtitle}</p>
             </div>
           </Link>
