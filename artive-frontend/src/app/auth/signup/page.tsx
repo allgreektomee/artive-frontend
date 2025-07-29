@@ -87,7 +87,11 @@ export default function SignupPage() {
       const res = await fetch(
         `${backEndUrl}/auth/check-email?email=${encodeURIComponent(
           form.email.trim()
-        )}`
+        )}`,
+        {
+          method: "GET",
+          credentials: "include", // ✅ 이거 중요!
+        }
       );
       const data = await res.json();
 
@@ -124,6 +128,7 @@ export default function SignupPage() {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include", // 여기도!
         body: JSON.stringify({
           email: form.email,
           password: form.password,
