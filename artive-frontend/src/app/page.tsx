@@ -32,6 +32,17 @@ export default function Home() {
         </Link>
         로 이동해보세요!
       </div>
+
+      {/* ✅ 추가된 개인정보처리방침 링크 */}
+      <div className="mt-6 text-xs text-gray-400">
+        <a
+          href="https://www.artivefor.me/terms"
+          target="_blank"
+          className="underline hover:text-gray-600"
+        >
+          개인정보처리방침
+        </a>
+      </div>
     </div>
   );
 }
