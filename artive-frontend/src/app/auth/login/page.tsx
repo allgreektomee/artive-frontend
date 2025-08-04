@@ -13,7 +13,9 @@ export default function LoginPage() {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
+
   const backEndUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
   const handleGoogleLogin = () => {
     window.location.href = `${backEndUrl}/oauth2/authorization/google`;
   };
@@ -26,15 +28,14 @@ export default function LoginPage() {
       const res = await fetch(`${backEndUrl}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include", // 쿠키 인증 시 필요
+        credentials: "include",
         body: JSON.stringify(form),
       });
 
       if (res.ok) {
         const data = await res.json();
         localStorage.setItem("token", data.token);
-
-        router.push(`/${data.slug}`); // 로그인 성공 시 작가 페이지로 이동
+        router.push(`/${data.slug}`);
       } else {
         const msg = await res.text();
         setError(msg || "로그인에 실패했습니다.");
@@ -91,6 +92,19 @@ export default function LoginPage() {
       >
         구글 로그인
       </button>
+
+      {/* ✅ 개인정보처리방침 안내 문구 추가 */}
+      <p className="text-xs text-gray-400 mt-2">
+        구글 로그인을 통해 회원가입 및 로그인을 진행하면{" "}
+        <a
+          href="https://www.artivefor.me/terms"
+          target="_blank"
+          className="underline text-blue-600 hover:text-blue-800"
+        >
+          개인정보처리방침
+        </a>
+        에 동의하게 됩니다.
+      </p>
 
       <p className="text-sm text-gray-500">
         아직 계정이 없으신가요?{" "}

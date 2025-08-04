@@ -1,11 +1,9 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-// import Image from "next/image";
 
 export default function SignupPage() {
   const backEndUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-
   const [mounted, setMounted] = useState(false);
   const [form, setForm] = useState({
     email: "",
@@ -16,8 +14,6 @@ export default function SignupPage() {
   });
 
   const [errors, setErrors] = useState<string | null>(null);
-  // const [thumbnailUrl, setThumbnailUrl] = useState("/default-profile.png");
-
   const [emailStatus, setEmailStatus] = useState<
     "idle" | "checking" | "available" | "duplicate"
   >("idle");
@@ -33,11 +29,9 @@ export default function SignupPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, files } = e.target;
-
     if (name === "file" && files) {
       const file = files[0];
       setForm((prev) => ({ ...prev, file }));
-      // setThumbnailUrl(URL.createObjectURL(file));
     } else {
       setForm((prev) => ({ ...prev, [name]: value }));
       if (name === "email") {
@@ -49,30 +43,19 @@ export default function SignupPage() {
   const validate = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!emailRegex.test(form.email)) {
-      return "유효한 이메일 형식을 입력하세요.";
-    }
-    if (form.password.length < 8) {
+    if (!emailRegex.test(form.email)) return "유효한 이메일 형식을 입력하세요.";
+    if (form.password.length < 8)
       return "비밀번호는 최소 8자 이상이어야 합니다.";
-    }
-    if (form.password !== form.confirmPassword) {
+    if (form.password !== form.confirmPassword)
       return "비밀번호가 일치하지 않습니다.";
-    }
-    if (form.name.length < 2) {
-      return "닉네임은 최소 2자 이상이어야 합니다.";
-    }
-    if (form.file && form.file.size > 2 * 1024 * 1024) {
+    if (form.name.length < 2) return "닉네임은 최소 2자 이상이어야 합니다.";
+    if (form.file && form.file.size > 2 * 1024 * 1024)
       return "썸네일 파일은 2MB 이하만 가능합니다.";
-    }
-    if (emailStatus !== "available") {
-      return "이메일 중복확인을 해주세요.";
-    }
+    if (emailStatus !== "available") return "이메일 중복확인을 해주세요.";
     return null;
   };
 
   const checkEmailDuplication = async () => {
-    console.log("버튼 눌림!");
-
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(form.email)) {
       alert("유효한 이메일 형식이 아닙니다.");
@@ -82,30 +65,19 @@ export default function SignupPage() {
     setEmailStatus("checking");
 
     try {
-      console.log("✅ backEndUrl =", backEndUrl);
-
       const res = await fetch(
         `${backEndUrl}/auth/check-email?email=${encodeURIComponent(
           form.email.trim()
         )}`,
-        {
-          method: "GET",
-          credentials: "include", // ✅ 이거 중요!
-        }
+        { method: "GET", credentials: "include" }
       );
       const data = await res.json();
-
       if (data.available) {
         setEmailStatus("available");
       } else {
         setEmailStatus("duplicate");
       }
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        // console.error(err.message);
-      } else {
-        // console.error("알 수 없는 오류:", err);
-      }
+    } catch {
       alert("중복 확인 중 오류가 발생했습니다.");
       setEmailStatus("idle");
     }
@@ -113,7 +85,6 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     const validationError = validate();
     if (validationError) {
       setErrors(validationError);
@@ -125,10 +96,8 @@ export default function SignupPage() {
     try {
       const res = await fetch(`${backEndUrl}/auth/signup`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include", // 여기도!
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           email: form.email,
           password: form.password,
@@ -142,43 +111,17 @@ export default function SignupPage() {
         const result = await res.text();
         alert(result);
       }
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        // console.error(err.message);
-      } else {
-        // console.error("알 수 없는 오류:", err);
-      }
+    } catch {
       alert("서버와 통신 중 오류가 발생했습니다.");
     } finally {
-      setIsLoading(false); // ✅ 로딩 종료
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-aut mx-4 mt-10 p-4 shadow rounded border ">
+    <div className="max-w-md mx-auto mx-4 mt-10 p-4 shadow rounded border">
       <h1 className="text-2xl font-bold mb-4">회원가입</h1>
       {errors && <p className="text-red-600 mb-2">{errors}</p>}
-
-      {/* <div className="flex justify-center mb-4">
-        <label htmlFor="file-input" className="cursor-pointer">
-          <div className="relative w-24 h-24">
-            <Image
-              src={thumbnailUrl}
-              alt="썸네일 미리보기"
-              fill
-              className="rounded-full object-cover border border-gray-300 hover:opacity-80 transition"
-            />
-          </div>
-        </label>
-        <input
-          id="file-input"
-          type="file"
-          name="file"
-          accept="image/*"
-          onChange={handleChange}
-          className="hidden"
-        />
-      </div> */}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex gap-2 items-center">
@@ -247,6 +190,21 @@ export default function SignupPage() {
           className="w-full border p-2 rounded placeholder-gray-400"
           required
         />
+
+        {/* ✅ 개인정보 처리방침 동의 추가 */}
+        <div className="flex items-center space-x-2 text-sm">
+          <input type="checkbox" id="agree" required className="w-4 h-4" />
+          <label htmlFor="agree" className="text-gray-700">
+            <a
+              href="https://www.artivefor.me/terms"
+              target="_blank"
+              className="text-blue-600 underline hover:text-blue-800"
+            >
+              개인정보처리방침
+            </a>
+            에 동의합니다.
+          </label>
+        </div>
 
         <button
           type="submit"
