@@ -38,7 +38,7 @@ export default function NewArtworkPage() {
     setMounted(true);
 
     // 로그인 상태 확인
-    const token = localStorage.getItem("access_token");
+    const token = localStorage.getItem("token");
     if (!token) {
       router.push("/auth/login");
       return;

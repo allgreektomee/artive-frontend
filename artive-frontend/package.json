@@ -10,9 +10,15 @@
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",
+    "@tiptap/extension-image": "^3.2.0",
+    "@tiptap/extension-link": "^3.2.0",
+    "@tiptap/extension-placeholder": "^3.2.0",
+    "@tiptap/react": "^3.2.0",
+    "@tiptap/starter-kit": "^3.2.0",
     "axios": "^1.10.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "lucide-react": "^0.515.0",
     "next": "^15.3.3",
     "react": "^19.1.1",
@@ -24,6 +30,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@tailwindcss/typography": "^0.5.16",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

@@ -10,6 +10,7 @@ import GalleryInfo from "@/components/gallery/GalleryInfo";
 import AddArtworkButton from "@/components/gallery/AddArtworkButton";
 import ArtworkGrid from "@/components/gallery/ArtworkGrid";
 import AboutSection from "@/components/gallery/AboutSection";
+import NoticeSection from "@/components/gallery/NoticeSection";
 
 // 타입들 import
 import { User, Artwork } from "@/components/gallery/types";
@@ -39,6 +40,8 @@ export default function GalleryPage() {
   const ITEMS_PER_PAGE = 12;
 
   const currentSlug = pathname?.split("/")[1];
+
+  const [noticesCount, setNoticesCount] = useState<number | null>(null);
 
   const [mobileGridMode, setMobileGridMode] = useState<"single" | "double">(
     "double"
@@ -80,7 +83,7 @@ export default function GalleryPage() {
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const token = localStorage.getItem("access_token");
+        const token = localStorage.getItem("token");
         if (!token) return;
 
         const res = await fetch(`${backEndUrl}/auth/me`, {
@@ -186,6 +189,29 @@ export default function GalleryPage() {
     fetchGalleryData();
   }, [currentSlug, backEndUrl]);
 
+  // 기존 useEffect들 다음에 추가
+  useEffect(() => {
+    const checkNoticesCount = async () => {
+      try {
+        const response = await fetch(
+          `${backEndUrl}/api/blog/posts?user=${currentSlug}&post_type=NOTICE&is_published=true&limit=1`
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setNoticesCount(data.total || 0);
+        } else {
+          setNoticesCount(0);
+        }
+      } catch (error) {
+        console.log("공지사항 개수 확인 실패:", error);
+        setNoticesCount(0);
+      }
+    };
+
+    checkNoticesCount();
+  }, [currentSlug, backEndUrl]);
+
   // Load More 함수
   const loadMoreArtworks = async () => {
     if (!hasMore || loadingMore || !currentSlug) return;
@@ -281,7 +307,6 @@ export default function GalleryPage() {
           isOwner={isOwner}
           onProfileClick={handleProfileClick}
         />
-
         {/* 작품 추가 버튼 컴포넌트 */}
         {/* AddArtworkButton에 props 추가 */}
         <AddArtworkButton
@@ -290,6 +315,10 @@ export default function GalleryPage() {
           isMobileGridMode={mobileGridMode}
           onMobileGridChange={setMobileGridMode}
         />
+
+        {noticesCount !== null && noticesCount > 0 && (
+          <NoticeSection userId={currentSlug} />
+        )}
 
         {/* 작품 그리드 컴포넌트 */}
         <ArtworkGrid
@@ -302,7 +331,6 @@ export default function GalleryPage() {
           onLoadMore={loadMoreArtworks}
           mobileGridMode={mobileGridMode} // 이 prop 추가
         />
-
         {/* About Section 컴포넌트 */}
         <AboutSection galleryUser={galleryUser} />
       </div>

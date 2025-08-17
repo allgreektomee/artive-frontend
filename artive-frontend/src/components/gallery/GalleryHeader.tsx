@@ -1,7 +1,7 @@
 // components/gallery/GalleryHeader.tsx
 import React from "react";
 import Link from "next/link";
-import { FaInstagram, FaYoutube, FaUser } from "react-icons/fa";
+import { FaInstagram, FaYoutube, FaUser, FaEdit } from "react-icons/fa";
 
 interface User {
   gallery_title?: string;
@@ -54,6 +54,15 @@ const GalleryHeader: React.FC<GalleryHeaderProps> = ({
           </div>
 
           <div className="flex items-center space-x-3">
+            {/* 블로그 아이콘 */}
+            <Link
+              href={`/blog/${currentSlug}`}
+              className="text-gray-600 hover:text-blue-600 transition-colors"
+              title="Blog"
+            >
+              <FaEdit className="text-2xl" />
+            </Link>
+
             <a
               href={
                 galleryUser?.youtube_channel_id

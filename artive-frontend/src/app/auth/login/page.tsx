@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
+import { apiRequest } from "@/utils/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,60 +19,56 @@ export default function LoginPage() {
   const backEndUrl =
     process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
-
-    console.log("🔍 Backend URL:", backEndUrl);
-    console.log("🔍 환경변수 확인:", process.env.NEXT_PUBLIC_BACKEND_URL);
 
     try {
-      console.log("🔍 로그인 요청:", {
-        url: `${backEndUrl}/auth/login`,
-        body: { email: form.email.trim(), password: form.password.trim() },
-      });
-
-      // FastAPI 로그인 API 호출
-      const res = await fetch(`${backEndUrl}/auth/login`, {
+      const response = await fetch(`${backEndUrl}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Accept: "application/json",
         },
         body: JSON.stringify({
-          email: form.email.trim(),
-          password: form.password.trim(),
+          email: form.email,
+          password: form.password,
         }),
       });
 
-      console.log("🔍 응답 상태:", res.status);
-      const data = await res.json();
+      const data = await response.json();
+      console.log("🔍 응답 상태:", response.status);
       console.log("🔍 응답 데이터:", data);
 
-      if (res.ok) {
-        // FastAPI 응답 형식: { access_token, token_type, user }
-        const { access_token, user } = data;
+      if (response.ok) {
+        // 로그인 성공
+        localStorage.setItem("token", data.access_token);
 
-        // JWT 토큰을 localStorage에 저장
-        localStorage.setItem("access_token", access_token);
-        localStorage.setItem("user", JSON.stringify(user));
+        // user 정보가 있으면 사용, 없으면 /me 호출
+        if (data.user && data.user.slug) {
+          router.push(`/${data.user.slug}`); // 사용자 갤러리로 이동
+        } else {
+          // user 정보가 없으면 /auth/me 호출해서 정보 가져오기
+          try {
+            const meResponse = await fetch(`${backEndUrl}/auth/me`, {
+              headers: {
+                Authorization: `Bearer ${data.access_token}`,
+              },
+            });
 
-        // 사용자 갤러리로 리다이렉트
-        router.push(`/${user.slug}`);
-      } else {
-        // FastAPI 에러 응답 형식: { detail: "에러 메시지" }
-        setError(data.detail || "로그인에 실패했습니다.");
+            if (meResponse.ok) {
+              const userData = await meResponse.json();
+              router.push(`/${userData.slug}`);
+            } else {
+              router.push("/"); // 실패시 홈으로
+            }
+          } catch {
+            router.push("/"); // 에러시 홈으로
+          }
+        }
       }
-    } catch (err: unknown) {
-      console.error("로그인 에러:", err);
-      if (err instanceof Error) {
-        setError("네트워크 오류: " + err.message);
-      } else {
-        setError("서버와 연결할 수 없습니다.");
-      }
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error("로그인 에러:", error);
+      setError("서버 연결에 실패했습니다.");
     }
   };
 

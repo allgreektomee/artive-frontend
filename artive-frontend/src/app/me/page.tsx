@@ -35,7 +35,7 @@ const AboutArtistSection = ({ data, onChange, isMobile }) => {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          유튜브 링크 1
+          유튜브 영상 1
         </label>
         <input
           type="url"
@@ -51,7 +51,7 @@ const AboutArtistSection = ({ data, onChange, isMobile }) => {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          유튜브 링크 2
+          유튜브 영상 2
         </label>
         <input
           type="url"
@@ -616,37 +616,6 @@ const ExhibitionsSection = ({ data, onChange, isMobile }) => {
           ))}
         </div>
       )}
-
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex">
-          <svg
-            className="w-5 h-5 text-blue-600 mr-2 mt-0.5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <div className="text-sm text-blue-800">
-            <p className="font-medium mb-1">💡 전시회 관리 팁</p>
-            <ul className="space-y-1 text-blue-700">
-              <li>• 최신 전시회부터 시간순으로 정리하세요</li>
-              <li>
-                • 주요 전시는 "주요 전시" 옵션을 체크하여 강조할 수 있습니다
-              </li>
-              <li>
-                • 전시 유형을 정확히 선택하면 포트폴리오가 더 전문적으로
-                보입니다
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
@@ -974,25 +943,6 @@ const CompetitionsSection = ({ data, onChange, isMobile }) => {
                         <span>{competition.year}년</span>
                       </p>
 
-                      {competition.award_name && (
-                        <p className="flex items-center space-x-2">
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
-                            />
-                          </svg>
-                          <span>{competition.award_name}</span>
-                        </p>
-                      )}
-
                       {competition.description_ko && (
                         <p className="text-gray-700 mt-2">
                           {competition.description_ko}
@@ -1025,35 +975,6 @@ const CompetitionsSection = ({ data, onChange, isMobile }) => {
           ))}
         </div>
       )}
-
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-        <div className="flex">
-          <svg
-            className="w-5 h-5 text-green-600 mr-2 mt-0.5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <div className="text-sm text-green-800">
-            <p className="font-medium mb-1">🏆 공모전 관리 팁</p>
-            <ul className="space-y-1 text-green-700">
-              <li>• 최신 공모전부터 시간순으로 정리하세요</li>
-              <li>
-                • 수상한 공모전은 "주요 공모전" 옵션을 체크하여 강조하세요
-              </li>
-              <li>• 작품명과 주제를 설명란에 간단히 적어주세요</li>
-              <li>• 참가만 해도 의미있는 경험이니 모두 기록해보세요</li>
-            </ul>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
@@ -1063,6 +984,8 @@ const ProfileManagement = () => {
   const isMobile = useIsMobile();
   const [currentView, setCurrentView] = useState("main");
   const [activeTab, setActiveTab] = useState("basic");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [profileData, setProfileData] = useState({
     basic: {},
     about: {},
@@ -1081,6 +1004,50 @@ const ProfileManagement = () => {
     { id: "competitions", label: "공모전", icon: "🏆" },
   ];
 
+  // 프로필 데이터 로딩
+  useEffect(() => {
+    loadProfileData();
+  }, []);
+
+  const loadProfileData = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/profile");
+      if (response.ok) {
+        const data = await response.json();
+        setProfileData({
+          basic: {
+            name: data.name || "",
+            email: data.email || "",
+            slug: data.slug || "",
+            bio: data.bio || "",
+            instagram_id: data.instagram_id || "",
+            youtube_id: data.youtube_id || "",
+          },
+          about: {
+            bio: data.artist_statement || "",
+            youtube_url_1: data.youtube_url_1 || "",
+            youtube_url_2: data.youtube_url_2 || "",
+          },
+          process: {
+            studio_description: data.studio_description || "",
+            process_video_1: data.process_video_1 || "",
+            process_video_2: data.process_video_2 || "",
+          },
+          interview: {
+            qa_list: data.qa_list || [],
+          },
+          exhibitions: data.exhibitions || [],
+          competitions: data.competitions || [],
+        });
+      }
+    } catch (error) {
+      console.error("프로필 로딩 실패:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSectionDataChange = (section, field, value) => {
     setProfileData((prev) => ({
       ...prev,
@@ -1092,6 +1059,44 @@ const ProfileManagement = () => {
               [field]: value,
             },
     }));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      // Instagram, YouTube ID를 전체 URL로 변환
+      const saveData = {
+        ...profileData,
+        basic: {
+          ...profileData.basic,
+          instagram_url: profileData.basic.instagram_id
+            ? `https://instagram.com/${profileData.basic.instagram_id}`
+            : "",
+          youtube_url: profileData.basic.youtube_id
+            ? `https://youtube.com/@${profileData.basic.youtube_id}`
+            : "",
+        },
+      };
+
+      const response = await fetch("/api/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(saveData),
+      });
+
+      if (response.ok) {
+        alert("프로필이 저장되었습니다!");
+      } else {
+        throw new Error("저장 실패");
+      }
+    } catch (error) {
+      console.error("프로필 저장 실패:", error);
+      alert("프로필 저장에 실패했습니다.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const getSubtitle = (sectionId) => {
@@ -1140,8 +1145,12 @@ const ProfileManagement = () => {
                 </button>
                 <h1 className="text-xl font-semibold">프로필 관리</h1>
               </div>
-              <button className="text-blue-600 text-sm font-medium">
-                미리보기
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+              >
+                {saving ? "저장중..." : "저장"}
               </button>
             </div>
           </div>
@@ -1219,8 +1228,12 @@ const ProfileManagement = () => {
                   <h1 className="text-lg font-semibold">{section.label}</h1>
                 </div>
               </div>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">
-                저장
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+              >
+                {saving ? "저장중..." : "저장"}
               </button>
             </div>
           </div>
@@ -1258,27 +1271,34 @@ const ProfileManagement = () => {
                 </button>
                 <h1 className="text-2xl font-bold">프로필 관리</h1>
               </div>
-              <button className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-800">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                  />
-                </svg>
-                <span>갤러리 미리보기</span>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                {saving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>저장중...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
+                      />
+                    </svg>
+                    <span>저장</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -1314,22 +1334,6 @@ const ProfileManagement = () => {
                         ?.label
                     }
                   </h2>
-                  <button className="flex items-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
-                      />
-                    </svg>
-                    <span>저장</span>
-                  </button>
                 </div>
 
                 {renderSectionContent(activeTab, false)}
@@ -1417,37 +1421,47 @@ const ProfileManagement = () => {
                   <label className="block text-sm font-medium mb-2">
                     📸 Instagram
                   </label>
-                  <input
-                    type="url"
-                    value={profileData.basic.instagram_url || ""}
-                    onChange={(e) =>
-                      handleSectionDataChange(
-                        "basic",
-                        "instagram_url",
-                        e.target.value
-                      )
-                    }
-                    placeholder="https://instagram.com/username"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  <div className="flex">
+                    <span className="bg-gray-100 border border-r-0 border-gray-300 px-3 py-3 rounded-l-lg text-gray-600 text-sm">
+                      instagram.com/
+                    </span>
+                    <input
+                      type="text"
+                      value={profileData.basic.instagram_id || ""}
+                      onChange={(e) =>
+                        handleSectionDataChange(
+                          "basic",
+                          "instagram_id",
+                          e.target.value
+                        )
+                      }
+                      placeholder="username"
+                      className="flex-1 border border-gray-300 px-4 py-3 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">
                     📺 YouTube
                   </label>
-                  <input
-                    type="url"
-                    value={profileData.basic.youtube_url || ""}
-                    onChange={(e) =>
-                      handleSectionDataChange(
-                        "basic",
-                        "youtube_url",
-                        e.target.value
-                      )
-                    }
-                    placeholder="https://youtube.com/@username"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  <div className="flex">
+                    <span className="bg-gray-100 border border-r-0 border-gray-300 px-3 py-3 rounded-l-lg text-gray-600 text-sm">
+                      youtube.com/@
+                    </span>
+                    <input
+                      type="text"
+                      value={profileData.basic.youtube_id || ""}
+                      onChange={(e) =>
+                        handleSectionDataChange(
+                          "basic",
+                          "youtube_id",
+                          e.target.value
+                        )
+                      }
+                      placeholder="channelname"
+                      className="flex-1 border border-gray-300 px-4 py-3 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -1467,6 +1481,18 @@ const ProfileManagement = () => {
         return <div>섹션을 찾을 수 없습니다.</div>;
     }
   };
+
+  // 로딩 중일 때 표시
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">프로필 정보를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (isMobile) {
     if (currentView === "main") {
