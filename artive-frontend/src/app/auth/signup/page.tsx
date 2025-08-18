@@ -101,30 +101,42 @@ export default function SignupPage() {
     }
   };
 
-  const checkSlugAvailability = async () => {
+  const checkSlugAvailability = async (slugValue: string) => {
     const slugRegex = /^[a-z0-9]+$/;
-    if (!slugRegex.test(form.slug)) {
-      alert("갤러리 주소는 영문 소문자와 숫자만 사용 가능합니다.");
+    if (!slugValue || slugValue.length < 3) {
+      alert("갤러리 주소는 3자 이상이어야 합니다.");
+      return;
+    }
+    if (!slugRegex.test(slugValue)) {
+      alert("영문 소문자와 숫자만 사용 가능합니다.");
       return;
     }
 
     setSlugStatus("checking");
 
     try {
-      // FastAPI 슬러그 중복 확인 API 호출
-      const res = await fetch(`${backEndUrl}/auth/check-slug`, {
+      const response = await fetch(`${backEndUrl}/auth/check-slug`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify({ slug: form.slug.trim() }),
+        body: JSON.stringify({ slug: slugValue }),
       });
 
-      const data = await res.json();
-      setSlugStatus(data.available ? "available" : "duplicate");
-    } catch {
-      alert("중복 확인 중 오류가 발생했습니다.");
+      const data = await response.json();
+      console.log("받은 데이터:", data); // 디버깅
+
+      // ✅ 상태 업데이트 수정
+      if (data.available === true) {
+        setSlugStatus("available");
+        // alert 제거 (UI로 충분함)
+      } else {
+        setSlugStatus("duplicate");
+      }
+    } catch (error) {
+      console.error("중복 확인 오류:", error);
+      alert("서버 연결 오류가 발생했습니다.");
       setSlugStatus("idle");
     }
   };
@@ -267,7 +279,7 @@ export default function SignupPage() {
             </div>
             <button
               type="button"
-              onClick={checkSlugAvailability}
+              onClick={() => checkSlugAvailability(form.slug)} // ✅ 화살표 함수로 감싸기
               className="border border-gray-300 px-4 py-3 rounded-lg bg-white hover:bg-gray-50 text-sm whitespace-nowrap"
               disabled={slugStatus === "checking" || isLoading}
             >
