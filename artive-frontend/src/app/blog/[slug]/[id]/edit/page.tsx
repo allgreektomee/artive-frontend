@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 
@@ -30,10 +30,24 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-export default function BlogWritePage() {
+interface BlogPost {
+  id: string;
+  title: string;
+  content: string;
+  excerpt?: string;
+  featured_image?: string;
+  post_type: "BLOG" | "NOTICE" | "EXHIBITION" | "AWARD" | "NEWS";
+  tags?: string[] | string;
+  is_published: boolean;
+  is_public: boolean;
+  is_pinned: boolean;
+}
+
+export default function BlogEditPage() {
   const params = useParams();
   const router = useRouter();
   const userSlug = params?.slug as string;
+  const postId = params?.id as string;
 
   // 기본 상태
   const [title, setTitle] = useState("");
@@ -41,97 +55,76 @@ export default function BlogWritePage() {
   const [postType, setPostType] = useState("BLOG");
   const [featuredImage, setFeaturedImage] = useState("");
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
-  const [tagList, setTagList] = useState<string[]>([]); // tags 제거, tagList만 사용
+  const [tagList, setTagList] = useState<string[]>([]);
 
   // 발행 설정
   const [isPublic, setIsPublic] = useState(true);
   const [isPinned, setIsPinned] = useState(false);
+  const [isPublished, setIsPublished] = useState(false);
 
   // 로딩 상태
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // ✅ 초기 로딩 상태 추가
-  const [autoSaveStatus, setAutoSaveStatus] = useState(""); // ✅ 자동저장 상태 추가
+  const [isLoading, setIsLoading] = useState(true);
 
   const backendUrl =
     process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
-  // ✅ 자동 저장 기능 (5분마다)
+  // 기존 포스트 데이터 불러오기
   useEffect(() => {
-    const autoSave = setInterval(() => {
-      if (title && content && !isSaving && !isPublishing) {
-        handleAutoSave();
-      }
-    }, 300000); // 5분
+    if (userSlug && postId) {
+      fetchPost();
+      checkPermission();
+    }
+  }, [userSlug, postId]);
 
-    return () => clearInterval(autoSave);
-  }, [title, content]);
-
-  const handleAutoSave = async () => {
-    setAutoSaveStatus("저장중...");
-    const token = localStorage.getItem("token");
-
+  const fetchPost = async () => {
     try {
-      // localStorage에 임시 저장
-      const draftData = {
-        title,
-        content,
-        postType,
-        tags: tagList.join(", "), // tagList를 문자열로 변환
-        featuredImage,
-        savedAt: new Date().toISOString(),
-      };
-      localStorage.setItem(`draft_${userSlug}`, JSON.stringify(draftData));
-      setAutoSaveStatus("자동 저장됨");
+      const response = await fetch(`${backendUrl}/api/blog/posts/${postId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
-      setTimeout(() => setAutoSaveStatus(""), 3000);
+      if (response.ok) {
+        const data = await response.json();
+
+        // 데이터 설정
+        setTitle(data.title || "");
+        setContent(data.content || "");
+        setPostType(data.post_type || "BLOG");
+        setFeaturedImage(data.featured_image || "");
+        setIsPublic(data.is_public ?? true);
+        setIsPinned(data.is_pinned ?? false);
+        setIsPublished(data.is_published ?? false);
+
+        // 태그 처리
+        if (data.tags) {
+          if (typeof data.tags === "string") {
+            try {
+              const parsedTags = JSON.parse(data.tags);
+              setTagList(Array.isArray(parsedTags) ? parsedTags : []);
+            } catch {
+              setTagList([]);
+            }
+          } else if (Array.isArray(data.tags)) {
+            setTagList(data.tags);
+          }
+        }
+
+        setIsLoading(false);
+      } else {
+        alert("포스트를 불러올 수 없습니다.");
+        router.push(`/blog/${userSlug}`);
+      }
     } catch (error) {
-      console.error("자동 저장 실패:", error);
-      setAutoSaveStatus("자동 저장 실패");
+      console.error("포스트 불러오기 실패:", error);
+      alert("네트워크 오류가 발생했습니다.");
+      router.push(`/blog/${userSlug}`);
     }
   };
-
-  // ✅ 임시 저장된 내용 불러오기
-  useEffect(() => {
-    const loadDraft = () => {
-      const savedDraft = localStorage.getItem(`draft_${userSlug}`);
-      if (savedDraft) {
-        const draft = JSON.parse(savedDraft);
-        const confirmLoad = window.confirm(
-          `${new Date(
-            draft.savedAt
-          ).toLocaleString()}에 자동 저장된 내용이 있습니다. 불러오시겠습니까?`
-        );
-
-        if (confirmLoad) {
-          setTitle(draft.title || "");
-          setContent(draft.content || "");
-          setPostType(draft.postType || "BLOG");
-          if (draft.tags) {
-            setTagList(
-              draft.tags
-                .split(",")
-                .map((t: string) => t.trim())
-                .filter((t: string) => t)
-            );
-          }
-          setFeaturedImage(draft.featuredImage || "");
-        } else {
-          localStorage.removeItem(`draft_${userSlug}`);
-        }
-      }
-    };
-
-    if (isLoading) {
-      loadDraft();
-    }
-  }, [userSlug, isLoading]);
-
-  // 권한 체크
-  useEffect(() => {
-    checkPermission();
-  }, [userSlug]);
 
   const checkPermission = async () => {
     const token = localStorage.getItem("token");
@@ -156,9 +149,7 @@ export default function BlogWritePage() {
 
         if (userData.slug !== userSlug) {
           alert("권한이 없습니다.");
-          router.push(`/blog/${userSlug}`);
-        } else {
-          setIsLoading(false); // ✅ 권한 확인 완료
+          router.push(`/blog/${userSlug}/${postId}`);
         }
       } else {
         if (response.status === 401) {
@@ -192,14 +183,19 @@ export default function BlogWritePage() {
     extractImages();
   }, [content]);
 
-  // 임시저장
-  const handleSaveDraft = async () => {
+  // 수정 저장
+  const handleUpdate = async (publish: boolean = false) => {
     if (!title.trim()) {
       alert("제목을 입력해주세요.");
       return;
     }
 
-    setIsSaving(true);
+    if (publish) {
+      setIsPublishing(true);
+    } else {
+      setIsSaving(true);
+    }
+
     const token = localStorage.getItem("token");
 
     try {
@@ -212,104 +208,35 @@ export default function BlogWritePage() {
         content: content.trim(),
         excerpt: autoExcerpt,
         post_type: postType,
-        tags: tagList, // 항상 배열로 (빈 배열 포함)
-        featured_image: featuredImage || "", // null 대신 빈 문자열
-        is_published: false,
-        is_public: false,
-        is_pinned: false,
-      };
-
-      console.log("임시저장 데이터:", postData); // 디버깅용
-
-      const response = await fetch(`${backendUrl}/api/blog/posts`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(postData),
-        credentials: "include", // 쿠키 포함
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        // ✅ 임시저장 성공 시 로컬 draft 삭제
-        localStorage.removeItem(`draft_${userSlug}`);
-        alert("임시저장이 완료되었습니다.");
-        router.push(`/blog/${userSlug}/${result.id}`);
-      } else {
-        const error = await response.json();
-        alert(`임시저장 실패: ${error.detail || "알 수 없는 오류"}`);
-      }
-    } catch (error) {
-      console.error("임시저장 실패:", error);
-      alert("임시저장 중 오류가 발생했습니다.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // 발행하기
-  const handlePublish = async () => {
-    if (!title.trim() || !content.trim()) {
-      alert("제목과 내용을 모두 입력해주세요.");
-      return;
-    }
-
-    setIsPublishing(true);
-    const token = localStorage.getItem("token");
-
-    try {
-      const plainText = content.replace(/<[^>]*>/g, "").trim();
-      const autoExcerpt =
-        plainText.length > 150 ? plainText.slice(0, 150) + "..." : plainText;
-
-      const postData = {
-        title: title.trim(),
-        content: content.trim(),
-        excerpt: autoExcerpt,
-        post_type: postType,
-        tags: tagList, // 항상 배열로 (빈 배열 포함)
-        featured_image: featuredImage || "", // null 대신 빈 문자열
-        is_published: true,
+        tags: tagList,
+        featured_image: featuredImage || "",
+        is_published: publish ? true : isPublished,
         is_public: isPublic,
         is_pinned: isPinned && postType === "NOTICE",
       };
 
-      console.log("발행 데이터:", postData); // 디버깅용
-      console.log(
-        "태그:",
-        postData.tags,
-        "타입:",
-        typeof postData.tags,
-        "길이:",
-        postData.tags.length
-      ); // 태그 확인
-
-      const response = await fetch(`${backendUrl}/api/blog/posts`, {
-        method: "POST",
+      const response = await fetch(`${backendUrl}/api/blog/posts/${postId}`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(postData),
-        credentials: "include", // 쿠키 포함
+        credentials: "include",
       });
 
       if (response.ok) {
-        const result = await response.json();
-        // ✅ 발행 성공 시 로컬 draft 삭제
-        localStorage.removeItem(`draft_${userSlug}`);
-        alert("발행이 완료되었습니다!");
-        router.push(`/blog/${userSlug}/${result.id}`);
+        alert(publish ? "발행이 완료되었습니다!" : "저장되었습니다.");
+        router.push(`/blog/${userSlug}/${postId}`);
       } else {
         const error = await response.json();
-        alert(`발행 실패: ${error.detail || "알 수 없는 오류"}`);
+        alert(`저장 실패: ${error.detail || "알 수 없는 오류"}`);
       }
     } catch (error) {
-      console.error("발행 실패:", error);
-      alert("발행 중 오류가 발생했습니다.");
+      console.error("저장 실패:", error);
+      alert("저장 중 오류가 발생했습니다.");
     } finally {
+      setIsSaving(false);
       setIsPublishing(false);
       setIsPublishModalOpen(false);
     }
@@ -332,7 +259,6 @@ export default function BlogWritePage() {
 
   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.nativeEvent.isComposing) {
-      // 한글 입력 중복 방지
       e.preventDefault();
       const newTag = tagInput.trim();
       if (newTag && !tagList.includes(newTag)) {
@@ -346,13 +272,13 @@ export default function BlogWritePage() {
     setTagList(tagList.filter((tag) => tag !== tagToRemove));
   };
 
-  // ✅ 초기 로딩 중일 때
+  // 초기 로딩 중일 때
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">권한 확인중...</p>
+          <p className="text-gray-600">포스트 불러오는 중...</p>
         </div>
       </div>
     );
@@ -372,24 +298,17 @@ export default function BlogWritePage() {
                 <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
               <div>
-                <h1 className="text-base sm:text-xl font-bold">새 글 작성</h1>
+                <h1 className="text-base sm:text-xl font-bold">글 수정</h1>
                 <p className="text-xs sm:text-sm text-gray-600">@{userSlug}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-1 sm:gap-2">
-              {/* 자동저장 상태 표시 - 모바일에서 숨김 */}
-              {autoSaveStatus && (
-                <span className="hidden sm:inline text-sm text-gray-500 mr-2">
-                  {autoSaveStatus}
-                </span>
-              )}
-
               <button
-                onClick={handleSaveDraft}
+                onClick={() => handleUpdate(false)}
                 disabled={isSaving || !title}
                 className="p-2 sm:px-4 sm:py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
-                title="임시저장"
+                title="저장"
               >
                 {isSaving ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -397,21 +316,23 @@ export default function BlogWritePage() {
                   <Save className="w-4 h-4" />
                 )}
                 <span className="hidden sm:inline ml-2 text-sm">
-                  {isSaving ? "저장중..." : "임시저장"}
+                  {isSaving ? "저장중..." : "저장"}
                 </span>
               </button>
 
-              <button
-                onClick={() => setIsPublishModalOpen(true)}
-                disabled={isPublishing || !title || !content}
-                className="p-2 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-                title="발행하기"
-              >
-                <Eye className="w-4 h-4" />
-                <span className="hidden sm:inline ml-2 text-sm">
-                  {isPublishing ? "발행중..." : "발행하기"}
-                </span>
-              </button>
+              {!isPublished && (
+                <button
+                  onClick={() => setIsPublishModalOpen(true)}
+                  disabled={isPublishing || !title || !content}
+                  className="p-2 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  title="발행하기"
+                >
+                  <Eye className="w-4 h-4" />
+                  <span className="hidden sm:inline ml-2 text-sm">
+                    발행하기
+                  </span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -563,7 +484,7 @@ export default function BlogWritePage() {
                 placeholder="태그 입력 후 Enter..."
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={handleAddTag} // 다시 onKeyDown으로
+                onKeyDown={handleAddTag}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <p className="text-xs text-gray-500 mt-1">
@@ -574,8 +495,8 @@ export default function BlogWritePage() {
         </div>
       </div>
 
-      {/* 발행 설정 모달 */}
-      {isPublishModalOpen && (
+      {/* 발행 설정 모달 (임시저장된 글만) */}
+      {isPublishModalOpen && !isPublished && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-md w-full p-6">
             <h3 className="text-lg font-bold mb-4">발행 설정</h3>
@@ -635,7 +556,7 @@ export default function BlogWritePage() {
                 취소
               </button>
               <button
-                onClick={handlePublish}
+                onClick={() => handleUpdate(true)}
                 disabled={isPublishing}
                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >

@@ -37,7 +37,7 @@ export default function NewArtworkPage() {
   useEffect(() => {
     setMounted(true);
 
-    // 로그인 상태 확인
+    // 로그인 상태 확인 - token 키 사용
     const token = localStorage.getItem("token");
     if (!token) {
       router.push("/auth/login");
@@ -110,7 +110,7 @@ export default function NewArtworkPage() {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem("access_token");
+      const token = localStorage.getItem("token"); // access_token을 token으로 통일
       if (!token) {
         router.push("/auth/login");
         return;
@@ -145,10 +145,15 @@ export default function NewArtworkPage() {
       if (response.ok) {
         // 성공 시 사용자 갤러리(홈)로 이동
         const userStr = localStorage.getItem("user");
+        console.log("저장된 사용자 정보:", userStr);
+
         if (userStr) {
           try {
             const user = JSON.parse(userStr);
-            router.push(`/${user.slug}`);
+            console.log("파싱된 사용자:", user);
+            console.log("리다이렉트할 slug:", user.slug);
+
+            router.push(`/${user.slug}`); // jaeyoungpark으로 가야 함
             return;
           } catch (e) {
             console.error("사용자 정보 파싱 오류:", e);
@@ -158,7 +163,7 @@ export default function NewArtworkPage() {
         router.push("/");
       } else {
         if (response.status === 401) {
-          localStorage.removeItem("access_token");
+          localStorage.removeItem("token"); // access_token을 token으로 통일
           localStorage.removeItem("user");
           router.push("/auth/login");
           return;
@@ -240,7 +245,7 @@ export default function NewArtworkPage() {
       </div>
 
       {/* 메인 콘텐츠 */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20">
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6">
             {error}
@@ -308,10 +313,11 @@ export default function NewArtworkPage() {
           </div>
         </form>
 
-        {/* 변경사항 안내 */}
+        {/* 변경사항 안내 - 위치 조정 (모바일에서도 안전하게) */}
         {isFormChanged() && (
-          <div className="fixed bottom-4 right-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg">
-            💾 변경사항이 있습니다
+          <div className="fixed bottom-20 sm:bottom-8 right-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg z-10 flex items-center space-x-2">
+            <span>💾</span>
+            <span className="text-sm">변경사항이 있습니다</span>
           </div>
         )}
       </div>

@@ -99,7 +99,7 @@ export default function ArtworkDetailPage() {
   // artworks/[id]/page.tsx에서
   const handleAddHistory = async (historyData) => {
     try {
-      const token = localStorage.getItem("access_token");
+      const token = localStorage.getItem("token");
 
       const response = await fetch(
         `${backEndUrl}/api/artworks/${artworkId}/histories`,
@@ -172,7 +172,7 @@ export default function ArtworkDetailPage() {
   // 히스토리 삭제 함수
   const handleDeleteHistory = async (historyId) => {
     try {
-      const token = localStorage.getItem("access_token");
+      const token = localStorage.getItem("token");
 
       const response = await fetch(
         `${backEndUrl}/api/artworks/${artworkId}/histories/${historyId}`,

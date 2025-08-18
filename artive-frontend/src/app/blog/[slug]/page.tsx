@@ -22,23 +22,28 @@ import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 
 interface BlogPost {
-  id: string;
+  id: number;
   title: string;
   content: string;
-  thumbnail?: string;
+  excerpt: string | null;
+  featured_image: string | null; // 대표 이미지
   post_type: "BLOG" | "NOTICE" | "EXHIBITION" | "AWARD" | "NEWS";
+  tags: string[] | null;
   is_published: boolean;
+  is_public: boolean;
   is_pinned: boolean;
-  is_featured: boolean;
   view_count: number;
+  like_count: number;
   created_at: string;
   updated_at: string;
-  author: {
+  published_at: string | null;
+  user: {
     id: number;
-    name: string;
+    username: string;
     slug: string;
     profile_image?: string;
   };
+  user_id: number;
 }
 
 interface User {
@@ -57,14 +62,14 @@ export default function BlogListPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [isOwner, setIsOwner] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // ✅ 추가
-  const [error, setError] = useState<string | null>(null); // ✅ 추가
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchTerm, setSearchTerm] = useState(""); // ✅ 추가
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalPosts, setTotalPosts] = useState(0); // ✅ 추가
+  const [totalPosts, setTotalPosts] = useState(0);
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   const postsPerPage = 10;
@@ -75,10 +80,9 @@ export default function BlogListPage() {
       fetchPosts();
       checkOwnership();
     }
-  }, [userSlug, selectedType, currentPage, searchTerm]); // searchTerm 추가
+  }, [userSlug, selectedType, currentPage, searchTerm]);
 
   const fetchUserInfo = async () => {
-    // 사용자 정보는 선택사항 - 없어도 계속 진행
     setUser({
       id: 0,
       name: userSlug.toUpperCase(),
@@ -89,13 +93,13 @@ export default function BlogListPage() {
   const fetchPosts = async () => {
     try {
       setIsLoading(true);
-      setError(null); // 에러 초기화
+      setError(null);
 
       const params = new URLSearchParams({
         user: userSlug,
         page: currentPage.toString(),
         limit: postsPerPage.toString(),
-        is_published: "true", // 발행된 글만
+        is_published: "true",
       });
 
       if (selectedType !== "ALL") {
@@ -147,7 +151,7 @@ export default function BlogListPage() {
   };
 
   const checkOwnership = async () => {
-    const token = localStorage.getItem("token"); // ✅ token으로 수정
+    const token = localStorage.getItem("token");
     if (!token) return;
 
     try {
@@ -167,22 +171,22 @@ export default function BlogListPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setSearchTerm(searchQuery); // 검색어 설정
+    setSearchTerm(searchQuery);
     setCurrentPage(1);
   };
 
   const getTypeIcon = (type: string) => {
     switch (type) {
       case "NOTICE":
-        return <Bell className="w-4 h-4" />;
+        return <Bell className="w-3 h-3 sm:w-4 sm:h-4" />;
       case "EXHIBITION":
-        return <ImageIcon className="w-4 h-4" />;
+        return <ImageIcon className="w-3 h-3 sm:w-4 sm:h-4" />;
       case "AWARD":
-        return <Award className="w-4 h-4" />;
+        return <Award className="w-3 h-3 sm:w-4 sm:h-4" />;
       case "NEWS":
-        return <Newspaper className="w-4 h-4" />;
+        return <Newspaper className="w-3 h-3 sm:w-4 sm:h-4" />;
       default:
-        return <FileText className="w-4 h-4" />;
+        return <FileText className="w-3 h-3 sm:w-4 sm:h-4" />;
     }
   };
 
@@ -216,20 +220,22 @@ export default function BlogListPage() {
     }
   };
 
-  // HTML 태그 제거
   const stripHtml = (html: string) => {
     const tmp = document.createElement("DIV");
     tmp.innerHTML = html;
     return tmp.textContent || tmp.innerText || "";
   };
 
-  // 썸네일 추출 (첫 번째 이미지)
-  const extractThumbnail = (content: string): string | null => {
-    const imgMatch = content.match(/<img[^>]+src="([^">]+)"/);
-    return imgMatch ? imgMatch[1] : null;
+  // excerpt가 있으면 사용하고, 없으면 content에서 추출
+  const getPreview = (post: BlogPost) => {
+    if (post.excerpt) {
+      return post.excerpt.length > 100
+        ? post.excerpt.substring(0, 100) + "..."
+        : post.excerpt;
+    }
+    return stripHtml(post.content).substring(0, 100) + "...";
   };
 
-  // 로딩 상태
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -238,7 +244,6 @@ export default function BlogListPage() {
     );
   }
 
-  // 에러 상태
   if (error) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
@@ -255,49 +260,57 @@ export default function BlogListPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 헤더 */}
+      {/* 헤더 - 모바일 최적화 */}
       <header className="bg-white border-b sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+        <div className="max-w-4xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <button
                 onClick={() => router.push(`/${userSlug}`)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
               <div>
-                <h1 className="text-xl font-bold">
-                  {user?.name || userSlug.toUpperCase()} 블로그
+                <h1 className="text-base sm:text-xl font-bold">
+                  <span className="hidden sm:inline">
+                    {user?.name || userSlug.toUpperCase()} 블로그
+                  </span>
+                  <span className="sm:hidden">블로그</span>
                 </h1>
-                <p className="text-sm text-gray-500">{totalPosts}개의 글</p>
+                <p className="text-xs sm:text-sm text-gray-500">
+                  {totalPosts}개의 글
+                </p>
               </div>
             </div>
             {isOwner && (
               <Link
                 href={`/blog/${userSlug}/write`}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                className="p-2 sm:px-4 sm:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                title="새 글 작성"
               >
                 <Plus className="w-4 h-4" />
-                <span>새 글 작성</span>
+                <span className="hidden sm:inline ml-2 text-sm">
+                  새 글 작성
+                </span>
               </Link>
             )}
           </div>
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        {/* 필터 & 검색 */}
-        <div className="bg-white rounded-lg p-4 mb-6 shadow-sm">
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* 타입 필터 */}
-            <div className="flex gap-2 flex-wrap">
+      <div className="max-w-4xl mx-auto px-2 sm:px-4 py-4 sm:py-6">
+        {/* 필터 & 검색 - 모바일 최적화 */}
+        <div className="bg-white rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 shadow-sm">
+          <div className="flex flex-col gap-3 sm:gap-4">
+            {/* 타입 필터 - 모바일에서 스크롤 가능 */}
+            <div className="flex gap-1 sm:gap-2 overflow-x-auto scrollbar-hide">
               <button
                 onClick={() => {
                   setSelectedType("ALL");
                   setCurrentPage(1);
                 }}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                   selectedType === "ALL"
                     ? "bg-gray-900 text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -310,7 +323,7 @@ export default function BlogListPage() {
                   setSelectedType("NOTICE");
                   setCurrentPage(1);
                 }}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                   selectedType === "NOTICE"
                     ? "bg-red-500 text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -323,7 +336,7 @@ export default function BlogListPage() {
                   setSelectedType("BLOG");
                   setCurrentPage(1);
                 }}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                   selectedType === "BLOG"
                     ? "bg-blue-500 text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -336,7 +349,7 @@ export default function BlogListPage() {
                   setSelectedType("NEWS");
                   setCurrentPage(1);
                 }}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                   selectedType === "NEWS"
                     ? "bg-green-500 text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -344,34 +357,62 @@ export default function BlogListPage() {
               >
                 뉴스
               </button>
+              <button
+                onClick={() => {
+                  setSelectedType("EXHIBITION");
+                  setCurrentPage(1);
+                }}
+                className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                  selectedType === "EXHIBITION"
+                    ? "bg-purple-500 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                전시
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedType("AWARD");
+                  setCurrentPage(1);
+                }}
+                className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                  selectedType === "AWARD"
+                    ? "bg-yellow-500 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                수상
+              </button>
             </div>
 
             {/* 검색 */}
-            <form onSubmit={handleSearch} className="flex-1">
+            <form onSubmit={handleSearch} className="w-full">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-2.5 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="검색..."
-                  className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+                  className="w-full pl-8 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 text-sm border rounded-lg focus:outline-none focus:border-blue-500"
                 />
               </div>
             </form>
           </div>
         </div>
 
-        {/* 포스트 목록 */}
-        <div className="space-y-4">
+        {/* 포스트 목록 - 모바일 최적화 */}
+        <div className="space-y-3 sm:space-y-4">
           {posts.length === 0 ? (
-            <div className="bg-white rounded-lg p-12 text-center">
-              <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">아직 작성된 글이 없습니다.</p>
+            <div className="bg-white rounded-lg p-8 sm:p-12 text-center">
+              <FileText className="w-10 h-10 sm:w-12 sm:h-12 text-gray-300 mx-auto mb-4" />
+              <p className="text-sm sm:text-base text-gray-500">
+                아직 작성된 글이 없습니다.
+              </p>
               {isOwner && (
                 <Link
                   href={`/blog/${userSlug}/write`}
-                  className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                  className="inline-flex items-center gap-2 mt-4 px-3 sm:px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   <span>첫 글 작성하기</span>
@@ -380,9 +421,7 @@ export default function BlogListPage() {
             </div>
           ) : (
             posts.map((post) => {
-              const thumbnail =
-                post.thumbnail || extractThumbnail(post.content);
-              const preview = stripHtml(post.content).substring(0, 150) + "...";
+              const preview = getPreview(post);
 
               return (
                 <article
@@ -390,65 +429,85 @@ export default function BlogListPage() {
                   className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow"
                 >
                   <Link href={`/blog/${userSlug}/${post.id}`}>
-                    <div className="p-6">
-                      <div className="flex items-start gap-4">
-                        {/* 썸네일 */}
-                        {thumbnail && (
+                    <div className="p-4 sm:p-6">
+                      <div className="flex items-start gap-3 sm:gap-4">
+                        {/* 대표 이미지 표시 - featured_image 사용 */}
+                        {post.featured_image && (
                           <div className="flex-shrink-0">
                             <img
-                              src={thumbnail}
+                              src={post.featured_image}
                               alt={post.title}
-                              className="w-24 h-24 object-cover rounded-lg"
+                              className="w-16 h-16 sm:w-24 sm:h-24 object-cover rounded-lg"
+                              onError={(e) => {
+                                // 이미지 로드 실패 시 숨기기
+                                (e.target as HTMLElement).style.display =
+                                  "none";
+                              }}
                             />
                           </div>
                         )}
 
                         {/* 콘텐츠 */}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-4 mb-2">
-                            <div className="flex items-center gap-2">
+                          <div className="flex items-start justify-between gap-2 sm:gap-4 mb-2">
+                            <div className="flex items-center gap-1 sm:gap-2">
                               {post.is_pinned && (
-                                <Pin className="w-4 h-4 text-red-500" />
+                                <Pin className="w-3 h-3 sm:w-4 sm:h-4 text-red-500" />
                               )}
                               <span
-                                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getTypeColor(
+                                className={`inline-flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium border ${getTypeColor(
                                   post.post_type
                                 )}`}
                               >
                                 {getTypeIcon(post.post_type)}
-                                {getTypeLabel(post.post_type)}
+                                <span className="hidden sm:inline">
+                                  {getTypeLabel(post.post_type)}
+                                </span>
                               </span>
                             </div>
                             {isOwner && (
                               <Link
                                 href={`/blog/${userSlug}/${post.id}/edit`}
                                 onClick={(e) => e.stopPropagation()}
-                                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                                className="p-1 sm:p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
                               >
-                                <Edit className="w-4 h-4" />
+                                <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                               </Link>
                             )}
                           </div>
 
-                          <h2 className="text-lg font-bold text-gray-900 mb-2 line-clamp-1">
+                          <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-1 sm:mb-2 line-clamp-1">
                             {post.title}
                           </h2>
 
-                          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                          <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 line-clamp-2">
                             {preview}
                           </p>
 
-                          <div className="flex items-center gap-4 text-xs text-gray-500">
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3.5 h-3.5" />
-                              {formatDistanceToNow(new Date(post.created_at), {
-                                addSuffix: true,
-                                locale: ko,
-                              })}
+                          <div className="flex items-center gap-3 sm:gap-4 text-xs text-gray-500">
+                            <span className="flex items-center gap-0.5 sm:gap-1">
+                              <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                              <span className="hidden sm:inline">
+                                {formatDistanceToNow(
+                                  new Date(post.created_at),
+                                  {
+                                    addSuffix: true,
+                                    locale: ko,
+                                  }
+                                )}
+                              </span>
+                              <span className="sm:hidden">
+                                {formatDistanceToNow(
+                                  new Date(post.created_at),
+                                  {
+                                    locale: ko,
+                                  }
+                                )}
+                              </span>
                             </span>
-                            <span className="flex items-center gap-1">
-                              <Eye className="w-3.5 h-3.5" />
-                              {post.view_count}회
+                            <span className="flex items-center gap-0.5 sm:gap-1">
+                              <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                              {post.view_count}
                             </span>
                           </div>
                         </div>
@@ -461,17 +520,17 @@ export default function BlogListPage() {
           )}
         </div>
 
-        {/* 페이지네이션 */}
+        {/* 페이지네이션 - 모바일 최적화 */}
         {totalPages > 1 && (
-          <div className="flex justify-center gap-2 mt-8">
+          <div className="flex justify-center gap-2 mt-6 sm:mt-8">
             <button
               onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
-              className="px-4 py-2 border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               이전
             </button>
-            <span className="px-4 py-2">
+            <span className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm">
               {currentPage} / {totalPages}
             </span>
             <button
@@ -479,7 +538,7 @@ export default function BlogListPage() {
                 setCurrentPage(Math.min(totalPages, currentPage + 1))
               }
               disabled={currentPage === totalPages}
-              className="px-4 py-2 border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               다음
             </button>
