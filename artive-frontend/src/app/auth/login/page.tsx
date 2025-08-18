@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
-import { apiRequest } from "@/utils/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,9 +18,10 @@ export default function LoginPage() {
   const backEndUrl =
     process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
     try {
       const response = await fetch(`${backEndUrl}/auth/login`, {
@@ -36,16 +36,24 @@ export default function LoginPage() {
       });
 
       const data = await response.json();
-      console.log("🔍 응답 상태:", response.status);
-      console.log("🔍 응답 데이터:", data);
+      console.log("🔍 로그인 응답 상태:", response.status);
+      console.log("🔍 로그인 응답 데이터:", data);
 
       if (response.ok) {
         // 로그인 성공
+        // 1. 토큰 저장
         localStorage.setItem("token", data.access_token);
 
-        // user 정보가 있으면 사용, 없으면 /me 호출
+        // 2. ⭐ user 정보도 저장해야 함! (이게 빠져있었음)
+        if (data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+          console.log("✅ user 정보 저장됨:", data.user);
+        }
+
+        // 3. 리다이렉트
         if (data.user && data.user.slug) {
-          router.push(`/${data.user.slug}`); // 사용자 갤러리로 이동
+          console.log("🚀 리다이렉트:", `/${data.user.slug}`);
+          router.push(`/${data.user.slug}`); // jaeyoungpark로 이동
         } else {
           // user 정보가 없으면 /auth/me 호출해서 정보 가져오기
           try {
@@ -57,6 +65,9 @@ export default function LoginPage() {
 
             if (meResponse.ok) {
               const userData = await meResponse.json();
+              // /auth/me로 가져온 user 정보도 저장
+              localStorage.setItem("user", JSON.stringify(userData));
+              console.log("✅ /auth/me로 user 정보 가져옴:", userData);
               router.push(`/${userData.slug}`);
             } else {
               router.push("/"); // 실패시 홈으로
@@ -65,10 +76,15 @@ export default function LoginPage() {
             router.push("/"); // 에러시 홈으로
           }
         }
+      } else {
+        // 로그인 실패
+        setError(data.detail || "로그인에 실패했습니다.");
       }
     } catch (error) {
       console.error("로그인 에러:", error);
       setError("서버 연결에 실패했습니다.");
+    } finally {
+      setLoading(false);
     }
   };
 

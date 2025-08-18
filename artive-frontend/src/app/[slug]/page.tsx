@@ -117,7 +117,7 @@ export default function GalleryPage() {
       setError(null);
 
       try {
-        const token = localStorage.getItem("access_token");
+        const token = localStorage.getItem("token"); // access_token → token으로 통일
         const headers: HeadersInit = { Accept: "application/json" };
 
         if (token) {
@@ -125,13 +125,14 @@ export default function GalleryPage() {
         }
 
         console.log("🔍 갤러리 요청:", {
-          url: `${backEndUrl}/artworks/user/${currentSlug}`,
+          url: `${backEndUrl}/artworks/user/${currentSlug}`, // 올바른 API 경로
           token: token ? "있음" : "없음",
           currentSlug,
         });
 
+        // 올바른 API 엔드포인트: /artworks/user/{user_slug}
         const artworksRes = await fetch(
-          `${backEndUrl}/artworks/user/${currentSlug}?sort_by=created_at&sort_order=desc&page=1&size=${ITEMS_PER_PAGE}`,
+          `${backEndUrl}/artworks/user/${currentSlug}?sort_by=created_at&sort_order=desc&page=1&limit=${ITEMS_PER_PAGE}`,
           {
             method: "GET",
             headers,
@@ -141,11 +142,9 @@ export default function GalleryPage() {
         console.log("🔍 갤러리 응답:", artworksRes.status);
 
         if (!artworksRes.ok) {
-          console.error(
-            "🔍 갤러리 에러:",
-            artworksRes.status,
-            await artworksRes.text()
-          );
+          const errorText = await artworksRes.text();
+          console.error("🔍 갤러리 에러:", artworksRes.status, errorText);
+
           if (artworksRes.status === 404) {
             setError("갤러리를 찾을 수 없습니다.");
           } else if (artworksRes.status === 403) {
@@ -157,11 +156,19 @@ export default function GalleryPage() {
         }
 
         const artworksData = await artworksRes.json();
-        setArtworks(artworksData.artworks || []);
-        setCurrentPage(artworksData.page || 1);
-        setTotalPages(artworksData.pages || 1);
-        setHasMore(artworksData.has_next || false);
+        console.log("🔍 작품 데이터:", artworksData);
 
+        setArtworks(artworksData.artworks || artworksData.items || []);
+        setCurrentPage(artworksData.page || 1);
+        setTotalPages(
+          artworksData.pages ||
+            Math.ceil((artworksData.total || 0) / ITEMS_PER_PAGE)
+        );
+        setHasMore(
+          artworksData.has_next || artworksData.page < artworksData.pages
+        );
+
+        // 갤러리 사용자 정보 설정
         if (artworksData.artworks && artworksData.artworks.length > 0) {
           setGalleryUser({
             id: 1,
@@ -172,9 +179,22 @@ export default function GalleryPage() {
             gallery_description: "작품을 통해 색채와 형태의 조화를 탐구합니다.",
             total_artworks: artworksData.total || 0,
             total_views: artworksData.artworks.reduce(
-              (sum: number, art: Artwork) => sum + art.view_count,
+              (sum: number, art: Artwork) => sum + (art.view_count || 0),
               0
             ),
+            is_public_gallery: true,
+          });
+        } else {
+          // 작품이 없어도 기본 갤러리 정보 설정
+          setGalleryUser({
+            id: 1,
+            name: currentSlug.toUpperCase(),
+            slug: currentSlug,
+            bio: "Contemporary abstract artist",
+            gallery_title: `${currentSlug.toUpperCase()} Gallery`,
+            gallery_description: "Welcome to my gallery",
+            total_artworks: 0,
+            total_views: 0,
             is_public_gallery: true,
           });
         }
@@ -219,7 +239,7 @@ export default function GalleryPage() {
     setLoadingMore(true);
 
     try {
-      const token = localStorage.getItem("access_token");
+      const token = localStorage.getItem("token"); // access_token → token으로 통일
       const headers: HeadersInit = { Accept: "application/json" };
 
       if (token) {
@@ -227,8 +247,9 @@ export default function GalleryPage() {
       }
 
       const nextPage = currentPage + 1;
+      // 올바른 API 엔드포인트
       const artworksRes = await fetch(
-        `${backEndUrl}/artworks/user/${currentSlug}?sort_by=created_at&sort_order=desc&page=${nextPage}&size=${ITEMS_PER_PAGE}`,
+        `${backEndUrl}/artworks/user/${currentSlug}?sort_by=created_at&sort_order=desc&page=${nextPage}&limit=${ITEMS_PER_PAGE}`,
         {
           method: "GET",
           headers,
@@ -237,9 +258,14 @@ export default function GalleryPage() {
 
       if (artworksRes.ok) {
         const artworksData = await artworksRes.json();
-        setArtworks((prev) => [...prev, ...(artworksData.artworks || [])]);
+        setArtworks((prev) => [
+          ...prev,
+          ...(artworksData.artworks || artworksData.items || []),
+        ]);
         setCurrentPage(artworksData.page || nextPage);
-        setHasMore(artworksData.has_next || false);
+        setHasMore(
+          artworksData.has_next || artworksData.page < artworksData.pages
+        );
       }
     } catch (err) {
       console.error("추가 작품 로딩 실패:", err);
