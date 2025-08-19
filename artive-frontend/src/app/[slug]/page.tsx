@@ -84,9 +84,16 @@ export default function GalleryPage() {
     const fetchCurrentUser = async () => {
       try {
         const token = localStorage.getItem("token");
-        if (!token) return;
+        console.log("🔍 토큰:", token ? "있음" : "없음");
 
-        const res = await fetch(`${backEndUrl}/auth/me`, {
+        if (!token) {
+          console.log("🚨 토큰 없음");
+          return;
+        }
+
+        console.log("🔍 API 호출 시작:", `${backEndUrl}/api/auth/me`);
+
+        const res = await fetch(`${backEndUrl}/api/auth/me`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -94,14 +101,20 @@ export default function GalleryPage() {
           },
         });
 
+        console.log("🔍 응답 상태:", res.status);
+        console.log("🔍 응답 OK:", res.ok);
+
         if (res.ok) {
           const userData = await res.json();
+          console.log("🎯 받은 사용자 데이터:", userData);
           setCurrentUser(userData);
           setIsOwner(userData.slug === currentSlug);
-          console.log("Current user:", userData);
+        } else {
+          const errorText = await res.text();
+          console.error("🚨 API 에러:", res.status, errorText);
         }
       } catch (err) {
-        console.error("현재 사용자 정보 조회 실패:", err);
+        console.error("🚨 네트워크 에러:", err);
       }
     };
 
@@ -125,14 +138,14 @@ export default function GalleryPage() {
         }
 
         console.log("🔍 갤러리 요청:", {
-          url: `${backEndUrl}/artworks/user/${currentSlug}`, // 올바른 API 경로
+          url: `${backEndUrl}/api/artworks/user/${currentSlug}`, // 올바른 API 경로
           token: token ? "있음" : "없음",
           currentSlug,
         });
 
         // 올바른 API 엔드포인트: /artworks/user/{user_slug}
         const artworksRes = await fetch(
-          `${backEndUrl}/artworks/user/${currentSlug}?sort_by=created_at&sort_order=desc&page=1&limit=${ITEMS_PER_PAGE}`,
+          `${backEndUrl}/api/artworks/user/${currentSlug}?sort_by=created_at&sort_order=desc&page=1&limit=${ITEMS_PER_PAGE}`,
           {
             method: "GET",
             headers,
@@ -249,7 +262,7 @@ export default function GalleryPage() {
       const nextPage = currentPage + 1;
       // 올바른 API 엔드포인트
       const artworksRes = await fetch(
-        `${backEndUrl}/artworks/user/${currentSlug}?sort_by=created_at&sort_order=desc&page=${nextPage}&limit=${ITEMS_PER_PAGE}`,
+        `${backEndUrl}/api/artworks/user/${currentSlug}?sort_by=created_at&sort_order=desc&page=${nextPage}&limit=${ITEMS_PER_PAGE}`,
         {
           method: "GET",
           headers,
@@ -321,6 +334,8 @@ export default function GalleryPage() {
         artworks={artworks}
         isOwner={isOwner}
         onProfileClick={handleProfileClick}
+        mobileGridMode={mobileGridMode}
+        onMobileGridChange={setMobileGridMode}
       />
 
       {/* 메인 콘텐츠 */}
@@ -332,7 +347,10 @@ export default function GalleryPage() {
           artworks={artworks}
           isOwner={isOwner}
           onProfileClick={handleProfileClick}
+          mobileGridMode={mobileGridMode} // 소유자 여부와 관계없이 전달
+          onMobileGridChange={setMobileGridMode} // 소유자 여부와 관계없이 전달
         />
+
         {/* 작품 추가 버튼 컴포넌트 */}
         {/* AddArtworkButton에 props 추가 */}
         <AddArtworkButton
@@ -355,7 +373,7 @@ export default function GalleryPage() {
           totalArtworks={galleryUser?.total_artworks || 0}
           onAddArtwork={handleAddArtwork}
           onLoadMore={loadMoreArtworks}
-          mobileGridMode={mobileGridMode} // 이 prop 추가
+          mobileGridMode={mobileGridMode} // 소유자 여부와 관계없이 전달
         />
         {/* About Section 컴포넌트 */}
         <AboutSection galleryUser={galleryUser} />

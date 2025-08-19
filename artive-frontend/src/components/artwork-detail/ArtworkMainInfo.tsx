@@ -9,6 +9,7 @@ interface Artist {
 interface Artwork {
   id: number;
   title: string;
+  artist_name: String;
   description: string;
   medium?: string;
   size?: string;
@@ -184,7 +185,7 @@ const ArtworkMainInfo: React.FC<ArtworkMainInfoProps> = ({
                 </div>
                 <div className="font-semibold text-gray-900 text-xs sm:text-sm lg:text-base truncate">
                   {artwork.artist?.name ||
-                    artwork.user?.name ||
+                    artwork.artist_name ||
                     "Unknown Artist"}
                 </div>
               </div>

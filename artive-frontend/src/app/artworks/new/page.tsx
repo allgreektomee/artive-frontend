@@ -110,15 +110,28 @@ export default function NewArtworkPage() {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem("token"); // access_token을 token으로 통일
+      const token = localStorage.getItem("token");
+      const userStr = localStorage.getItem("user"); // 🎯 사용자 정보 가져오기
+
       if (!token) {
         router.push("/auth/login");
         return;
       }
 
+      // 🎯 현재 사용자 정보 파싱
+      let currentUser = null;
+      if (userStr) {
+        try {
+          currentUser = JSON.parse(userStr);
+        } catch (e) {
+          console.error("사용자 정보 파싱 오류:", e);
+        }
+      }
+
       // 날짜 형식 변환
       const submitData = {
         ...form,
+        artist_name: currentUser?.name || "Unknown Artist", // 🎯 아티스트명 추가!
         started_at: form.started_at
           ? new Date(form.started_at).toISOString()
           : null,
@@ -129,7 +142,7 @@ export default function NewArtworkPage() {
 
       console.log("📤 작품 등록 요청:", submitData);
 
-      const response = await fetch(`${backEndUrl}/artworks/`, {
+      const response = await fetch(`${backEndUrl}/api/artworks/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

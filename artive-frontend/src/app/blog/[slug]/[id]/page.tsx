@@ -143,7 +143,7 @@ export default function BlogDetailPage() {
     if (!token) return;
 
     try {
-      const response = await fetch(`${backendUrl}/auth/me`, {
+      const response = await fetch(`${backendUrl}/api/auth/me`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

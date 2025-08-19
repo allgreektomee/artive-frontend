@@ -129,7 +129,7 @@ export default function NewArtworkPage() {
 
       console.log("📤 작품 등록 요청:", submitData);
 
-      const response = await fetch(`${backEndUrl}/artworks/`, {
+      const response = await fetch(`${backEndUrl}/api/artworks/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

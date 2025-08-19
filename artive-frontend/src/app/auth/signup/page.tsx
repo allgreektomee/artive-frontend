@@ -3,6 +3,14 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+type UserRole = "artist" | "academy" | "gallery";
+
+interface RoleOption {
+  value: UserRole;
+  label: string;
+  description: string;
+}
+
 export default function SignupPage() {
   const backEndUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   const [mounted, setMounted] = useState(false);
@@ -13,6 +21,7 @@ export default function SignupPage() {
     name: "",
     slug: "",
     bio: "",
+    role: "artist" as UserRole, // role 추가
   });
 
   const [errors, setErrors] = useState<string | null>(null);
@@ -25,6 +34,25 @@ export default function SignupPage() {
 
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+
+  // role 옵션 정의
+  const roleOptions: RoleOption[] = [
+    {
+      value: "artist",
+      label: "개인 아티스트",
+      description: "개인 작가로 활동하며 작품을 전시하고 판매합니다",
+    },
+    {
+      value: "academy",
+      label: "미술학원·화실",
+      description: "학원이나 화실을 운영하며 수강생 작품을 관리합니다",
+    },
+    {
+      value: "gallery",
+      label: "갤러리",
+      description: "갤러리를 운영하며 다양한 작가의 작품을 전시합니다",
+    },
+  ];
 
   useEffect(() => {
     setMounted(true);
@@ -52,6 +80,10 @@ export default function SignupPage() {
         .replace(/[^a-z0-9]/g, "");
       setForm((prev) => ({ ...prev, slug: autoSlug }));
     }
+  };
+
+  const handleRoleChange = (role: UserRole) => {
+    setForm((prev) => ({ ...prev, role }));
   };
 
   const validate = () => {
@@ -115,7 +147,7 @@ export default function SignupPage() {
     setSlugStatus("checking");
 
     try {
-      const response = await fetch(`${backEndUrl}/auth/check-slug`, {
+      const response = await fetch(`${backEndUrl}/api/auth/check-slug`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -153,8 +185,8 @@ export default function SignupPage() {
     setIsLoading(true);
 
     try {
-      // FastAPI 회원가입 API 호출
-      const res = await fetch(`${backEndUrl}/auth/register`, {
+      // FastAPI 회원가입 API 호출 - role 추가
+      const res = await fetch(`${backEndUrl}/api/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -166,6 +198,7 @@ export default function SignupPage() {
           name: form.name.trim(),
           slug: form.slug.trim(),
           bio: form.bio.trim() || null,
+          role: form.role, // role 추가
         }),
       });
 
@@ -279,7 +312,7 @@ export default function SignupPage() {
             </div>
             <button
               type="button"
-              onClick={() => checkSlugAvailability(form.slug)} // ✅ 화살표 함수로 감싸기
+              onClick={() => checkSlugAvailability(form.slug)}
               className="border border-gray-300 px-4 py-3 rounded-lg bg-white hover:bg-gray-50 text-sm whitespace-nowrap"
               disabled={slugStatus === "checking" || isLoading}
             >
@@ -339,7 +372,49 @@ export default function SignupPage() {
           required
           disabled={isLoading}
         />
-
+        {/* 회원 유형 선택 - 새로 추가 */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            회원 유형을 선택해주세요
+          </label>
+          <div className="space-y-2">
+            {roleOptions.map((option) => (
+              <div
+                key={option.value}
+                className={`relative flex items-start p-3 border rounded-lg cursor-pointer transition-colors ${
+                  form.role === option.value
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-gray-300 hover:bg-gray-50"
+                }`}
+                onClick={() => handleRoleChange(option.value)}
+              >
+                <div className="flex items-center h-5">
+                  <input
+                    id={option.value}
+                    name="role"
+                    type="radio"
+                    value={option.value}
+                    checked={form.role === option.value}
+                    onChange={() => handleRoleChange(option.value)}
+                    className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="ml-3">
+                  <label
+                    htmlFor={option.value}
+                    className="font-medium text-gray-900 cursor-pointer"
+                  >
+                    {option.label}
+                  </label>
+                  <p className="text-sm text-gray-500 mt-0.5">
+                    {option.description}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
         {/* 개인정보 처리방침 동의 */}
         <div className="flex items-center space-x-2 text-sm">
           <input
@@ -384,6 +459,7 @@ export default function SignupPage() {
           <p>이메일: test@example.com</p>
           <p>이름: 테스트 사용자</p>
           <p>갤러리 주소: testuser</p>
+          <p>회원 유형: {form.role}</p>
           <p className="text-gray-600 mt-1">
             API 서버: {backEndUrl || "환경변수 설정 필요"}
           </p>

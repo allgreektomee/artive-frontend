@@ -136,7 +136,7 @@ export default function BlogEditPage() {
     }
 
     try {
-      const response = await fetch(`${backendUrl}/auth/me`, {
+      const response = await fetch(`${backendUrl}/api/auth/me`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,

@@ -1,7 +1,7 @@
 // components/gallery/GalleryInfo.tsx
 import React from "react";
 import Link from "next/link";
-import { FaInstagram, FaYoutube, FaUser, FaEdit } from "react-icons/fa";
+import { FaUser, FaEdit, FaTh, FaBars } from "react-icons/fa";
 
 interface User {
   gallery_title?: string;
@@ -10,8 +10,6 @@ interface User {
   bio?: string;
   total_artworks: number;
   total_views: number;
-  youtube_channel_id?: string;
-  instagram_username?: string;
 }
 
 interface GalleryInfoProps {
@@ -20,6 +18,8 @@ interface GalleryInfoProps {
   artworks: any[];
   isOwner: boolean;
   onProfileClick: () => void;
+  mobileGridMode?: "single" | "double";
+  onMobileGridChange?: (mode: "single" | "double") => void;
 }
 
 const GalleryInfo: React.FC<GalleryInfoProps> = ({
@@ -28,10 +28,12 @@ const GalleryInfo: React.FC<GalleryInfoProps> = ({
   artworks,
   isOwner,
   onProfileClick,
+  mobileGridMode = "double",
+  onMobileGridChange,
 }) => {
   return (
     <div id="gallery-info" className="mb-2">
-      <p className="text-2xl sm:text-2xl mb-10">{"artive.com "}</p>
+      <p className="text-xl sm:text-2xl mb-8 sm:mb-10">{"artive.com"}</p>
 
       <h1 className="text-2xl sm:text-3xl font-bold mb-1">
         {galleryUser?.gallery_title ||
@@ -44,51 +46,46 @@ const GalleryInfo: React.FC<GalleryInfoProps> = ({
           "작품을 통해 색채와 형태의 조화를 탐구합니다."}
       </p>
 
-      {/* 통계와 소셜미디어 */}
+      {/* 통계와 아이콘 */}
       <div className="flex justify-between items-center gap-4 py-2 border-b border-gray-200">
-        <div className="flex items-center gap-4 sm:gap-6 text-sm text-gray-500">
+        <div className="flex items-center gap-3 sm:gap-6 text-sm text-gray-500">
           <span className="font-medium">
             {galleryUser?.total_artworks || artworks.length} Artworks
-          </span>
-          <span className="font-medium">
-            {galleryUser?.total_views || 0} Total Views
           </span>
         </div>
 
         <div className="flex items-center space-x-2 sm:space-x-3">
-          {/* 블로그 아이콘 */}
-          <Link
-            href={`/blog/${currentSlug}`}
-            className="text-gray-600 hover:text-blue-600 transition-colors"
-            title="Blog"
+          {/* 그리드 토글 버튼 - 모바일에서만 표시 */}
+          <button
+            onClick={() => {
+              if (onMobileGridChange) {
+                onMobileGridChange(
+                  mobileGridMode === "single" ? "double" : "single"
+                );
+              }
+            }}
+            className="sm:hidden text-gray-600 hover:text-black transition-colors p-1"
+            title={mobileGridMode === "single" ? "2열 보기" : "1열 보기"}
           >
-            <FaEdit className="text-lg sm:text-xl md:text-2xl" />
-          </Link>
+            {mobileGridMode === "single" ? (
+              <FaTh className="text-lg" />
+            ) : (
+              <FaBars className="text-lg" />
+            )}
+          </button>
 
-          <a
-            href={
-              galleryUser?.youtube_channel_id
-                ? `https://youtube.com/channel/${galleryUser.youtube_channel_id}`
-                : "https://youtube.com/"
-            }
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-gray-600 hover:text-red-600 transition-colors"
-          >
-            <FaYoutube className="text-lg sm:text-xl md:text-2xl" />
-          </a>
-          <a
-            href={
-              galleryUser?.instagram_username
-                ? `https://instagram.com/${galleryUser.instagram_username}`
-                : "https://instagram.com/"
-            }
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-gray-600 hover:text-pink-600 transition-colors"
-          >
-            <FaInstagram className="text-lg sm:text-xl md:text-2xl" />
-          </a>
+          {/* 블로그 아이콘 - 소유자일 때만 표시 */}
+          {isOwner && (
+            <Link
+              href={`/blog/${currentSlug}`}
+              className="text-gray-600 hover:text-blue-600 transition-colors"
+              title="Blog"
+            >
+              <FaEdit className="text-lg sm:text-xl md:text-2xl" />
+            </Link>
+          )}
+
+          {/* 프로필 아이콘 - 소유자일 때만 표시 */}
           {isOwner && (
             <button
               onClick={onProfileClick}

@@ -24,7 +24,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${backEndUrl}/auth/login`, {
+      const response = await fetch(`${backEndUrl}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -57,7 +57,7 @@ export default function LoginPage() {
         } else {
           // user 정보가 없으면 /auth/me 호출해서 정보 가져오기
           try {
-            const meResponse = await fetch(`${backEndUrl}/auth/me`, {
+            const meResponse = await fetch(`${backEndUrl}/api/auth/me`, {
               headers: {
                 Authorization: `Bearer ${data.access_token}`,
               },

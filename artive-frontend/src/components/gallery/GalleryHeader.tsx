@@ -1,15 +1,13 @@
 // components/gallery/GalleryHeader.tsx
 import React from "react";
 import Link from "next/link";
-import { FaInstagram, FaYoutube, FaUser, FaEdit } from "react-icons/fa";
+import { FaUser, FaEdit, FaTh, FaBars } from "react-icons/fa";
 
 interface User {
   gallery_title?: string;
   name?: string;
   total_artworks: number;
   total_views: number;
-  youtube_channel_id?: string;
-  instagram_username?: string;
 }
 
 interface GalleryHeaderProps {
@@ -19,6 +17,8 @@ interface GalleryHeaderProps {
   artworks: any[];
   isOwner: boolean;
   onProfileClick: () => void;
+  mobileGridMode?: "single" | "double";
+  onMobileGridChange?: (mode: "single" | "double") => void;
 }
 
 const GalleryHeader: React.FC<GalleryHeaderProps> = ({
@@ -28,6 +28,8 @@ const GalleryHeader: React.FC<GalleryHeaderProps> = ({
   artworks,
   isOwner,
   onProfileClick,
+  mobileGridMode = "double",
+  onMobileGridChange,
 }) => {
   return (
     <div
@@ -37,63 +39,60 @@ const GalleryHeader: React.FC<GalleryHeaderProps> = ({
           : "-translate-y-full opacity-0 pointer-events-none"
       }`}
     >
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
         <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-xl font-bold">
+          <div className="flex-1">
+            <h1 className="text-lg sm:text-xl font-bold">
               {galleryUser?.gallery_title ||
                 galleryUser?.name ||
                 currentSlug?.toUpperCase() + " Gallery"}
             </h1>
-            <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
+            <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">
               <span>
                 {galleryUser?.total_artworks || artworks.length} Artworks
               </span>
-              <span>{galleryUser?.total_views || 0} Total Views</span>
             </div>
           </div>
 
-          <div className="flex items-center space-x-3">
-            {/* 블로그 아이콘 */}
-            <Link
-              href={`/blog/${currentSlug}`}
-              className="text-gray-600 hover:text-blue-600 transition-colors"
-              title="Blog"
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* 그리드 토글 버튼 - 모바일에서만 표시 */}
+            <button
+              onClick={() => {
+                if (onMobileGridChange) {
+                  onMobileGridChange(
+                    mobileGridMode === "single" ? "double" : "single"
+                  );
+                }
+              }}
+              className="sm:hidden text-gray-600 hover:text-black transition-colors p-1"
+              title={mobileGridMode === "single" ? "2열 보기" : "1열 보기"}
             >
-              <FaEdit className="text-2xl" />
-            </Link>
+              {mobileGridMode === "single" ? (
+                <FaTh className="text-xl" />
+              ) : (
+                <FaBars className="text-xl" />
+              )}
+            </button>
 
-            <a
-              href={
-                galleryUser?.youtube_channel_id
-                  ? `https://youtube.com/channel/${galleryUser.youtube_channel_id}`
-                  : "https://youtube.com/"
-              }
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-gray-600 hover:text-red-600 transition-colors"
-            >
-              <FaYoutube className="text-2xl" />
-            </a>
-            <a
-              href={
-                galleryUser?.instagram_username
-                  ? `https://instagram.com/${galleryUser.instagram_username}`
-                  : "https://instagram.com/"
-              }
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-gray-600 hover:text-pink-600 transition-colors"
-            >
-              <FaInstagram className="text-2xl" />
-            </a>
+            {/* 블로그 아이콘 - 소유자일 때만 표시 */}
+            {isOwner && (
+              <Link
+                href={`/blog/${currentSlug}`}
+                className="text-gray-600 hover:text-blue-600 transition-colors p-1"
+                title="Blog"
+              >
+                <FaEdit className="text-xl sm:text-2xl" />
+              </Link>
+            )}
+
+            {/* 프로필 아이콘 - 소유자일 때만 표시 */}
             {isOwner && (
               <button
                 onClick={onProfileClick}
                 title="Edit Profile"
-                className="text-gray-600 hover:text-black transition-colors"
+                className="text-gray-600 hover:text-black transition-colors p-1"
               >
-                <FaUser className="text-2xl" />
+                <FaUser className="text-xl sm:text-2xl" />
               </button>
             )}
           </div>

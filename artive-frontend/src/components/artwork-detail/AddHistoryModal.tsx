@@ -6,6 +6,7 @@ interface AddHistoryModalProps {
   onClose: () => void;
   onSubmit: (historyData: HistoryFormData) => void;
   loading?: boolean;
+  editingHistory?: any; // 수정할 히스토리 데이터
 }
 
 interface HistoryFormData {
@@ -21,7 +22,9 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
   onClose,
   onSubmit,
   loading = false,
+  editingHistory = null,
 }) => {
+  const backEndUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   const [form, setForm] = useState<HistoryFormData>({
     title: "",
     content: "",
@@ -31,8 +34,10 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
   });
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const [youtubePreview, setYoutubePreview] = useState<string | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // ESC 키로 모달 닫기
   useEffect(() => {
@@ -53,9 +58,33 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
     };
   }, [isOpen, onClose, loading]);
 
-  // 폼 리셋
+  // 폼 리셋 및 수정 모드 처리
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen && editingHistory) {
+      // 수정 모드: 기존 데이터로 폼 세팅
+      setForm({
+        title: editingHistory.title || "",
+        content: editingHistory.content || "",
+        media_type: editingHistory.media_type || "text",
+        media_url: editingHistory.media_url || "",
+        work_date: editingHistory.work_date
+          ? editingHistory.work_date.split("T")[0] // datetime을 date로 변환
+          : new Date().toISOString().split("T")[0],
+      });
+
+      // 이미지 미리보기 설정
+      if (editingHistory.media_type === "image" && editingHistory.media_url) {
+        setImagePreview(editingHistory.media_url);
+        setUploadedImageUrl(editingHistory.media_url);
+      }
+
+      // YouTube 미리보기 설정
+      if (editingHistory.media_type === "youtube" && editingHistory.media_url) {
+        const videoId = extractYouTubeVideoId(editingHistory.media_url);
+        setYoutubePreview(videoId);
+      }
+    } else if (!isOpen) {
+      // 모달 닫힐 때 폼 초기화
       setForm({
         title: "",
         content: "",
@@ -64,10 +93,12 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
         work_date: new Date().toISOString().split("T")[0],
       });
       setImagePreview(null);
+      setUploadedImageUrl(null);
       setYoutubePreview(null);
       setErrors([]);
+      setUploadingImage(false);
     }
-  }, [isOpen]);
+  }, [isOpen, editingHistory]);
 
   const extractYouTubeVideoId = (url: string): string | null => {
     const regex =
@@ -113,17 +144,21 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
   ];
 
   const handleMediaTypeChange = (type: "text" | "image" | "youtube") => {
+    // 수정 모드에서는 타입 변경 불가
+    if (editingHistory) return;
+
     setForm((prev) => ({
       ...prev,
       media_type: type,
       media_url: type === "text" ? "" : prev.media_url,
     }));
     setImagePreview(null);
+    setUploadedImageUrl(null);
     setYoutubePreview(null);
     setErrors([]);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -138,14 +173,50 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
       return;
     }
 
-    // 미리보기 생성
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      setImagePreview(result);
-      setForm((prev) => ({ ...prev, media_url: result }));
-    };
-    reader.readAsDataURL(file);
+    setUploadingImage(true);
+    setErrors([]);
+
+    try {
+      // 1. 로컬 미리보기 생성
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      // 2. S3에 업로드
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${backEndUrl}/api/upload/history`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("이미지 업로드 실패");
+      }
+
+      const data = await response.json();
+
+      // S3 URL 저장
+      const imageUrl = data.file_url || data.url;
+      setUploadedImageUrl(imageUrl);
+      setForm((prev) => ({ ...prev, media_url: imageUrl }));
+
+      console.log("✅ 이미지 업로드 성공:", imageUrl);
+    } catch (error) {
+      console.error("이미지 업로드 오류:", error);
+      setErrors(["이미지 업로드에 실패했습니다."]);
+      setImagePreview(null);
+      setUploadedImageUrl(null);
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const validateForm = (): string[] => {
@@ -166,6 +237,15 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
       }
     }
 
+    if (
+      form.media_type === "image" &&
+      imagePreview &&
+      !uploadedImageUrl &&
+      !uploadingImage
+    ) {
+      newErrors.push("이미지 업로드가 완료될 때까지 기다려주세요.");
+    }
+
     return newErrors;
   };
 
@@ -178,22 +258,28 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
       return;
     }
 
-    // setLoading(true); // 이 줄 완전 삭제
-
     try {
-      // 히스토리 데이터 직접 전송
-      onSubmit({
-        title: form.title,
-        content: form.content,
+      // 데이터 정리
+      const submitData: HistoryFormData = {
+        title: form.title.trim(),
+        content: form.content.trim(),
         media_type: form.media_type,
-        media_url: form.media_url,
+        media_url:
+          form.media_type === "text"
+            ? undefined
+            : form.media_type === "image"
+            ? uploadedImageUrl || undefined
+            : form.media_url || undefined,
         work_date: form.work_date,
-      });
+      };
+
+      console.log("📤 전송할 데이터:", submitData);
+
+      onSubmit(submitData);
     } catch (error) {
       console.error("히스토리 추가 실패:", error);
       setErrors(["히스토리 추가에 실패했습니다."]);
     }
-    // setLoading(false); // 이 줄도 완전 삭제
   };
 
   const getMediaTypeIcon = (type: string) => {
@@ -214,7 +300,7 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-2xl">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-gray-900">
-              Add New Process
+              {editingHistory ? "Edit Process" : "Add New Process"}
             </h2>
             <button
               onClick={onClose}
@@ -254,18 +340,30 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
           {/* Media Type Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
-              Type
+              Type{" "}
+              {editingHistory && (
+                <span className="text-xs text-gray-500">(수정 불가)</span>
+              )}
             </label>
             <div className="grid grid-cols-3 gap-3">
               {(["text", "image", "youtube"] as const).map((type) => (
                 <button
                   key={type}
                   type="button"
-                  onClick={() => handleMediaTypeChange(type)}
+                  onClick={() => !editingHistory && handleMediaTypeChange(type)}
+                  disabled={editingHistory}
                   className={`p-4 rounded-xl border-2 transition-all ${
                     form.media_type === type
                       ? "border-blue-500 bg-blue-50 text-blue-700"
                       : "border-gray-200 hover:border-gray-300 text-gray-600"
+                  } ${
+                    editingHistory
+                      ? "opacity-60 cursor-not-allowed"
+                      : "cursor-pointer"
+                  } ${
+                    editingHistory && form.media_type !== type
+                      ? "opacity-30"
+                      : ""
                   }`}
                 >
                   <div className="text-2xl mb-2">{getMediaTypeIcon(type)}</div>
@@ -273,6 +371,11 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
                 </button>
               ))}
             </div>
+            {editingHistory && (
+              <p className="mt-2 text-xs text-gray-500">
+                * 타입을 변경하려면 기존 히스토리를 삭제하고 새로 추가해주세요.
+              </p>
+            )}
           </div>
 
           {/* Icon */}
@@ -344,21 +447,44 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
               </label>
               {imagePreview ? (
                 <div className="relative">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="w-full h-48 object-cover rounded-lg"
-                  />
+                  <div className="relative w-full bg-gray-100 rounded-lg overflow-hidden">
+                    <div
+                      className="relative w-full"
+                      style={{ paddingBottom: "66.67%" }}
+                    >
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="absolute inset-0 w-full h-full object-contain bg-gray-50"
+                      />
+                      {uploadingImage && (
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                          <div className="bg-white rounded-lg px-4 py-2 flex items-center space-x-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                            <span className="text-sm">업로드 중...</span>
+                          </div>
+                        </div>
+                      )}
+                      {uploadedImageUrl && !uploadingImage && (
+                        <div className="absolute top-3 left-3 bg-green-500 text-white px-2 py-1 rounded text-xs">
+                          ✓ 업로드 완료
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   <button
                     type="button"
                     onClick={() => {
                       setImagePreview(null);
+                      setUploadedImageUrl(null);
                       setForm((prev) => ({ ...prev, media_url: "" }));
                     }}
-                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                    disabled={uploadingImage}
+                    className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm text-red-500 p-2 rounded-full hover:bg-white shadow-lg transition-all disabled:opacity-50"
                   >
                     <svg
-                      className="w-4 h-4"
+                      className="w-5 h-5"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -373,22 +499,57 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
                   </button>
                 </div>
               ) : (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-                  <div className="text-gray-400 mb-2">📷</div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                    id="image-upload"
-                    disabled={loading}
-                  />
-                  <label
-                    htmlFor="image-upload"
-                    className="cursor-pointer bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors inline-block"
-                  >
-                    Choose Image
-                  </label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors">
+                  <div className="p-8 text-center">
+                    <svg
+                      className="mx-auto h-12 w-12 text-gray-400"
+                      stroke="currentColor"
+                      fill="none"
+                      viewBox="0 0 48 48"
+                    >
+                      <path
+                        d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      id="image-upload"
+                      disabled={loading || uploadingImage}
+                    />
+
+                    <div className="mt-4">
+                      <label
+                        htmlFor="image-upload"
+                        className="cursor-pointer inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-black hover:bg-gray-800 transition-colors"
+                      >
+                        <svg
+                          className="w-4 h-4 mr-2"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 4v16m8-8H4"
+                          />
+                        </svg>
+                        Choose Image
+                      </label>
+                    </div>
+
+                    <p className="mt-2 text-xs text-gray-500">
+                      PNG, JPG, GIF up to 10MB
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
@@ -455,14 +616,19 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              disabled={loading}
+              disabled={loading || uploadingImage}
               className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={loading || !form.title.trim() || !form.content.trim()}
+              disabled={
+                loading ||
+                !form.title.trim() ||
+                !form.content.trim() ||
+                uploadingImage
+              }
               className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
@@ -470,6 +636,8 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   <span>Adding...</span>
                 </div>
+              ) : editingHistory ? (
+                "Update Process"
               ) : (
                 "Add Process"
               )}
