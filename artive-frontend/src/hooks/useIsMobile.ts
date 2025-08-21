@@ -1,6 +1,7 @@
+// hooks/useIsMobile.ts
 import { useState, useEffect } from "react";
 
-export default function useIsMobile() {
+export const useIsMobile = () => {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -11,4 +12,4 @@ export default function useIsMobile() {
   }, []);
 
   return isMobile;
-}
+};

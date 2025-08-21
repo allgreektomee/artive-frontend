@@ -1,5 +1,5 @@
-// components/gallery/ArtworkGrid.tsx
 import React from "react";
+import Masonry from "react-masonry-css";
 import ArtworkCard from "./ArtworkCard";
 import { Artwork } from "./types";
 
@@ -24,11 +24,21 @@ const ArtworkGrid: React.FC<ArtworkGridProps> = ({
   onLoadMore,
   mobileGridMode = "double",
 }) => {
-  // Masonry 레이아웃 with CSS columns
-  const masonry =
+  // 반응형 컬럼 수 설정
+  const breakpointColumnsObj =
     mobileGridMode === "single"
-      ? "columns-1 lg:columns-3"
-      : "columns-2 lg:columns-3";
+      ? {
+          default: 3,
+          1024: 3,
+          768: 1,
+          640: 1,
+        }
+      : {
+          default: 3,
+          1024: 3,
+          768: 2,
+          640: 2,
+        };
 
   if (artworks.length === 0) {
     return (
@@ -57,19 +67,22 @@ const ArtworkGrid: React.FC<ArtworkGridProps> = ({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Masonry 그리드 */}
-      <div className={`${masonry} gap-3 sm:gap-4 lg:gap-6`}>
+    <div>
+      <Masonry
+        breakpointCols={breakpointColumnsObj}
+        className="my-masonry-grid flex -ml-3 sm:-ml-4 lg:-ml-6 w-auto"
+        columnClassName="my-masonry-grid_column pl-3 sm:pl-4 lg:pl-6 bg-clip-padding"
+      >
         {artworks.map((artwork) => (
-          <div key={artwork.id} className="break-inside-avoid mb-3 sm:mb-4">
+          <div key={artwork.id} className="mb-3 sm:mb-4">
             <ArtworkCard artwork={artwork} />
           </div>
         ))}
-      </div>
+      </Masonry>
 
       {/* Load More 버튼 */}
       {hasMore && (
-        <div className="text-center py-8">
+        <div className="text-center py-8 mt-6">
           <button
             onClick={onLoadMore}
             disabled={loadingMore}
@@ -88,7 +101,7 @@ const ArtworkGrid: React.FC<ArtworkGridProps> = ({
       )}
 
       {/* 총 작품 수 표시 */}
-      <div className="text-center text-sm text-gray-500 py-4">
+      <div className="text-center text-sm text-gray-500 py-4 mt-6">
         Showing {artworks.length} of {totalArtworks} artworks
       </div>
     </div>

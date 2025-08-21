@@ -5,9 +5,12 @@ interface ArtworkDetailHeaderProps {
   onBack: () => void;
   artworkTitle?: string;
   showTitle?: boolean;
-  isOwner?: boolean; // 소유주 여부
-  artworkId?: number; // 삭제할 artwork ID
-  onDelete?: () => void; // 삭제 성공 후 콜백
+  isOwner?: boolean;
+  artworkId?: number;
+  userId?: number;
+  artistId?: number;
+  onDelete?: () => void;
+  onEdit?: () => void; // ✅ 추가됨
 }
 
 const ArtworkDetailHeader: React.FC<ArtworkDetailHeaderProps> = ({
@@ -16,39 +19,119 @@ const ArtworkDetailHeader: React.FC<ArtworkDetailHeaderProps> = ({
   showTitle = false,
   isOwner = false,
   artworkId,
+  userId,
+  artistId,
   onDelete,
+  onEdit, // ✅ 추가됨
 }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // 소유권 검증 함수
+  const verifyOwnership = (): boolean => {
+    if (!isOwner) {
+      console.warn("User is not the owner of this artwork");
+      return false;
+    }
+
+    if (userId && artistId && userId !== artistId) {
+      console.warn("User ID does not match artist ID");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleDeleteClick = () => {
+    if (!verifyOwnership()) {
+      alert("작품을 삭제할 권한이 없습니다.");
+      return;
+    }
+    setShowDeleteModal(true);
+  };
+
   const handleDelete = async () => {
-    if (!artworkId) return;
+    if (!artworkId) {
+      console.error("Artwork ID is missing");
+      alert("작품 정보를 찾을 수 없습니다.");
+      return;
+    }
+
+    if (!verifyOwnership()) {
+      alert("작품을 삭제할 권한이 없습니다.");
+      setShowDeleteModal(false);
+      return;
+    }
 
     setIsDeleting(true);
     try {
       const backEndUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const token = localStorage.getItem("token");
 
-      // Artwork와 관련 history 삭제 API 호출
-      const response = await fetch(`${backEndUrl}/api/artworks/${artworkId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("작품 삭제에 실패했습니다");
+      if (!token) {
+        throw new Error("인증 토큰이 없습니다. 다시 로그인해주세요.");
       }
 
-      // 삭제 성공 시 콜백 실행 (갤러리로 이동 등)
+      const verifyResponse = await fetch(
+        `${backEndUrl}/api/artworks/${artworkId}/verify-ownership`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (verifyResponse.status === 403) {
+        throw new Error("작품을 삭제할 권한이 없습니다.");
+      }
+
+      if (!verifyResponse.ok) {
+        const errorData = await verifyResponse.json().catch(() => ({}));
+        throw new Error(errorData.message || "소유권 확인에 실패했습니다.");
+      }
+
+      const deleteResponse = await fetch(
+        `${backEndUrl}/api/artworks/${artworkId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (deleteResponse.status === 403) {
+        throw new Error("작품을 삭제할 권한이 없습니다.");
+      }
+
+      if (!deleteResponse.ok) {
+        const errorData = await deleteResponse.json().catch(() => ({}));
+        throw new Error(errorData.message || "작품 삭제에 실패했습니다.");
+      }
+
+      alert("작품이 성공적으로 삭제되었습니다.");
+
       if (onDelete) {
         onDelete();
       }
     } catch (error) {
       console.error("Error deleting artwork:", error);
-      alert("작품 삭제에 실패했습니다. 다시 시도해주세요.");
+
+      let errorMessage = "작품 삭제에 실패했습니다.";
+      if (error instanceof Error) {
+        if (error.message.includes("권한")) {
+          errorMessage = error.message;
+        } else if (error.message.includes("토큰")) {
+          errorMessage = "로그인이 필요합니다. 다시 로그인해주세요.";
+        } else {
+          errorMessage = `삭제 실패: ${error.message}`;
+        }
+      }
+
+      alert(errorMessage);
     } finally {
       setIsDeleting(false);
       setShowDeleteModal(false);
@@ -100,10 +183,33 @@ const ArtworkDetailHeader: React.FC<ArtworkDetailHeaderProps> = ({
 
             {/* Right Side - Brand & Actions */}
             <div className="flex items-center space-x-4">
+              {/* ✅ Edit Button 추가됨 (소유주일 때만 표시) */}
+              {isOwner && (
+                <button
+                  onClick={onEdit}
+                  className="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors group"
+                  title="Edit description"
+                >
+                  <svg
+                    className="w-5 h-5 group-hover:scale-110 transition-transform"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
+                  </svg>
+                </button>
+              )}
+
               {/* Delete Button (소유주일 때만 표시) */}
               {isOwner && (
                 <button
-                  onClick={() => setShowDeleteModal(true)}
+                  onClick={handleDeleteClick}
                   className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors group"
                   title="Delete artwork"
                 >

@@ -64,21 +64,23 @@ export default function SignupPage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+
+    // slug 입력 시 한글이 포함되어 있으면 무시
+    if (name === "slug") {
+      // 한글이 포함되어 있는지 체크
+      if (/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(value)) {
+        return; // 한글이 있으면 입력 무시
+      }
+      // 영문 소문자, 숫자, 하이픈, 언더스코어만 허용
+      const cleanedValue = value.toLowerCase().replace(/[^a-z0-9-_]/g, "");
+      setForm((prev) => ({ ...prev, slug: cleanedValue }));
+      setSlugStatus("idle");
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }));
+    }
 
     if (name === "email") {
       setEmailStatus("idle");
-    }
-    if (name === "slug") {
-      setSlugStatus("idle");
-    }
-    // 이름 변경시 자동으로 slug 생성 (선택사항)
-    if (name === "name" && !form.slug) {
-      const autoSlug = value
-        .toLowerCase()
-        .replace(/\s+/g, "")
-        .replace(/[^a-z0-9]/g, "");
-      setForm((prev) => ({ ...prev, slug: autoSlug }));
     }
   };
 
@@ -88,7 +90,7 @@ export default function SignupPage() {
 
   const validate = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const slugRegex = /^[a-z0-9]+$/;
+    const slugRegex = /^[a-z0-9-_]+$/; // 하이픈, 언더스코어 추가
 
     if (!emailRegex.test(form.email)) return "유효한 이메일 형식을 입력하세요.";
     if (form.password.length < 8)
@@ -98,7 +100,7 @@ export default function SignupPage() {
     if (form.name.length < 2) return "이름은 최소 2자 이상이어야 합니다.";
     if (!form.slug) return "갤러리 주소(슬러그)를 입력하세요.";
     if (!slugRegex.test(form.slug))
-      return "갤러리 주소는 영문 소문자와 숫자만 사용 가능합니다.";
+      return "갤러리 주소는 영문 소문자, 숫자, 하이픈(-), 언더스코어(_)만 사용 가능합니다.";
     if (form.slug.length < 3)
       return "갤러리 주소는 최소 3자 이상이어야 합니다.";
     if (emailStatus !== "available") return "이메일 중복확인을 해주세요.";
@@ -134,13 +136,13 @@ export default function SignupPage() {
   };
 
   const checkSlugAvailability = async (slugValue: string) => {
-    const slugRegex = /^[a-z0-9]+$/;
+    const slugRegex = /^[a-z0-9-_]+$/; // 하이픈, 언더스코어 추가
     if (!slugValue || slugValue.length < 3) {
       alert("갤러리 주소는 3자 이상이어야 합니다.");
       return;
     }
     if (!slugRegex.test(slugValue)) {
-      alert("영문 소문자와 숫자만 사용 가능합니다.");
+      alert("영문 소문자, 숫자, 하이픈(-), 언더스코어(_)만 사용 가능합니다.");
       return;
     }
 
@@ -184,8 +186,19 @@ export default function SignupPage() {
     setErrors(null);
     setIsLoading(true);
 
+    // 전송할 데이터 확인
+    const requestData = {
+      email: form.email.trim(),
+      password: form.password,
+      name: form.name.trim(),
+      slug: form.slug.trim(),
+      bio: form.bio.trim() || null,
+      role: form.role, // "artist", "academy", "gallery" 중 하나
+    };
+
+    console.log("전송 데이터:", requestData); // 디버깅용
+
     try {
-      // FastAPI 회원가입 API 호출 - role 추가
       const res = await fetch(`${backEndUrl}/api/auth/register`, {
         method: "POST",
         headers: {
@@ -198,21 +211,40 @@ export default function SignupPage() {
           name: form.name.trim(),
           slug: form.slug.trim(),
           bio: form.bio.trim() || null,
-          role: form.role, // role 추가
+          role: form.role,
         }),
       });
 
       const data = await res.json();
+      console.log("응답 상태:", res.status); // 디버깅용
+      console.log("응답 데이터:", data); // 디버깅용
 
       if (res.ok) {
-        // 회원가입 성공 - 이메일 인증 안내
         alert(
-          "회원가입이 완료되었습니다! 터미널에서 이메일 인증 링크를 확인해주세요."
+          "회원가입이 성공적으로 완료되었습니다.\n서비스 이용을 위해 이메일 인증을 진행해주세요.\n인증 메일이 도착하지 않은 경우, 스팸함을 확인해주세요."
         );
         router.push("/auth/login");
       } else {
-        // FastAPI 에러 응답 형식: { detail: "에러 메시지" }
-        setErrors(data.detail || "회원가입에 실패했습니다.");
+        // 422 에러 처리 - FastAPI validation error
+        if (res.status === 422 && data.detail) {
+          // detail이 배열인 경우 (validation errors)
+          if (data.detail && Array.isArray(data.detail)) {
+            const firstError = data.detail[0];
+            const field =
+              firstError.loc?.[firstError.loc.length - 1] || "알 수 없는 필드";
+            const message = firstError.msg || "유효하지 않은 값입니다";
+            setErrors(`${field}: ${message}`);
+          } else if (typeof data.detail === "string") {
+            // detail이 문자열인 경우
+            setErrors(data.detail);
+          } else {
+            // detail이 객체인 경우
+            setErrors(JSON.stringify(data.detail));
+          }
+        } else {
+          // 기타 에러
+          setErrors(data.detail || data.message || "회원가입에 실패했습니다.");
+        }
       }
     } catch (err: unknown) {
       console.error("회원가입 에러:", err);
@@ -227,7 +259,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto py-16 px-4">
+    <div className="max-w-md lg:max-w-2xl mx-auto py-8 lg:py-16 px-4">
       <h1 className="text-2xl font-bold text-center mb-6">회원가입</h1>
 
       {errors && (
@@ -236,68 +268,81 @@ export default function SignupPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* 이메일 */}
-        <div>
-          <div className="flex gap-2 items-center">
-            <input
-              type="email"
-              name="email"
-              placeholder="이메일"
-              value={form.email}
-              onChange={handleChange}
-              className="flex-1 border border-gray-300 p-3 rounded-lg focus:outline-none focus:border-blue-500"
-              required
-              disabled={isLoading}
-            />
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-6 bg-gray-50 p-1 rounded-xl"
+      >
+        {/* === 이메일 영역 === */}
+        <div className="bg-white border border-gray-300 p-4 rounded-lg">
+          <h3 className="text-sm font-medium text-gray-700 mb-3">이메일</h3>
+          <input
+            type="email"
+            name="email"
+            placeholder="이메일 주소를 입력하세요"
+            value={form.email}
+            onChange={handleChange}
+            className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:border-blue-500"
+            required
+            disabled={isLoading}
+          />
+
+          <div className="flex justify-between items-center mt-3">
+            <p
+              className={`text-sm ${
+                emailStatus === "duplicate"
+                  ? "text-red-600"
+                  : emailStatus === "available"
+                  ? "text-green-600"
+                  : "text-gray-600"
+              }`}
+            >
+              {emailStatus === "duplicate"
+                ? "이미 사용 중인 이메일입니다."
+                : emailStatus === "available"
+                ? "사용 가능한 이메일입니다."
+                : "이메일 중복확인을 해주세요."}
+            </p>
+
             <button
               type="button"
               onClick={checkEmailDuplication}
-              className="border border-gray-300 px-4 py-3 rounded-lg bg-white hover:bg-gray-50 text-sm whitespace-nowrap"
+              className="border border-gray-300 px-4 py-2 rounded-lg bg-white hover:bg-gray-50 text-sm whitespace-nowrap ml-3"
               disabled={emailStatus === "checking" || isLoading}
             >
               {emailStatus === "checking"
-                ? "확인 중..."
+                ? "확인중..."
                 : emailStatus === "available"
-                ? "확인 완료"
-                : "중복 확인"}
+                ? "확인완료"
+                : "중복확인"}
             </button>
           </div>
-          <p
-            className={`text-sm mt-1 ${
-              emailStatus === "duplicate"
-                ? "text-red-600"
-                : emailStatus === "available"
-                ? "text-green-600"
-                : "text-gray-600"
-            }`}
-          >
-            {emailStatus === "duplicate"
-              ? "이미 사용 중인 이메일입니다."
-              : emailStatus === "available"
-              ? "사용 가능한 이메일입니다."
-              : "이메일 중복확인을 해주세요."}
-          </p>
         </div>
 
-        {/* 이름 */}
-        <input
-          type="text"
-          name="name"
-          placeholder="이름"
-          value={form.name}
-          onChange={handleChange}
-          className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:border-blue-500"
-          required
-          disabled={isLoading}
-        />
+        {/* === 기본정보 영역 === */}
+        <div className="bg-white border border-gray-300 p-4 rounded-lg">
+          <h3 className="text-sm font-medium text-gray-700 mb-3">기본정보</h3>
+          {/* 이름 */}
+          <input
+            type="text"
+            name="name"
+            placeholder="이름을 입력하세요"
+            value={form.name}
+            onChange={handleChange}
+            className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:border-blue-500 mb-4"
+            required
+            disabled={isLoading}
+          />
 
-        {/* 갤러리 주소 (슬러그) */}
-        <div>
-          <div className="flex gap-2 items-center">
-            <div className="flex-1 flex">
+          {/* 갤러리 주소 안내 */}
+          <p className="text-sm text-gray-600 mb-2">
+            갤러리 주소 <span className="text-gray-400">(추후 변경 가능)</span>
+          </p>
+
+          {/* 갤러리 주소 */}
+          <div className="mb-3">
+            <div className="flex">
               <span className="bg-gray-100 border border-r-0 border-gray-300 px-3 py-3 rounded-l-lg text-gray-600 text-sm">
-                artivefor.me/
+                artive.me/
               </span>
               <input
                 type="text"
@@ -310,78 +355,91 @@ export default function SignupPage() {
                 disabled={isLoading}
               />
             </div>
-            <button
-              type="button"
-              onClick={() => checkSlugAvailability(form.slug)}
-              className="border border-gray-300 px-4 py-3 rounded-lg bg-white hover:bg-gray-50 text-sm whitespace-nowrap"
-              disabled={slugStatus === "checking" || isLoading}
-            >
-              {slugStatus === "checking"
-                ? "확인 중..."
-                : slugStatus === "available"
-                ? "확인 완료"
-                : "중복 확인"}
-            </button>
+
+            <div className="flex justify-between items-center mt-3">
+              <p
+                className={`text-sm ${
+                  slugStatus === "duplicate"
+                    ? "text-red-600"
+                    : slugStatus === "available"
+                    ? "text-green-600"
+                    : "text-gray-600"
+                }`}
+              >
+                {slugStatus === "duplicate"
+                  ? "이미 사용 중인 주소입니다."
+                  : slugStatus === "available"
+                  ? "사용 가능한 주소입니다."
+                  : "영문 소문자, 숫자, 하이픈(-), 언더스코어(_)만 사용 가능합니다. (3자 이상)"}
+              </p>
+
+              <button
+                type="button"
+                onClick={() => checkSlugAvailability(form.slug)}
+                className="border border-gray-300 px-4 py-2 rounded-lg bg-white hover:bg-gray-50 text-sm whitespace-nowrap ml-3"
+                disabled={slugStatus === "checking" || isLoading}
+              >
+                {slugStatus === "checking"
+                  ? "확인중..."
+                  : slugStatus === "available"
+                  ? "확인완료"
+                  : "중복확인"}
+              </button>
+            </div>
           </div>
-          <p
-            className={`text-sm mt-1 ${
-              slugStatus === "duplicate"
-                ? "text-red-600"
-                : slugStatus === "available"
-                ? "text-green-600"
-                : "text-gray-600"
-            }`}
-          >
-            {slugStatus === "duplicate"
-              ? "이미 사용 중인 주소입니다."
-              : slugStatus === "available"
-              ? "사용 가능한 주소입니다."
-              : "영문 소문자, 숫자만 사용 가능합니다. (3자 이상)"}
-          </p>
         </div>
 
-        {/* 자기소개 */}
-        <textarea
-          name="bio"
-          placeholder="자기소개 (선택사항)"
-          value={form.bio}
-          onChange={handleChange}
-          rows={3}
-          className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:border-blue-500 resize-none"
-          disabled={isLoading}
-        />
+        {/* === 자기소개 영역 === */}
+        <div className="bg-white border border-gray-300 p-4 rounded-lg">
+          <h3 className="text-sm font-medium text-gray-700 mb-3">
+            자기소개 (선택사항)
+          </h3>
+          <textarea
+            name="bio"
+            placeholder="본인을 간단히 소개해주세요"
+            value={form.bio}
+            onChange={handleChange}
+            rows={3}
+            className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:border-blue-500 resize-none"
+            disabled={isLoading}
+          />
+        </div>
 
-        {/* 비밀번호 */}
-        <input
-          type="password"
-          name="password"
-          placeholder="비밀번호 (8자 이상)"
-          value={form.password}
-          onChange={handleChange}
-          className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:border-blue-500"
-          required
-          disabled={isLoading}
-        />
-        <input
-          type="password"
-          name="confirmPassword"
-          placeholder="비밀번호 확인"
-          value={form.confirmPassword}
-          onChange={handleChange}
-          className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:border-blue-500"
-          required
-          disabled={isLoading}
-        />
-        {/* 회원 유형 선택 - 새로 추가 */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            회원 유형을 선택해주세요
-          </label>
-          <div className="space-y-2">
+        {/* === 비밀번호 영역 === */}
+        <div className="bg-white border border-gray-300 p-4 rounded-lg">
+          <h3 className="text-sm font-medium text-gray-700 mb-3">비밀번호</h3>
+          <div className="space-y-3">
+            <input
+              type="password"
+              name="password"
+              placeholder="비밀번호 (8자 이상)"
+              value={form.password}
+              onChange={handleChange}
+              className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:border-blue-500"
+              required
+              disabled={isLoading}
+            />
+            <input
+              type="password"
+              name="confirmPassword"
+              placeholder="비밀번호 확인"
+              value={form.confirmPassword}
+              onChange={handleChange}
+              className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:border-blue-500 bg-white"
+              required
+              disabled={isLoading}
+            />
+          </div>
+        </div>
+
+        {/* === 회원 유형 선택 영역 === */}
+        <div className="bg-white border border-gray-300 p-4 rounded-lg">
+          <h3 className="text-sm font-medium text-gray-700 mb-3">회원 유형</h3>
+          <div className="space-y-3">
             {roleOptions.map((option) => (
               <div
                 key={option.value}
-                className={`relative flex items-start p-3 border rounded-lg cursor-pointer transition-colors ${
+                className={`relative flex items-start p-4 border rounded-lg cursor-pointer transition-colors ${
                   form.role === option.value
                     ? "border-blue-500 bg-blue-50"
                     : "border-gray-300 hover:bg-gray-50"

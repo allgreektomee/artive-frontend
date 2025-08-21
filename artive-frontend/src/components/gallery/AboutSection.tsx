@@ -11,7 +11,7 @@ interface AboutSectionProps {
 
 const AboutSection: React.FC<AboutSectionProps> = ({ galleryUser }) => {
   return (
-    <div className="py-12 sm:py-16 border-t border-gray-200 mt-16">
+    <div className="py-12 sm:py-16 mt-16">
       {/* Artist Statement */}
       <div className="mb-12 sm:mb-16">
         <h2 className="text-xl sm:text-2xl font-semibold mb-6 sm:mb-8">

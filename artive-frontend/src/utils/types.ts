@@ -191,10 +191,15 @@ export interface ProfileData {
 }
 
 // 섹션 컴포넌트 Props
+// utils/types.ts
+
 export interface SectionProps {
   data: any;
   onChange: (field: string, value: any) => void;
-  isMobile: boolean;
+  isMobile?: boolean;
+  onSave?: () => void;
+  saving?: boolean;
+  hasChanges?: boolean;
 }
 
 // API 응답 타입

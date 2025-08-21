@@ -260,3 +260,82 @@
   height: 0;
   pointer-events: none;
 }
+
+/* iOS Safari 렌더링 이슈 수정 */
+@supports (-webkit-touch-callout: none) {
+  /* iOS 전용 스타일 */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 불필요한 border 제거 */
+  .max-w-5xl > div {
+    -webkit-mask-image: none;
+  }
+
+  /* AddArtworkButton과 ArtworkGrid 사이 빈 요소 숨기기 */
+  .max-w-5xl > div:empty {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+  }
+
+  /* iOS에서 예상치 못한 선 제거 */
+  .max-w-5xl > * {
+    -webkit-border-before: none !important;
+    -webkit-border-after: none !important;
+  }
+
+  /* Flexbox/Grid 갭 이슈 해결 */
+  .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+    -webkit-margin-before: 0;
+  }
+}
+
+columns-2 {
+  column-rule: none !important;
+}
+
+@media (max-width: 640px) {
+  .columns-2::before {
+    display: none !important;
+  }
+
+  /* columns 레이아웃 첫 번째 요소 */
+  .columns-2 > :first-child {
+    border-top: none !important;
+    margin-top: 0 !important;
+  }
+}
+
+/* PC에서만 폰트 크기 증가 */
+@media (min-width: 1024px) {
+  body {
+    font-size: 17px; /* 기본 16px → 17px */
+  }
+
+  /* Tailwind 클래스 오버라이드 */
+  .text-xs {
+    font-size: 0.875rem;
+  } /* 12px → 14px */
+  .text-sm {
+    font-size: 1rem;
+  } /* 14px → 16px */
+  .text-base {
+    font-size: 1.125rem;
+  } /* 16px → 18px */
+  .text-lg {
+    font-size: 1.25rem;
+  } /* 18px → 20px */
+}
+
+/* Mac Safari 전용 (PC) */
+@media (min-width: 1024px) and (-webkit-min-device-pixel-ratio: 2) {
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-size: 18px;
+  }
+}

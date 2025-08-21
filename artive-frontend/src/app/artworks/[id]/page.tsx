@@ -8,6 +8,7 @@ import ArtworkMainInfo from "@/components/artwork-detail/ArtworkMainInfo";
 import ArtworkHistoryTimeline from "@/components/artwork-detail/ArtworkHistoryTimeline";
 import ImageModal from "@/components/artwork-detail/ImageModal";
 import AddHistoryModal from "@/components/artwork-detail/AddHistoryModal";
+import EditDescriptionModal from "@/components/artwork-detail/EditDescriptionModal";
 
 export default function ArtworkDetailPage() {
   const params = useParams();
@@ -27,6 +28,8 @@ export default function ArtworkDetailPage() {
   // Modal states
   const [showImageModal, setShowImageModal] = useState(false);
   const [showAddHistoryModal, setShowAddHistoryModal] = useState(false);
+  const [showEditDescriptionModal, setShowEditDescriptionModal] =
+    useState(false);
   const [selectedImage, setSelectedImage] = useState({
     url: "",
     title: "",
@@ -43,9 +46,10 @@ export default function ArtworkDetailPage() {
           return;
         }
 
-        const response = await fetch(`${backEndUrl}/api/users/me`, {
+        const response = await fetch(`${backEndUrl}/api/auth/me`, {
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
         });
 
@@ -281,6 +285,37 @@ export default function ArtworkDetailPage() {
     }
   };
 
+  // 작품 설명 수정 함수
+  const handleUpdateDescription = async (data) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await fetch(`${backEndUrl}/api/artworks/${artworkId}`, {
+        method: "PUT", // PATCH → PUT으로 변경
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          description: data.description,
+          links: data.links,
+          youtube_urls: data.youtube_urls,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("수정에 실패했습니다.");
+      }
+
+      const updatedArtwork = await response.json();
+      setArtwork(updatedArtwork);
+      alert("작품 정보가 수정되었습니다.");
+    } catch (err) {
+      console.error("수정 오류:", err);
+      throw err;
+    }
+  };
+
   // Artwork 삭제 핸들러
   const handleDeleteArtwork = () => {
     // 삭제 성공 후 사용자의 갤러리로 이동
@@ -347,9 +382,12 @@ export default function ArtworkDetailPage() {
         onBack={handleBack}
         artworkTitle={artwork.title}
         showTitle={showTitleInHeader}
-        isOwner={true} // 일단 true로 강제 설정
+        isOwner={isOwner}
         artworkId={artwork.id}
+        userId={currentUser?.id}
+        artistId={artwork?.user_id || artwork?.user?.id}
         onDelete={handleDeleteArtwork}
+        onEdit={() => setShowEditDescriptionModal(true)}
       />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -367,7 +405,7 @@ export default function ArtworkDetailPage() {
           onImageClick={handleImageClick}
           onAddHistory={() => setShowAddHistoryModal(true)}
           onDeleteHistory={handleDeleteHistory}
-          isOwner={true} // 일단 true로 강제 설정하여 테스트
+          isOwner={isOwner}
         />
       </div>
 
@@ -386,6 +424,19 @@ export default function ArtworkDetailPage() {
         onClose={() => setShowAddHistoryModal(false)}
         onSubmit={handleAddHistory}
         loading={false}
+      />
+
+      {/* Edit Description Modal */}
+      <EditDescriptionModal
+        isOpen={showEditDescriptionModal}
+        onClose={() => setShowEditDescriptionModal(false)}
+        onSubmit={handleUpdateDescription}
+        currentData={{
+          description: artwork?.description || "",
+          links: artwork?.links || [],
+          youtube_urls: artwork?.youtube_urls || [],
+        }}
+        artworkTitle={artwork?.title || ""}
       />
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { FaArrowLeft } from "react-icons/fa";
 
@@ -18,6 +18,8 @@ export default function NewArtworkPage() {
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isTemp, setIsTemp] = useState(false); // 임시 파일 여부
 
   const [form, setForm] = useState({
     title: "",
@@ -29,15 +31,22 @@ export default function NewArtworkPage() {
     privacy: "public" as "public" | "private" | "unlisted",
     started_at: "",
     estimated_completion: "",
+    // 새로 추가되는 필드들
+    links: [] as Array<{ title: string; url: string }>,
+    youtube_urls: [] as string[],
+    description_format: "markdown",
   });
 
   // 이미지 미리보기 상태
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
 
+  // cleanup 플래그 (언마운트 시 이미지 삭제용)
+  const shouldCleanupRef = useRef(true);
+
   useEffect(() => {
     setMounted(true);
 
-    // 로그인 상태 확인 - token 키 사용
+    // 로그인 상태 확인
     const token = localStorage.getItem("token");
     if (!token) {
       router.push("/auth/login");
@@ -45,22 +54,83 @@ export default function NewArtworkPage() {
     }
   }, [router]);
 
+  // 페이지 이탈 시 임시 이미지 삭제
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (form.thumbnail_url && !isSubmitting && isTemp) {
+        e.preventDefault();
+        e.returnValue = "업로드한 이미지가 삭제됩니다. 계속하시겠습니까?";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    // 컴포넌트 언마운트 시 정리
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+
+      // 임시 이미지 삭제 (제출하지 않은 경우)
+      if (shouldCleanupRef.current && form.thumbnail_url && isTemp) {
+        const token = localStorage.getItem("token");
+        if (token) {
+          // 비동기로 삭제 요청
+          fetch(
+            `${backEndUrl}/api/upload/delete-file?file_url=${encodeURIComponent(
+              form.thumbnail_url
+            )}`,
+            {
+              method: "DELETE",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          ).catch((err) => console.error("임시 이미지 삭제 실패:", err));
+        }
+      }
+    };
+  }, [form.thumbnail_url, isSubmitting, isTemp, backEndUrl]);
+
   if (!mounted) return null;
 
   // 폼 데이터 변경 핸들러
-  const handleFormChange = (name: string, value: string) => {
+  const handleFormChange = (name: string, value: any) => {
     setForm((prev) => ({ ...prev, [name]: value }));
 
-    // 에러가 있으면 클리어 (사용자가 수정을 시작했을 때)
+    // 에러가 있으면 클리어
     if (error) {
       setError(null);
     }
   };
 
-  // 이미지 변경 핸들러
-  const handleImageChange = (imageUrl: string, preview: string | null) => {
+  // 이미지 변경 핸들러 (임시 업로드 사용)
+  const handleImageChange = async (
+    imageUrl: string,
+    preview: string | null,
+    tempFlag: boolean = true
+  ) => {
+    // 기존 임시 이미지가 있으면 삭제
+    if (form.thumbnail_url && isTemp) {
+      try {
+        const token = localStorage.getItem("token");
+        await fetch(
+          `${backEndUrl}/api/upload/delete-file?file_url=${encodeURIComponent(
+            form.thumbnail_url
+          )}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+      } catch (err) {
+        console.error("기존 임시 이미지 삭제 실패:", err);
+      }
+    }
+
     setForm((prev) => ({ ...prev, thumbnail_url: imageUrl }));
     setThumbnailPreview(preview);
+    setIsTemp(tempFlag);
 
     // 에러가 있으면 클리어
     if (error) {
@@ -77,8 +147,9 @@ export default function NewArtworkPage() {
     if (!form.title.trim()) return "작품 제목을 입력해주세요.";
     if (form.title.length < 2) return "제목은 최소 2자 이상이어야 합니다.";
     if (form.title.length > 100) return "제목은 100자 이하여야 합니다.";
-    if (form.description && form.description.length > 1000)
-      return "설명은 1000자 이하여야 합니다.";
+    if (form.description && form.description.length > 5000)
+      // 1000 → 5000
+      return "설명은 5000자 이하여야 합니다.";
     if (
       form.year &&
       (parseInt(form.year) < 1900 ||
@@ -108,17 +179,19 @@ export default function NewArtworkPage() {
 
     setError(null);
     setLoading(true);
+    setIsSubmitting(true);
+    shouldCleanupRef.current = false; // 제출 시 cleanup 방지
 
     try {
       const token = localStorage.getItem("token");
-      const userStr = localStorage.getItem("user"); // 🎯 사용자 정보 가져오기
+      const userStr = localStorage.getItem("user");
 
       if (!token) {
         router.push("/auth/login");
         return;
       }
 
-      // 🎯 현재 사용자 정보 파싱
+      // 현재 사용자 정보 파싱
       let currentUser = null;
       if (userStr) {
         try {
@@ -128,10 +201,40 @@ export default function NewArtworkPage() {
         }
       }
 
+      // 임시 이미지를 정식 폴더로 이동 (temp 폴더에서 artworks 폴더로)
+      let finalImageUrl = form.thumbnail_url;
+      if (form.thumbnail_url && isTemp) {
+        try {
+          const moveResponse = await fetch(
+            `${backEndUrl}/api/upload/move-temp-to-permanent`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                temp_url: form.thumbnail_url,
+                target_folder: "artworks",
+              }),
+            }
+          );
+
+          if (moveResponse.ok) {
+            const moveData = await moveResponse.json();
+            finalImageUrl = moveData.new_url;
+            console.log("이미지 정식 폴더로 이동 완료:", finalImageUrl);
+          }
+        } catch (err) {
+          console.error("이미지 이동 실패 (계속 진행):", err);
+        }
+      }
+
       // 날짜 형식 변환
       const submitData = {
         ...form,
-        artist_name: currentUser?.name || "Unknown Artist", // 🎯 아티스트명 추가!
+        thumbnail_url: finalImageUrl,
+        artist_name: currentUser?.name || "Unknown Artist",
         started_at: form.started_at
           ? new Date(form.started_at).toISOString()
           : null,
@@ -156,27 +259,21 @@ export default function NewArtworkPage() {
       console.log("📥 작품 등록 응답:", data);
 
       if (response.ok) {
-        // 성공 시 사용자 갤러리(홈)로 이동
+        // 성공 시 사용자 갤러리로 이동
         const userStr = localStorage.getItem("user");
-        console.log("저장된 사용자 정보:", userStr);
-
         if (userStr) {
           try {
             const user = JSON.parse(userStr);
-            console.log("파싱된 사용자:", user);
-            console.log("리다이렉트할 slug:", user.slug);
-
-            router.push(`/${user.slug}`); // jaeyoungpark으로 가야 함
+            router.push(`/${user.slug}`);
             return;
           } catch (e) {
             console.error("사용자 정보 파싱 오류:", e);
           }
         }
-        // 사용자 정보가 없으면 루트로 이동
         router.push("/");
       } else {
         if (response.status === 401) {
-          localStorage.removeItem("token"); // access_token을 token으로 통일
+          localStorage.removeItem("token");
           localStorage.removeItem("user");
           router.push("/auth/login");
           return;
@@ -192,12 +289,46 @@ export default function NewArtworkPage() {
       }
     } finally {
       setLoading(false);
+      setIsSubmitting(false);
     }
+  };
+
+  // 취소 핸들러 (이미지 삭제 포함)
+  const handleCancel = async () => {
+    // 업로드된 임시 이미지가 있으면 삭제
+    if (form.thumbnail_url && isTemp) {
+      const confirmDelete = window.confirm(
+        "업로드한 이미지가 삭제됩니다. 계속하시겠습니까?"
+      );
+      if (confirmDelete) {
+        try {
+          const token = localStorage.getItem("token");
+          await fetch(
+            `${backEndUrl}/api/upload/delete-file?file_url=${encodeURIComponent(
+              form.thumbnail_url
+            )}`,
+            {
+              method: "DELETE",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          console.log("임시 이미지 삭제 완료");
+        } catch (error) {
+          console.error("이미지 삭제 실패:", error);
+        }
+      } else {
+        return; // 취소
+      }
+    }
+
+    shouldCleanupRef.current = false; // 수동 취소 시 cleanup 방지
+    handleBack();
   };
 
   // 뒤로가기 핸들러
   const handleBack = () => {
-    // 현재 사용자 정보 가져오기
     const userStr = localStorage.getItem("user");
     if (userStr) {
       try {
@@ -208,8 +339,6 @@ export default function NewArtworkPage() {
         console.error("사용자 정보 파싱 오류:", e);
       }
     }
-
-    // 사용자 정보가 없으면 브라우저 뒤로가기
     router.back();
   };
 
@@ -222,7 +351,9 @@ export default function NewArtworkPage() {
       form.size.trim() !== "" ||
       form.thumbnail_url !== "" ||
       form.started_at !== "" ||
-      form.estimated_completion !== ""
+      form.estimated_completion !== "" ||
+      form.links.length > 0 ||
+      form.youtube_urls.length > 0
     );
   };
 
@@ -239,7 +370,7 @@ export default function NewArtworkPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
-                onClick={handleBack}
+                onClick={handleCancel}
                 className="text-gray-600 hover:text-black transition-colors"
                 type="button"
               >
@@ -266,7 +397,7 @@ export default function NewArtworkPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* 기본 정보 섹션 */}
+          {/* 기본 정보 섹션 (링크/유튜브 추가 기능 포함) */}
           <ArtworkBasicInfo
             form={{
               title: form.title,
@@ -278,15 +409,20 @@ export default function NewArtworkPage() {
             }}
             onChange={handleFormChange}
             loading={loading}
+            onLinksChange={(links) => handleFormChange("links", links)}
+            onYoutubeUrlsChange={(urls) =>
+              handleFormChange("youtube_urls", urls)
+            }
           />
 
-          {/* 이미지 업로드 섹션 */}
+          {/* 이미지 업로드 섹션 (임시 업로드 사용) */}
           <ArtworkImageUpload
             imageUrl={form.thumbnail_url}
             imagePreview={thumbnailPreview}
             onImageChange={handleImageChange}
             onError={handleError}
             loading={loading}
+            useTemp={true} // 임시 업로드 사용
           />
 
           {/* 일정 정보 섹션 */}
@@ -303,7 +439,7 @@ export default function NewArtworkPage() {
           <div className="flex justify-end space-x-4">
             <button
               type="button"
-              onClick={handleBack}
+              onClick={handleCancel}
               disabled={loading}
               className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
@@ -326,9 +462,9 @@ export default function NewArtworkPage() {
           </div>
         </form>
 
-        {/* 변경사항 안내 - 위치 조정 (모바일에서도 안전하게) */}
-        {isFormChanged() && (
-          <div className="fixed bottom-20 sm:bottom-8 right-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg z-10 flex items-center space-x-2">
+        {/* 변경사항 안내 */}
+        {isFormChanged() && !isSubmitting && (
+          <div className="fixed bottom-5 sm:bottom-8 left-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg z-10 flex items-center space-x-2">
             <span>💾</span>
             <span className="text-sm">변경사항이 있습니다</span>
           </div>

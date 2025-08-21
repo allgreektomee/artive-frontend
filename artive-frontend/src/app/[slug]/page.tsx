@@ -289,7 +289,7 @@ export default function GalleryPage() {
 
   // 이벤트 핸들러들
   const handleProfileClick = () => {
-    router.push("/me");
+    router.push("/profile/manage");
   };
 
   const handleAddArtwork = () => {
@@ -353,18 +353,30 @@ export default function GalleryPage() {
 
         {/* 작품 추가 버튼 컴포넌트 */}
         {/* AddArtworkButton에 props 추가 */}
-        <AddArtworkButton
-          isOwner={isOwner}
-          onClick={handleAddArtwork}
-          isMobileGridMode={mobileGridMode}
-          onMobileGridChange={setMobileGridMode}
-        />
+        {isOwner && (
+          <AddArtworkButton
+            isOwner={isOwner}
+            onClick={handleAddArtwork}
+            isMobileGridMode={mobileGridMode}
+            onMobileGridChange={setMobileGridMode}
+          />
+        )}
 
         {noticesCount !== null && noticesCount > 0 && (
           <NoticeSection userId={currentSlug} />
         )}
 
         {/* 작품 그리드 컴포넌트 */}
+        <div
+          style={{
+            height: "2px",
+            background: "white",
+            marginTop: "-1px",
+            marginBottom: "-1px",
+            position: "relative",
+            zIndex: 10,
+          }}
+        />
         <ArtworkGrid
           artworks={artworks}
           isOwner={isOwner}
