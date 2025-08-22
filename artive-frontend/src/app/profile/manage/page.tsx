@@ -14,7 +14,7 @@ import ExhibitionsSection from "@/components/profile/sections/ExhibitionsSection
 import CompetitionsSection from "@/components/profile/sections/CompetitionsSection";
 import AccountSettingsSection from "@/components/profile/sections/AccountSettingsSection";
 
-// 타입 정의
+// 타입 정의 - GalleryPage와 일치하도록 수정
 interface ProfileData {
   // 기본 정보
   id?: number;
@@ -27,20 +27,27 @@ interface ProfileData {
   instagram_username?: string;
   youtube_channel_id?: string;
 
-  // About 섹션
-  about_text?: string;
-  about_image?: string;
-  about_video?: string;
+  // About the Artist - 필드명 변경
+  artist_statement?: string; // about_text -> artist_statement
+  about_text?: string; // 추가!
+  about_image?: string; // 추가!
+  about_video?: string; // 추가!
 
-  // Studio 섹션
+  // Studio Process - 그대로 유지
   studio_description?: string;
   studio_image?: string;
   process_video?: string;
 
-  // Q&A
-  qa_list?: any[];
+  // Artist Interview - 필드명 변경
+  artist_interview?: string; // qa_list -> artist_interview (JSON string)
 
-  // 전시회/수상
+  // Exhibitions & Recognition - 필드명 추가
+  cv_education?: string;
+  cv_exhibitions?: string;
+  cv_awards?: string;
+
+  // 기존 배열 형식도 유지 (내부 관리용)
+  qa_list?: any[]; // UI 편집용
   exhibitions?: any[];
   awards?: any[];
 }
@@ -96,23 +103,39 @@ const ProfileManagement: React.FC = () => {
 
       if (response.ok) {
         const data = await response.json();
-        // API 응답 구조에 맞게 데이터 매핑
+
+        // qa_list를 artist_interview (JSON string)로 변환
+        let artistInterview = "";
+        if (data.qa_list && Array.isArray(data.qa_list)) {
+          artistInterview = JSON.stringify(data.qa_list);
+        }
+
+        // API 응답 구조에 맞게 데이터 매핑 - GalleryPage와 일치하도록
         const mappedData = {
           // 기본 정보
           ...data.basic,
 
-          // 아티스트 소개 (About)
+          // About the Artist - 필드명 변경
+          artist_statement:
+            data.basic?.artist_statement || data.basic?.about_text || "",
           about_text: data.basic?.about_text || "",
           about_image: data.basic?.about_image || "",
           about_video: data.basic?.about_video || "",
 
-          // 작업 공간 (Studio)
+          // Studio Process - 그대로 유지
           studio_description: data.basic?.studio_description || "",
           studio_image: data.basic?.studio_image || "",
           process_video: data.basic?.process_video || "",
 
-          // 인터뷰 Q&A
-          qa_list: data.qa_list || [],
+          // Artist Interview - JSON string으로 저장
+          artist_interview:
+            artistInterview || data.basic?.artist_interview || "",
+          qa_list: data.qa_list || [], // UI 편집용으로 배열도 유지
+
+          // Exhibitions & Recognition
+          cv_education: data.basic?.cv_education || "",
+          cv_exhibitions: data.basic?.cv_exhibitions || "",
+          cv_awards: data.basic?.cv_awards || "",
         };
         setProfileData((prev) => ({ ...prev, ...mappedData }));
       } else if (response.status === 404) {
@@ -138,15 +161,22 @@ const ProfileManagement: React.FC = () => {
 
       if (response.ok) {
         const exhibitions = await response.json();
-        setProfileData((prev) => ({ ...prev, exhibitions }));
+        // 전시 목록을 cv_exhibitions 텍스트로도 변환
+        const cvExhibitions = exhibitions
+          .map((ex: any) => `${ex.year} ${ex.title} - ${ex.venue}`)
+          .join("\n");
+
+        setProfileData((prev) => ({
+          ...prev,
+          exhibitions,
+          cv_exhibitions: cvExhibitions,
+        }));
       } else {
         console.error("전시회 API 오류:", response.status);
-        // 오류 시 빈 배열로 초기화
         setProfileData((prev) => ({ ...prev, exhibitions: [] }));
       }
     } catch (error) {
       console.error("전시회 로딩 실패:", error);
-      // 네트워크 오류 시에도 빈 배열로 초기화
       setProfileData((prev) => ({ ...prev, exhibitions: [] }));
     } finally {
       setExhibitionsLoading(false);
@@ -166,15 +196,25 @@ const ProfileManagement: React.FC = () => {
 
       if (response.ok) {
         const awards = await response.json();
-        setProfileData((prev) => ({ ...prev, awards }));
+        // 수상 목록을 cv_awards 텍스트로도 변환
+        const cvAwards = awards
+          .map(
+            (award: any) =>
+              `${award.year} ${award.title} - ${award.organization}`
+          )
+          .join("\n");
+
+        setProfileData((prev) => ({
+          ...prev,
+          awards,
+          cv_awards: cvAwards,
+        }));
       } else {
         console.error("수상 API 오류:", response.status);
-        // 오류 시 빈 배열로 초기화
         setProfileData((prev) => ({ ...prev, awards: [] }));
       }
     } catch (error) {
       console.error("수상 로딩 실패:", error);
-      // 네트워크 오류 시에도 빈 배열로 초기화
       setProfileData((prev) => ({ ...prev, awards: [] }));
     } finally {
       setAwardsLoading(false);
@@ -193,13 +233,26 @@ const ProfileManagement: React.FC = () => {
   });
 
   const handleSectionDataChange = (field: string, value: any) => {
-    setProfileData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    console.log("Field changed:", field, "Value:", value); // 디버깅용
 
-    // 어느 섹션이 변경되었는지 확인
+    // qa_list 변경시 artist_interview도 함께 업데이트
+    if (field === "qa_list") {
+      setProfileData((prev) => ({
+        ...prev,
+        qa_list: value,
+        artist_interview: JSON.stringify(value),
+      }));
+    } else {
+      setProfileData((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+    }
+
+    // 어느 섹션이 변경되었는지 확인 - 수정된 부분
     let changedSection = "";
+
+    // 기본 정보 섹션
     if (
       [
         "name",
@@ -212,28 +265,52 @@ const ProfileManagement: React.FC = () => {
       ].includes(field)
     ) {
       changedSection = "basic";
-    } else if (["about_text", "about_image", "about_video"].includes(field)) {
+    }
+    // About 섹션 - artist_statement 추가
+    else if (
+      field === "artist_statement" ||
+      field === "about_text" ||
+      field === "about_image" ||
+      field === "about_video"
+    ) {
       changedSection = "about";
-    } else if (
+    }
+    // Studio 섹션
+    else if (
       ["studio_description", "studio_image", "process_video"].includes(field)
     ) {
       changedSection = "studio";
-    } else if (field === "qa_list") {
+    }
+    // Interview 섹션
+    else if (field === "qa_list" || field === "artist_interview") {
       changedSection = "interview";
-    } else if (field === "exhibitions") {
+    }
+    // Exhibitions 섹션
+    else if (
+      field === "exhibitions" ||
+      field === "cv_exhibitions" ||
+      field === "cv_education"
+    ) {
       changedSection = "exhibitions";
-    } else if (field === "awards") {
+    }
+    // Competitions 섹션
+    else if (field === "awards" || field === "cv_awards") {
       changedSection = "competitions";
     }
 
-    if (changedSection) {
-      setSectionChanges((prev) => ({
-        ...prev,
-        [changedSection]: true,
-      }));
-    }
+    console.log("Changed section:", changedSection); // 디버깅용
 
-    setHasChanges(true);
+    if (changedSection) {
+      setSectionChanges((prev) => {
+        const newChanges = {
+          ...prev,
+          [changedSection]: true,
+        };
+        console.log("Section changes:", newChanges); // 디버깅용
+        return newChanges;
+      });
+      setHasChanges(true);
+    }
   };
 
   // 섹션별 저장 함수
@@ -261,9 +338,9 @@ const ProfileManagement: React.FC = () => {
         case "about":
           endpoint = `${backEndUrl}/api/profile/about`;
           sectionData = {
-            about_text: profileData.about_text,
-            about_image: profileData.about_image,
-            about_video: profileData.about_video,
+            artist_statement: profileData.artist_statement,
+            about_image: profileData.about_image || "", // 추가!
+            about_video: profileData.about_video || "", // 추가!
           };
           break;
 
@@ -277,20 +354,29 @@ const ProfileManagement: React.FC = () => {
           break;
 
         case "interview":
-          endpoint = `${backEndUrl}/api/profile/qa`;
-          // Q&A는 배열로 전송 - 빈 배열이라도 전송
-          sectionData = profileData.qa_list || [];
+          endpoint = `${backEndUrl}/api/profile/interview`;
+          // artist_interview를 JSON string으로 전송
+          sectionData = {
+            artist_interview:
+              profileData.artist_interview ||
+              JSON.stringify(profileData.qa_list || []),
+          };
           break;
 
         case "exhibitions":
-          alert("전시회는 개별 항목으로 저장됩니다");
-          setSaving(false);
-          return;
+          endpoint = `${backEndUrl}/api/profile/exhibitions`;
+          sectionData = {
+            cv_exhibitions: profileData.cv_exhibitions,
+            cv_education: profileData.cv_education,
+          };
+          break;
 
         case "competitions":
-          alert("수상/선정은 개별 항목으로 저장됩니다");
-          setSaving(false);
-          return;
+          endpoint = `${backEndUrl}/api/profile/awards`;
+          sectionData = {
+            cv_awards: profileData.cv_awards,
+          };
+          break;
 
         case "account":
           setSaving(false);
@@ -325,17 +411,15 @@ const ProfileManagement: React.FC = () => {
         setHasChanges(hasOtherChanges);
         alert(`${sections.find((s) => s.id === sectionId)?.label} 저장 완료!`);
       } else {
-        // 에러 응답 처리 개선
+        // 에러 응답 처리
         let errorMessage = "저장 실패";
         try {
           const errorData = await response.json();
-          console.log("Error response:", errorData); // 디버깅용
+          console.log("Error response:", errorData);
 
-          // 다양한 에러 형식 처리
           if (typeof errorData === "string") {
             errorMessage = errorData;
           } else if (Array.isArray(errorData)) {
-            // 배열인 경우 (validation errors)
             errorMessage = errorData
               .map((err) =>
                 typeof err === "object"
@@ -344,7 +428,6 @@ const ProfileManagement: React.FC = () => {
               )
               .join(", ");
           } else if (errorData.detail) {
-            // FastAPI 표준 에러
             errorMessage = errorData.detail;
           } else if (errorData.message) {
             errorMessage = errorData.message;
@@ -364,6 +447,8 @@ const ProfileManagement: React.FC = () => {
       setSaving(false);
     }
   };
+
+  // ... 나머지 코드는 동일 ...
 
   const getSubtitle = (sectionId: string): string => {
     switch (sectionId) {
@@ -437,6 +522,11 @@ const ProfileManagement: React.FC = () => {
     }
   };
 
+  const handleBackClick = () => {
+    // router.back() 대신
+    router.push(`/${profileData?.slug || ""}`); // 현재 사용자의 갤러리로
+  };
+
   // 모바일 메인 뷰
   const MobileMainView = () => (
     <div className="min-h-screen bg-gray-50">
@@ -444,7 +534,7 @@ const ProfileManagement: React.FC = () => {
         <div className="px-4 py-4">
           <div className="flex items-center space-x-3">
             <button
-              onClick={() => router.back()}
+              onClick={handleBackClick}
               className="p-2 rounded-lg hover:bg-gray-100"
             >
               <svg
@@ -550,7 +640,7 @@ const ProfileManagement: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center space-x-4">
             <button
-              onClick={() => router.back()}
+              onClick={handleBackClick}
               className="text-gray-600 hover:text-black transition-colors"
             >
               <svg

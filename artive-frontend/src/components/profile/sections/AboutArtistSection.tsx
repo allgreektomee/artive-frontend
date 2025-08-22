@@ -10,29 +10,34 @@ const AboutArtistSection: React.FC<SectionProps> = ({
   saving,
   hasChanges,
 }) => {
-  // 로컬 state로 관리 (포커스 문제 해결)
+  // 로컬 state로 관리 - 필드명 수정
   const [localData, setLocalData] = useState({
-    about_text: data?.about_text || "",
-    about_video: data?.about_video || "",
-    about_image: data?.about_image || "",
+    artist_statement: "",
+    about_image: "",
+    about_video: "",
   });
 
-  const [imagePreview, setImagePreview] = useState<string>(
-    data?.about_image || ""
-  );
+  const [imagePreview, setImagePreview] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
 
   const backEndUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-  // data prop이 변경될 때만 로컬 state 업데이트
+  // data prop이 변경될 때 로컬 state 업데이트 - 수정
   useEffect(() => {
-    setLocalData({
-      about_text: data?.about_text || "",
-      about_video: data?.about_video || "",
-      about_image: data?.about_image || "",
-    });
-    setImagePreview(data?.about_image || "");
-  }, [data?.id]);
+    if (data) {
+      setLocalData({
+        artist_statement: data.artist_statement || data.about_text || "",
+        about_image: data.about_image || "",
+        about_video: data.about_video || "",
+      });
+      setImagePreview(data.about_image || "");
+    }
+  }, [
+    data?.artist_statement,
+    data?.about_text,
+    data?.about_image,
+    data?.about_video,
+  ]);
 
   // 로컬 변경 처리
   const handleLocalChange = (field: string, value: string) => {
@@ -141,9 +146,11 @@ const AboutArtistSection: React.FC<SectionProps> = ({
           소개 글
         </label>
         <textarea
-          value={localData.about_text}
-          onChange={(e) => handleLocalChange("about_text", e.target.value)}
-          onBlur={() => handleBlur("about_text")}
+          value={localData.artist_statement}
+          onChange={(e) =>
+            handleLocalChange("artist_statement", e.target.value)
+          }
+          onBlur={() => handleBlur("artist_statement")}
           placeholder="작가로서의 배경, 작업 철학, 예술적 여정, 영감의 원천 등을 자세히 소개해주세요."
           rows={isMobile ? 8 : 10}
           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"

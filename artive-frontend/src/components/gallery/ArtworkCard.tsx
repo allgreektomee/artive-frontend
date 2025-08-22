@@ -12,6 +12,7 @@ interface Artwork {
   year?: string;
   views?: number;
   likes?: number;
+  size?: string;
 }
 
 interface ArtworkCardProps {
@@ -33,29 +34,6 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork }) => {
     );
   };
 
-  // 상태 배지
-  const getStatusBadge = (status: string) => {
-    const badges = {
-      completed: (
-        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-          Completed
-        </span>
-      ),
-      work_in_progress: (
-        <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
-          In Progress
-        </span>
-      ),
-      archived: (
-        <span className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">
-          Archived
-        </span>
-      ),
-    };
-
-    return badges[status] || null;
-  };
-
   return (
     <Link href={`/artworks/${artwork.id}`} className="block">
       <div className="relative bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 break-inside-avoid mb-4">
@@ -75,17 +53,27 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork }) => {
 
         {/* 카드 하단 정보 */}
         <div className="p-3">
-          <h3 className="font-medium text-gray-900 line-clamp-1 text-sm">
+          <h3 className="font-medium text-gray-900 line-clamp-1 text-base mb-2">
             {artwork.title}
           </h3>
-          <div className="flex items-center justify-between mt-1">
-            <span className="text-xs text-gray-500">{artwork.medium}</span>
-            <div className="flex items-center space-x-2">
-              {artwork.year && (
-                <span className="text-xs text-gray-400">{artwork.year}</span>
-              )}
-              {getStatusBadge(artwork.status)}
-            </div>
+
+          <div className="space-y-1 text-xs">
+            {/* 첫 줄: 미디엄과 사이즈 */}
+            {artwork.medium && (
+              <div className="text-gray-600">
+                {artwork.medium}
+                {artwork.size && ` · ${artwork.size}`}
+              </div>
+            )}
+
+            {/* 둘째 줄: 연도 (오른쪽 정렬) */}
+            {artwork.year && (
+              <div className="flex justify-end">
+                <span className="px-1.5 py-0.5 border border-gray-200 rounded text-gray-500 text-xs">
+                  {artwork.year}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>

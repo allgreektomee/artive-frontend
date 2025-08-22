@@ -32,8 +32,8 @@ const CompetitionsSection: React.FC<SectionProps> = ({
     process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
   useEffect(() => {
-    // data.awards에서 데이터를 가져옴
     if (data?.awards && Array.isArray(data.awards)) {
+      console.log("로드된 수상 데이터:", data.awards);
       setAwards(data.awards);
     } else {
       setAwards([]);
@@ -63,7 +63,20 @@ const CompetitionsSection: React.FC<SectionProps> = ({
 
       if (response.ok) {
         const data = await response.json();
-        updateAward(awardId, "image_url", data.url);
+        console.log("업로드된 이미지 URL:", data.url);
+
+        // 편집 중인 경우 tempEditData 직접 업데이트
+        if (editingId === awardId) {
+          setTempEditData((prev) => ({
+            ...prev,
+            [awardId]: {
+              ...(prev[awardId] || awards.find((a) => a.id === awardId)),
+              image_url: data.url,
+            },
+          }));
+        } else {
+          updateAward(awardId, "image_url", data.url);
+        }
       } else {
         alert("이미지 업로드에 실패했습니다.");
       }
@@ -85,7 +98,7 @@ const CompetitionsSection: React.FC<SectionProps> = ({
 
   const addAward = async () => {
     const newAward: Award = {
-      id: Date.now(), // 임시 ID
+      id: Date.now(),
       title_ko: "",
       organization_ko: "",
       year: new Date().getFullYear().toString(),
@@ -96,7 +109,6 @@ const CompetitionsSection: React.FC<SectionProps> = ({
       is_featured: false,
     };
 
-    // UI에 즉시 반영
     const updatedAwards = [...awards, newAward];
     setAwards(updatedAwards);
     setEditingId(newAward.id);
@@ -105,13 +117,16 @@ const CompetitionsSection: React.FC<SectionProps> = ({
 
   const updateAward = (id: number, field: string, value: any) => {
     if (editingId === id) {
-      setTempEditData({
-        ...tempEditData,
+      // tempEditData 업데이트 개선
+      const currentData =
+        tempEditData[id] || awards.find((a) => a.id === id) || ({} as Award);
+      setTempEditData((prev) => ({
+        ...prev,
         [id]: {
-          ...(tempEditData[id] || awards.find((a) => a.id === id)),
+          ...currentData,
           [field]: value,
         },
-      });
+      }));
     } else {
       const updatedAwards = awards.map((award) =>
         award.id === id ? { ...award, [field]: value } : award
@@ -128,9 +143,7 @@ const CompetitionsSection: React.FC<SectionProps> = ({
       try {
         const token = localStorage.getItem("token");
 
-        // 백엔드에 저장된 수상인 경우
         if (id < Date.now() - 1000000000) {
-          // 실제 ID인 경우
           const response = await fetch(
             `${backEndUrl}/api/profile/awards/${id}`,
             {
@@ -146,7 +159,6 @@ const CompetitionsSection: React.FC<SectionProps> = ({
           }
         }
 
-        // UI에서 제거
         const updatedAwards = awards.filter((award) => award.id !== id);
         setAwards(updatedAwards);
         if (onChange) {
@@ -165,33 +177,46 @@ const CompetitionsSection: React.FC<SectionProps> = ({
         const token = localStorage.getItem("token");
         const awardData = tempEditData[editingId];
 
-        // 새로 추가하는 경우 (임시 ID)
+        console.log("저장할 수상 데이터:", awardData);
+
+        // 새로 추가하는 경우
         if (awardData.id >= Date.now() - 1000000000) {
+          const requestBody = {
+            title_ko: awardData.title_ko,
+            organization_ko: awardData.organization_ko,
+            year: awardData.year,
+            award_type: awardData.award_type,
+            description_ko: awardData.description_ko,
+            image_url: awardData.image_url || null, // null 처리
+            video_url: awardData.video_url || null, // null 처리
+            is_featured: awardData.is_featured,
+          };
+
+          console.log("POST 요청 body:", requestBody);
+
           const response = await fetch(`${backEndUrl}/api/profile/awards`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({
-              title_ko: awardData.title_ko,
-              organization_ko: awardData.organization_ko,
-              year: awardData.year,
-              award_type: awardData.award_type,
-              description_ko: awardData.description_ko,
-              image_url: awardData.image_url || "",
-              video_url: awardData.video_url || "",
-              is_featured: awardData.is_featured,
-            }),
+            body: JSON.stringify(requestBody),
           });
 
           if (response.ok) {
             const result = await response.json();
-            const newAward = result.award;
+            console.log("서버 응답:", result);
+            const newAward = result.award || result;
 
-            // 임시 ID를 실제 ID로 교체
+            // URL 유지하면서 ID 교체
             const updatedAwards = awards.map((award) =>
-              award.id === editingId ? { ...newAward } : award
+              award.id === editingId
+                ? {
+                    ...newAward,
+                    image_url: awardData.image_url || newAward.image_url,
+                    video_url: awardData.video_url || newAward.video_url,
+                  }
+                : award
             );
             setAwards(updatedAwards);
             if (onChange) {
@@ -202,6 +227,19 @@ const CompetitionsSection: React.FC<SectionProps> = ({
           }
         } else {
           // 기존 수상 수정
+          const requestBody = {
+            title_ko: awardData.title_ko,
+            organization_ko: awardData.organization_ko,
+            year: awardData.year,
+            award_type: awardData.award_type,
+            description_ko: awardData.description_ko,
+            image_url: awardData.image_url || null,
+            video_url: awardData.video_url || null,
+            is_featured: awardData.is_featured,
+          };
+
+          console.log("PUT 요청 body:", requestBody);
+
           const response = await fetch(
             `${backEndUrl}/api/profile/awards/${awardData.id}`,
             {
@@ -210,16 +248,7 @@ const CompetitionsSection: React.FC<SectionProps> = ({
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`,
               },
-              body: JSON.stringify({
-                title_ko: awardData.title_ko,
-                organization_ko: awardData.organization_ko,
-                year: awardData.year,
-                award_type: awardData.award_type,
-                description_ko: awardData.description_ko,
-                image_url: awardData.image_url || "",
-                video_url: awardData.video_url || "",
-                is_featured: awardData.is_featured,
-              }),
+              body: JSON.stringify(requestBody),
             }
           );
 
@@ -253,6 +282,14 @@ const CompetitionsSection: React.FC<SectionProps> = ({
     return award ? award[field] : "";
   };
 
+  // 편집 시작 시 데이터 복사 개선
+  const startEditing = (award: Award) => {
+    setEditingId(award.id);
+    setTempEditData({
+      [award.id]: { ...award },
+    });
+  };
+
   // 유형별 배지 색상 결정 함수
   const getTypeBadgeColor = (type: string) => {
     const lowerType = type.toLowerCase();
@@ -275,7 +312,6 @@ const CompetitionsSection: React.FC<SectionProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* PC에서만 보이는 타이틀 - 수상은 개별 저장이므로 저장 버튼 없음 */}
       {!isMobile && (
         <div className="mb-6">
           <h2 className="text-xl font-semibold text-gray-900">수상/선정</h2>
@@ -434,7 +470,6 @@ const CompetitionsSection: React.FC<SectionProps> = ({
                     />
                   </div>
 
-                  {/* 이미지 업로드 섹션 */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       공모전 포스터 및 증서
@@ -532,7 +567,6 @@ const CompetitionsSection: React.FC<SectionProps> = ({
                     )}
                   </div>
 
-                  {/* 유튜브 링크 섹션 */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       관련 영상 (YouTube)
@@ -667,7 +701,6 @@ const CompetitionsSection: React.FC<SectionProps> = ({
                         </p>
                       )}
 
-                      {/* 이미지 미리보기 - 원본 비율 */}
                       {award.image_url && (
                         <div className="mt-3">
                           <img
@@ -678,7 +711,6 @@ const CompetitionsSection: React.FC<SectionProps> = ({
                         </div>
                       )}
 
-                      {/* 비디오 아이콘 표시 */}
                       {award.video_url && (
                         <div className="flex items-center space-x-2 mt-2">
                           <svg
@@ -698,10 +730,7 @@ const CompetitionsSection: React.FC<SectionProps> = ({
                   </div>
 
                   <button
-                    onClick={() => {
-                      setEditingId(award.id);
-                      setTempEditData({ [award.id]: award });
-                    }}
+                    onClick={() => startEditing(award)}
                     className="ml-4 p-2 text-gray-400 hover:text-gray-600 transition-colors"
                   >
                     <svg

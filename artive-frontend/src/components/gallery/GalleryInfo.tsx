@@ -33,14 +33,14 @@ const GalleryInfo: React.FC<GalleryInfoProps> = ({
 }) => {
   return (
     <div id="gallery-info" className="mb-2">
-      <p className="text-xl sm:text-2xl mb-8 sm:mb-10">{"artive.com"}</p>
+      <p className="text-xl sm:text-2xl mb-8 sm:mb-10">{"ArtiveForMe"}</p>
 
       <h1 className="text-2xl sm:text-3xl font-bold mb-1">
         {galleryUser?.gallery_title ||
           galleryUser?.name ||
           currentSlug?.toUpperCase() + " Gallery"}
       </h1>
-      <p className="text-gray-600 text-sm sm:text-base mb-3">
+      <p className="text-gray-600 text-sm sm:text-base mb-3 whitespace-pre-wrap">
         {galleryUser?.gallery_description ||
           galleryUser?.bio ||
           "작품을 통해 색채와 형태의 조화를 탐구합니다."}

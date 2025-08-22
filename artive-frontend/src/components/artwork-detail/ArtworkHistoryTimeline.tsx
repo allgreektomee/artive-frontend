@@ -63,14 +63,6 @@ const ArtworkHistoryTimeline: React.FC<ArtworkHistoryTimelineProps> = ({
           <p className="text-gray-500 mb-6 text-sm lg:text-base">
             Start documenting your creative journey!
           </p>
-          {isOwner && (
-            <button
-              onClick={onAddHistory}
-              className="bg-black text-white px-6 py-3 rounded-full hover:bg-gray-800 transition-colors text-sm lg:text-base"
-            >
-              Add First Process
-            </button>
-          )}
         </div>
       </div>
     );
@@ -82,17 +74,31 @@ const ArtworkHistoryTimeline: React.FC<ArtworkHistoryTimelineProps> = ({
         <h2 className="text-2xl lg:text-3xl font-bold text-gray-900">
           Creation Process
         </h2>
+      </div>
+
+      <div className="flex items-center justify-end">
         {isOwner && (
-          <button
-            onClick={onAddHistory}
-            className="flex items-center space-x-1 lg:space-x-2 bg-black text-white px-3 lg:px-4 py-2 rounded-full hover:bg-gray-800 transition-colors group text-sm lg:text-base"
-          >
-            <span className="text-xs lg:text-sm group-hover:rotate-90 transition-transform">
-              +
-            </span>
-            <span className="hidden md:inline">Add Process</span>
-            <span className="md:hidden">Add</span>
-          </button>
+          <div className="flex justify-center my-2">
+            <button
+              onClick={() => onAddHistory()}
+              className="flex items-center gap-1 sm:gap-1.5 md:gap-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 bg-white hover:bg-gray-50 text-gray-600 border border-gray-300 hover:border-gray-400 rounded-full font-medium text-[13px] sm:text-[14px] md:text-[15px] shadow-sm hover:shadow-md transition-all duration-200"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2.5}
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 4.5v15m7.5-7.5h-15"
+                />
+              </svg>
+              <span>Add New Process </span>
+            </button>
+          </div>
         )}
       </div>
 

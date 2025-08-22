@@ -339,3 +339,31 @@ columns-2 {
     font-size: 18px;
   }
 }
+
+input,
+textarea,
+select {
+  font-size: 16px !important; /* 16px 이상으로 설정 */
+  -webkit-appearance: none;
+  border-radius: 0; /* iOS 기본 스타일 제거 */
+}
+
+/* 포커스 시 줌 방지 */
+@media screen and (max-width: 768px) {
+  input:focus,
+  textarea:focus,
+  select:focus {
+    font-size: 16px !important;
+    transform: scale(1) !important;
+  }
+}
+
+input::-webkit-inner-spin-button,
+input::-webkit-outer-spin-button,
+input::-webkit-search-decoration,
+input::-webkit-search-cancel-button,
+input::-webkit-search-results-button,
+input::-webkit-search-results-decoration {
+  display: none;
+  -webkit-appearance: none;
+}

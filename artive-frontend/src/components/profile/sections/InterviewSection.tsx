@@ -104,17 +104,6 @@ const InterviewSection: React.FC<SectionProps> = ({
               Q&A 형식으로 작가 인터뷰를 구성하세요
             </p>
           </div>
-          <button
-            onClick={onSave}
-            disabled={!hasChanges || saving}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              hasChanges && !saving
-                ? "bg-blue-600 text-white hover:bg-blue-700"
-                : "bg-gray-200 text-gray-400 cursor-not-allowed"
-            }`}
-          >
-            {saving ? "저장 중..." : "저장하기"}
-          </button>
         </div>
       )}
 

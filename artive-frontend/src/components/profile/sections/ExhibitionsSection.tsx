@@ -32,13 +32,13 @@ const ExhibitionsSection: React.FC<SectionProps> = ({
     process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
   useEffect(() => {
-    // data.exhibitions에서 데이터를 가져옴
     if (data?.exhibitions && Array.isArray(data.exhibitions)) {
+      console.log("로드된 전시회 데이터:", data.exhibitions);
       setExhibitions(data.exhibitions);
     } else {
       setExhibitions([]);
     }
-  }, [data?.exhibitions]); // data.exhibitions 변경 감지
+  }, [data?.exhibitions]);
 
   const handleImageUpload = async (exhibitionId: number, file: File) => {
     if (file.size > 5 * 1024 * 1024) {
@@ -63,7 +63,21 @@ const ExhibitionsSection: React.FC<SectionProps> = ({
 
       if (response.ok) {
         const data = await response.json();
-        updateExhibition(exhibitionId, "image_url", data.url);
+        console.log("업로드된 이미지 URL:", data.url);
+
+        // 편집 중인 경우 tempEditData 직접 업데이트
+        if (editingId === exhibitionId) {
+          setTempEditData((prev) => ({
+            ...prev,
+            [exhibitionId]: {
+              ...(prev[exhibitionId] ||
+                exhibitions.find((e) => e.id === exhibitionId)),
+              image_url: data.url,
+            },
+          }));
+        } else {
+          updateExhibition(exhibitionId, "image_url", data.url);
+        }
       } else {
         alert("이미지 업로드에 실패했습니다.");
       }
@@ -85,7 +99,7 @@ const ExhibitionsSection: React.FC<SectionProps> = ({
 
   const addExhibition = async () => {
     const newExhibition: Exhibition = {
-      id: Date.now(), // 임시 ID
+      id: Date.now(),
       title_ko: "",
       venue_ko: "",
       year: new Date().getFullYear().toString(),
@@ -96,7 +110,6 @@ const ExhibitionsSection: React.FC<SectionProps> = ({
       is_featured: false,
     };
 
-    // UI에 즉시 반영
     const updatedExhibitions = [...exhibitions, newExhibition];
     setExhibitions(updatedExhibitions);
     setEditingId(newExhibition.id);
@@ -109,14 +122,20 @@ const ExhibitionsSection: React.FC<SectionProps> = ({
     value: any
   ) => {
     if (editingId === id) {
-      setTempEditData({
-        ...tempEditData,
+      // 편집 중일 때 - tempEditData를 제대로 업데이트
+      const currentData =
+        tempEditData[id] ||
+        exhibitions.find((e) => e.id === id) ||
+        ({} as Exhibition);
+      setTempEditData((prev) => ({
+        ...prev,
         [id]: {
-          ...(tempEditData[id] || exhibitions.find((e) => e.id === id)),
+          ...currentData,
           [field]: value,
         },
-      });
+      }));
     } else {
+      // 편집 중이 아닐 때
       const updatedExhibitions = exhibitions.map((exhibition) =>
         exhibition.id === id ? { ...exhibition, [field]: value } : exhibition
       );
@@ -134,7 +153,6 @@ const ExhibitionsSection: React.FC<SectionProps> = ({
 
         // 백엔드에 저장된 전시회인 경우
         if (id < Date.now() - 1000000000) {
-          // 실제 ID인 경우
           const response = await fetch(
             `${backEndUrl}/api/profile/exhibitions/${id}`,
             {
@@ -171,8 +189,24 @@ const ExhibitionsSection: React.FC<SectionProps> = ({
         const token = localStorage.getItem("token");
         const exhibitionData = tempEditData[editingId];
 
+        // 저장할 데이터 확인
+        console.log("저장할 전시회 데이터:", exhibitionData);
+
         // 새로 추가하는 경우 (임시 ID)
         if (exhibitionData.id >= Date.now() - 1000000000) {
+          const requestBody = {
+            title_ko: exhibitionData.title_ko || "",
+            venue_ko: exhibitionData.venue_ko || "",
+            year: exhibitionData.year || new Date().getFullYear().toString(),
+            exhibition_type: exhibitionData.exhibition_type || "group",
+            description_ko: exhibitionData.description_ko || "",
+            image_url: exhibitionData.image_url || null, // 빈 문자열 대신 null
+            video_url: exhibitionData.video_url || null, // 빈 문자열 대신 null
+            is_featured: exhibitionData.is_featured || false,
+          };
+
+          console.log("POST 요청 body:", requestBody);
+
           const response = await fetch(
             `${backEndUrl}/api/profile/exhibitions`,
             {
@@ -181,36 +215,51 @@ const ExhibitionsSection: React.FC<SectionProps> = ({
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`,
               },
-              body: JSON.stringify({
-                title_ko: exhibitionData.title_ko,
-                venue_ko: exhibitionData.venue_ko,
-                year: exhibitionData.year,
-                exhibition_type: exhibitionData.exhibition_type,
-                description_ko: exhibitionData.description_ko,
-                image_url: exhibitionData.image_url || "",
-                video_url: exhibitionData.video_url || "",
-                is_featured: exhibitionData.is_featured,
-              }),
+              body: JSON.stringify(requestBody),
             }
           );
 
           if (response.ok) {
             const result = await response.json();
-            const newExhibition = result.exhibition;
+            console.log("서버 응답:", result);
+            const newExhibition = result.exhibition || result;
 
-            // 임시 ID를 실제 ID로 교체
+            // 임시 ID를 실제 ID로 교체하고 이미지/영상 URL 유지
             const updatedExhibitions = exhibitions.map((exhibition) =>
-              exhibition.id === editingId ? { ...newExhibition } : exhibition
+              exhibition.id === editingId
+                ? {
+                    ...newExhibition,
+                    image_url:
+                      exhibitionData.image_url || newExhibition.image_url,
+                    video_url:
+                      exhibitionData.video_url || newExhibition.video_url,
+                  }
+                : exhibition
             );
             setExhibitions(updatedExhibitions);
             if (onChange) {
               onChange("exhibitions", updatedExhibitions);
             }
           } else {
+            const errorText = await response.text();
+            console.error("저장 실패:", errorText);
             throw new Error("저장 실패");
           }
         } else {
           // 기존 전시회 수정
+          const requestBody = {
+            title_ko: exhibitionData.title_ko || "",
+            venue_ko: exhibitionData.venue_ko || "",
+            year: exhibitionData.year || new Date().getFullYear().toString(),
+            exhibition_type: exhibitionData.exhibition_type || "group",
+            description_ko: exhibitionData.description_ko || "",
+            image_url: exhibitionData.image_url || null,
+            video_url: exhibitionData.video_url || null,
+            is_featured: exhibitionData.is_featured || false,
+          };
+
+          console.log("PUT 요청 body:", requestBody);
+
           const response = await fetch(
             `${backEndUrl}/api/profile/exhibitions/${exhibitionData.id}`,
             {
@@ -219,28 +268,21 @@ const ExhibitionsSection: React.FC<SectionProps> = ({
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`,
               },
-              body: JSON.stringify({
-                title_ko: exhibitionData.title_ko,
-                venue_ko: exhibitionData.venue_ko,
-                year: exhibitionData.year,
-                exhibition_type: exhibitionData.exhibition_type,
-                description_ko: exhibitionData.description_ko,
-                image_url: exhibitionData.image_url || "",
-                video_url: exhibitionData.video_url || "",
-                is_featured: exhibitionData.is_featured,
-              }),
+              body: JSON.stringify(requestBody),
             }
           );
 
           if (response.ok) {
             const updatedExhibitions = exhibitions.map((exhibition) =>
-              exhibition.id === editingId ? tempEditData[editingId] : exhibition
+              exhibition.id === editingId ? exhibitionData : exhibition
             );
             setExhibitions(updatedExhibitions);
             if (onChange) {
               onChange("exhibitions", updatedExhibitions);
             }
           } else {
+            const errorText = await response.text();
+            console.error("수정 실패:", errorText);
             throw new Error("수정 실패");
           }
         }
@@ -262,9 +304,17 @@ const ExhibitionsSection: React.FC<SectionProps> = ({
     return exhibition ? exhibition[field] : "";
   };
 
+  // 편집 시작 시 tempEditData 초기화 개선
+  const startEditing = (exhibition: Exhibition) => {
+    setEditingId(exhibition.id);
+    // 전체 exhibition 객체를 tempEditData에 복사
+    setTempEditData({
+      [exhibition.id]: { ...exhibition },
+    });
+  };
+
   return (
     <div className="space-y-6">
-      {/* PC에서만 보이는 타이틀과 저장 버튼 - 전시회는 개별 저장이므로 표시하지 않음 */}
       {!isMobile && (
         <div className="mb-6">
           <h2 className="text-xl font-semibold text-gray-900">전시회</h2>
@@ -298,7 +348,7 @@ const ExhibitionsSection: React.FC<SectionProps> = ({
               d="M12 4v16m8-8H4"
             />
           </svg>
-          <span>전시회 추가</span>
+          <span>추가</span>
         </button>
       </div>
 
@@ -477,24 +527,6 @@ const ExhibitionsSection: React.FC<SectionProps> = ({
                               />
                             </svg>
                           </button>
-                          <label
-                            htmlFor={`exhibition-image-upload-${exhibition.id}`}
-                            className="p-2 bg-white rounded-lg shadow-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                          >
-                            <svg
-                              className="w-4 h-4 text-gray-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                              />
-                            </svg>
-                          </label>
                         </div>
                       </div>
                     ) : (
@@ -702,7 +734,6 @@ const ExhibitionsSection: React.FC<SectionProps> = ({
                         </p>
                       )}
 
-                      {/* 이미지 미리보기 - 원본 비율 */}
                       {exhibition.image_url && (
                         <div className="mt-3">
                           <img
@@ -732,10 +763,7 @@ const ExhibitionsSection: React.FC<SectionProps> = ({
                   </div>
 
                   <button
-                    onClick={() => {
-                      setEditingId(exhibition.id);
-                      setTempEditData({ [exhibition.id]: exhibition });
-                    }}
+                    onClick={() => startEditing(exhibition)}
                     className="ml-4 p-2 text-gray-400 hover:text-gray-600 transition-colors"
                   >
                     <svg
@@ -761,30 +789,15 @@ const ExhibitionsSection: React.FC<SectionProps> = ({
 
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex">
-          <svg
-            className="w-5 h-5 text-blue-600 mr-2 mt-0.5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
           <div className="text-sm text-blue-800">
             <p className="font-medium mb-1">💡 전시회 관리 팁</p>
+
             <ul className="space-y-1 text-blue-700">
               <li>• 최신 전시회부터 시간순으로 정리하세요</li>
               <li>
                 • 주요 전시는 "주요 전시" 옵션을 체크하여 강조할 수 있습니다
               </li>
-              <li>
-                • 전시 유형을 정확히 선택하면 포트폴리오가 더 전문적으로
-                보입니다
-              </li>
+              <li>• 전시 유형을 정확히 선택하면 더 전문적으로 보입니다</li>
             </ul>
           </div>
         </div>

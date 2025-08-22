@@ -9,8 +9,13 @@ import GalleryHeader from "@/components/gallery/GalleryHeader";
 import GalleryInfo from "@/components/gallery/GalleryInfo";
 import AddArtworkButton from "@/components/gallery/AddArtworkButton";
 import ArtworkGrid from "@/components/gallery/ArtworkGrid";
-import AboutSection from "@/components/gallery/AboutSection";
 import NoticeSection from "@/components/gallery/NoticeSection";
+
+// About 섹션 컴포넌트들 직접 import
+import ArtistStatement from "@/components/gallery/about/ArtistStatement";
+import StudioProcess from "@/components/gallery/about/StudioProcess";
+import ArtistInterview from "@/components/gallery/about/ArtistInterview";
+import ExhibitionsRecognition from "@/components/gallery/about/ExhibitionsRecognition";
 
 // 타입들 import
 import { User, Artwork } from "@/components/gallery/types";
@@ -130,7 +135,7 @@ export default function GalleryPage() {
       setError(null);
 
       try {
-        const token = localStorage.getItem("token"); // access_token → token으로 통일
+        const token = localStorage.getItem("token");
         const headers: HeadersInit = { Accept: "application/json" };
 
         if (token) {
@@ -138,12 +143,12 @@ export default function GalleryPage() {
         }
 
         console.log("🔍 갤러리 요청:", {
-          url: `${backEndUrl}/api/artworks/user/${currentSlug}`, // 올바른 API 경로
+          url: `${backEndUrl}/api/artworks/user/${currentSlug}`,
           token: token ? "있음" : "없음",
           currentSlug,
         });
 
-        // 올바른 API 엔드포인트: /artworks/user/{user_slug}
+        // 1. 작품 목록 가져오기
         const artworksRes = await fetch(
           `${backEndUrl}/api/artworks/user/${currentSlug}?sort_by=created_at&sort_order=desc&page=1&limit=${ITEMS_PER_PAGE}`,
           {
@@ -171,6 +176,23 @@ export default function GalleryPage() {
         const artworksData = await artworksRes.json();
         console.log("🔍 작품 데이터:", artworksData);
 
+        // 2. 사용자 프로필 정보 가져오기
+        const profileRes = await fetch(
+          `${backEndUrl}/api/profile/${currentSlug}`,
+          {
+            method: "GET",
+            headers,
+          }
+        );
+
+        let profileData = null;
+        if (profileRes.ok) {
+          profileData = await profileRes.json();
+          console.log("🔍 프로필 데이터:", profileData);
+        } else {
+          console.log("🔍 프로필 데이터 없음 또는 오류");
+        }
+
         setArtworks(artworksData.artworks || artworksData.items || []);
         setCurrentPage(artworksData.page || 1);
         setTotalPages(
@@ -181,36 +203,46 @@ export default function GalleryPage() {
           artworksData.has_next || artworksData.page < artworksData.pages
         );
 
-        // 갤러리 사용자 정보 설정
-        if (artworksData.artworks && artworksData.artworks.length > 0) {
-          setGalleryUser({
-            id: 1,
-            name: currentSlug.toUpperCase(),
-            slug: currentSlug,
-            bio: "Contemporary abstract artist exploring color and form.",
-            gallery_title: `${currentSlug.toUpperCase()} Gallery`,
-            gallery_description: "작품을 통해 색채와 형태의 조화를 탐구합니다.",
-            total_artworks: artworksData.total || 0,
-            total_views: artworksData.artworks.reduce(
+        // 갤러리 사용자 정보 설정 (프로필 데이터 포함)
+        setGalleryUser({
+          id: profileData?.id || 1,
+          name: profileData?.name || currentSlug.toUpperCase(),
+          slug: currentSlug,
+          bio: profileData?.bio || "",
+
+          // About the Artist 관련 - 필드 추가!
+          artist_statement:
+            profileData?.artist_statement || profileData?.about_text || "",
+          about_text: profileData?.about_text || "", // 추가
+          about_image: profileData?.about_image || "", // 추가
+          about_video: profileData?.about_video || "", // 추가
+
+          // Studio Process 관련
+          studio_description: profileData?.studio_description || "",
+          studio_image: profileData?.studio_image || "",
+          process_video: profileData?.process_video || "",
+
+          // Artist Interview
+          artist_interview: profileData?.artist_interview || "",
+
+          // Exhibitions & Recognition
+          cv_education: profileData?.cv_education || "",
+          cv_exhibitions: profileData?.cv_exhibitions || "",
+          cv_awards: profileData?.cv_awards || "",
+
+          // 갤러리 정보
+          gallery_title:
+            profileData?.gallery_title ||
+            `${currentSlug.toUpperCase()} Gallery`,
+          gallery_description: profileData?.gallery_description || "",
+          total_artworks: artworksData.total || 0,
+          total_views:
+            artworksData.artworks?.reduce(
               (sum: number, art: Artwork) => sum + (art.view_count || 0),
               0
-            ),
-            is_public_gallery: true,
-          });
-        } else {
-          // 작품이 없어도 기본 갤러리 정보 설정
-          setGalleryUser({
-            id: 1,
-            name: currentSlug.toUpperCase(),
-            slug: currentSlug,
-            bio: "Contemporary abstract artist",
-            gallery_title: `${currentSlug.toUpperCase()} Gallery`,
-            gallery_description: "Welcome to my gallery",
-            total_artworks: 0,
-            total_views: 0,
-            is_public_gallery: true,
-          });
-        }
+            ) || 0,
+          is_public_gallery: profileData?.is_public_gallery !== false,
+        });
       } catch (err) {
         console.error("갤러리 데이터 조회 실패:", err);
         setError("네트워크 오류가 발생했습니다.");
@@ -252,7 +284,7 @@ export default function GalleryPage() {
     setLoadingMore(true);
 
     try {
-      const token = localStorage.getItem("token"); // access_token → token으로 통일
+      const token = localStorage.getItem("token");
       const headers: HeadersInit = { Accept: "application/json" };
 
       if (token) {
@@ -260,7 +292,6 @@ export default function GalleryPage() {
       }
 
       const nextPage = currentPage + 1;
-      // 올바른 API 엔드포인트
       const artworksRes = await fetch(
         `${backEndUrl}/api/artworks/user/${currentSlug}?sort_by=created_at&sort_order=desc&page=${nextPage}&limit=${ITEMS_PER_PAGE}`,
         {
@@ -347,12 +378,11 @@ export default function GalleryPage() {
           artworks={artworks}
           isOwner={isOwner}
           onProfileClick={handleProfileClick}
-          mobileGridMode={mobileGridMode} // 소유자 여부와 관계없이 전달
-          onMobileGridChange={setMobileGridMode} // 소유자 여부와 관계없이 전달
+          mobileGridMode={mobileGridMode}
+          onMobileGridChange={setMobileGridMode}
         />
 
         {/* 작품 추가 버튼 컴포넌트 */}
-        {/* AddArtworkButton에 props 추가 */}
         {isOwner && (
           <AddArtworkButton
             isOwner={isOwner}
@@ -385,10 +415,15 @@ export default function GalleryPage() {
           totalArtworks={galleryUser?.total_artworks || 0}
           onAddArtwork={handleAddArtwork}
           onLoadMore={loadMoreArtworks}
-          mobileGridMode={mobileGridMode} // 소유자 여부와 관계없이 전달
+          mobileGridMode={mobileGridMode}
         />
-        {/* About Section 컴포넌트 */}
-        <AboutSection galleryUser={galleryUser} />
+
+        <div className="mt-20 pb-20">
+          <ArtistStatement galleryUser={galleryUser} isOwner={isOwner} />
+          <StudioProcess galleryUser={galleryUser} isOwner={isOwner} />
+          <ArtistInterview galleryUser={galleryUser} isOwner={isOwner} />
+          <ExhibitionsRecognition galleryUser={galleryUser} isOwner={isOwner} />
+        </div>
       </div>
     </div>
   );
