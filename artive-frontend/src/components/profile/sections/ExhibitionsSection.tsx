@@ -18,9 +18,6 @@ const ExhibitionsSection: React.FC<SectionProps> = ({
   data,
   onChange,
   isMobile,
-  onSave,
-  saving,
-  hasChanges,
 }) => {
   const router = useRouter();
   const [exhibitions, setExhibitions] = useState<Exhibition[]>([]);

@@ -12,10 +12,7 @@ interface QAItem {
 const InterviewSection: React.FC<SectionProps> = ({
   data,
   onChange,
-  isMobile,
-  onSave,
   saving,
-  hasChanges,
 }) => {
   const [qaList, setQaList] = useState<QAItem[]>(data?.qa_list || []);
   const [editingId, setEditingId] = useState<number | null>(null);
