@@ -22,7 +22,7 @@ interface BlogPost {
   content: string;
   excerpt?: string;
   featured_image?: string;
-  post_type: "BLOG" | "NOTICE" | "EXHIBITION" | "AWARD" | "NEWS";
+  post_type: "BLOG" | "NOTICE" | "EXHIBITION" | "AWARD" | "NEWS" | "STUDIO";
   tags?: string[];
   is_published: boolean;
   is_public: boolean;
@@ -77,7 +77,7 @@ export default function BlogDetailPage() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log("포스트 데이터:", data); // 디버깅용
+        console.log("포스트 데이터:", data);
 
         // author 필드가 없으면 user 필드 사용
         if (!data.author && data.user) {
@@ -92,21 +92,24 @@ export default function BlogDetailPage() {
           };
         }
 
-        // tags 파싱 (문자열이면 JSON 파싱)
+        // tags 파싱 (문자열이면 배열로 변환)
         if (data.tags && typeof data.tags === "string") {
           try {
-            data.tags = JSON.parse(data.tags);
+            data.tags = data.tags
+              .split(",")
+              .map((tag: string) => tag.trim())
+              .filter((tag: string) => tag);
           } catch (e) {
             console.error("태그 파싱 실패:", e);
             data.tags = [];
           }
-        } else if (!data.tags) {
+        } else if (!Array.isArray(data.tags)) {
           data.tags = [];
         }
 
         setPost(data);
 
-        // 조회수 증가 (별도 API 호출)
+        // 조회수 증가
         incrementViewCount();
       } else {
         if (response.status === 404) {
@@ -124,10 +127,6 @@ export default function BlogDetailPage() {
   };
 
   const incrementViewCount = async () => {
-    // 조회수 API가 없으면 skip
-    return;
-
-    /* 백엔드에 조회수 API가 있으면 주석 해제
     try {
       await fetch(`${backendUrl}/api/blog/posts/${postId}/view`, {
         method: "POST",
@@ -135,7 +134,6 @@ export default function BlogDetailPage() {
     } catch (error) {
       console.error("조회수 증가 실패:", error);
     }
-    */
   };
 
   const checkOwnership = async () => {
@@ -214,6 +212,8 @@ export default function BlogDetailPage() {
         return "bg-yellow-100 text-yellow-700";
       case "NEWS":
         return "bg-blue-100 text-blue-700";
+      case "STUDIO":
+        return "bg-indigo-100 text-indigo-700";
       default:
         return "bg-gray-100 text-gray-700";
     }
@@ -229,6 +229,8 @@ export default function BlogDetailPage() {
         return "수상";
       case "NEWS":
         return "뉴스";
+      case "STUDIO":
+        return "스튜디오";
       default:
         return "블로그";
     }
@@ -260,7 +262,7 @@ export default function BlogDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 헤더 - 작성 페이지 스타일 */}
+      {/* 헤더 */}
       <div className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
@@ -354,15 +356,137 @@ export default function BlogDetailPage() {
             </div>
           </div>
 
-          {/* 본문 내용 */}
+          {/* 본문 내용 - 에디터 스타일 적용 */}
           <div
-            className="prose prose-lg max-w-none mb-8"
+            className="blog-content"
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
 
+          <style jsx>{`
+            .blog-content {
+              font-size: 1.1rem;
+              line-height: 1.8;
+              color: #374151;
+            }
+
+            .blog-content h1 {
+              font-size: 2rem;
+              font-weight: bold;
+              margin: 2rem 0 1rem;
+              color: #111827;
+            }
+
+            .blog-content h2 {
+              font-size: 1.5rem;
+              font-weight: bold;
+              margin: 1.5rem 0 0.75rem;
+              color: #111827;
+            }
+
+            .blog-content h3 {
+              font-size: 1.25rem;
+              font-weight: bold;
+              margin: 1.25rem 0 0.5rem;
+              color: #111827;
+            }
+
+            .blog-content p {
+              margin-bottom: 1rem;
+            }
+
+            .blog-content ul,
+            .blog-content ol {
+              margin: 1rem 0;
+              padding-left: 2rem;
+            }
+
+            .blog-content ul {
+              list-style-type: disc;
+            }
+
+            .blog-content ol {
+              list-style-type: decimal;
+            }
+
+            .blog-content li {
+              margin-bottom: 0.5rem;
+            }
+
+            .blog-content img {
+              width: 100%;
+              height: auto;
+              border-radius: 0.5rem;
+              margin: 1.5rem 0;
+              box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            }
+
+            .blog-content blockquote {
+              border-left: 4px solid #d1d5db;
+              padding-left: 1rem;
+              margin: 1rem 0;
+              font-style: italic;
+              color: #6b7280;
+            }
+
+            .blog-content a {
+              color: #2563eb;
+              text-decoration: underline;
+            }
+
+            .blog-content a:hover {
+              color: #1d4ed8;
+            }
+
+            .blog-content strong {
+              font-weight: 600;
+              color: #111827;
+            }
+
+            .blog-content code {
+              background-color: #f3f4f6;
+              padding: 0.125rem 0.25rem;
+              border-radius: 0.25rem;
+              font-family: monospace;
+              font-size: 0.875em;
+            }
+
+            .blog-content pre {
+              background-color: #1f2937;
+              color: #f9fafb;
+              padding: 1rem;
+              border-radius: 0.5rem;
+              overflow-x: auto;
+              margin: 1rem 0;
+            }
+
+            .blog-content pre code {
+              background-color: transparent;
+              padding: 0;
+              color: inherit;
+            }
+
+            .blog-content table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 1rem 0;
+            }
+
+            .blog-content th,
+            .blog-content td {
+              border: 1px solid #e5e7eb;
+              padding: 0.5rem;
+              text-align: left;
+            }
+
+            .blog-content th {
+              background-color: #f9fafb;
+              font-weight: 600;
+            }
+          `}</style>
+
           {/* 태그 */}
-          {post.tags && post.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-6 border-t">
+          {post.tags && Array.isArray(post.tags) && post.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-6 border-t mt-8">
               {post.tags.map((tag, index) => (
                 <span
                   key={index}

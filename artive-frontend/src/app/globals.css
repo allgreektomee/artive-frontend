@@ -367,3 +367,54 @@ input::-webkit-search-results-decoration {
   display: none;
   -webkit-appearance: none;
 }
+
+/* 블로그 콘텐츠 스타일 */
+/* 블로그 콘텐츠 스타일 - 텍스트 크기 20% 축소 */
+.blog-content {
+  font-size: 0.88rem; /* 1.1rem → 0.88rem */
+  line-height: 1.8;
+  color: #374151;
+}
+
+.blog-content h1 {
+  font-size: 1.6rem; /* 2rem → 1.6rem */
+  font-weight: bold;
+  margin: 2rem 0 1rem;
+  color: #111827;
+}
+
+.blog-content h2 {
+  font-size: 1.2rem; /* 1.5rem → 1.2rem */
+  font-weight: bold;
+  margin: 1.5rem 0 0.75rem;
+  color: #111827;
+}
+
+.blog-content h3 {
+  font-size: 1rem; /* 1.25rem → 1rem */
+  font-weight: bold;
+  margin: 1.25rem 0 0.5rem;
+  color: #111827;
+}
+
+.blog-content p {
+  margin-bottom: 0.8rem; /* 1rem → 0.8rem */
+}
+
+.blog-content ul,
+.blog-content ol {
+  margin: 0.8rem 0; /* 1rem → 0.8rem */
+  padding-left: 1.6rem; /* 2rem → 1.6rem */
+}
+
+.blog-content li {
+  margin-bottom: 0.4rem; /* 0.5rem → 0.4rem */
+}
+
+.blog-content code {
+  font-size: 0.7em; /* 0.875em → 0.7em */
+}
+
+.studio-page .blog-content {
+  margin-top: 0 !important;
+}

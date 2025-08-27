@@ -74,17 +74,6 @@ const GalleryHeader: React.FC<GalleryHeaderProps> = ({
               )}
             </button>
 
-            {/* 블로그 아이콘 - 소유자일 때만 표시 */}
-            {isOwner && (
-              <Link
-                href={`/blog/${currentSlug}`}
-                className="text-gray-600 hover:text-blue-600 transition-colors p-1"
-                title="Blog"
-              >
-                <FaEdit className="text-xl sm:text-2xl" />
-              </Link>
-            )}
-
             {/* 프로필 아이콘 - 소유자일 때만 표시 */}
             {isOwner && (
               <button

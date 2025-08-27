@@ -3,6 +3,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import BottomNavigation from "@/components/gallery/BottomNavigation";
+import BlogHeader from "@/components/gallery/BlogHeader";
+import { FaUser, FaEdit } from "react-icons/fa";
 import {
   ArrowLeft,
   Calendar,
@@ -26,8 +29,8 @@ interface BlogPost {
   title: string;
   content: string;
   excerpt: string | null;
-  featured_image: string | null; // 대표 이미지
-  post_type: "BLOG" | "NOTICE" | "EXHIBITION" | "AWARD" | "NEWS";
+  featured_image: string | null;
+  post_type: "BLOG" | "NOTICE" | "EXHIBITION" | "AWARD" | "NEWS" | "STUDIO";
   tags: string[] | null;
   is_published: boolean;
   is_public: boolean;
@@ -70,17 +73,40 @@ export default function BlogListPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalPosts, setTotalPosts] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [showBlogHeader, setShowBlogHeader] = useState(false);
+  const [hasStudioPost, setHasStudioPost] = useState(false);
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   const postsPerPage = 10;
+
+  // 스크롤 기반 헤더 전환 로직
+  useEffect(() => {
+    const handleScroll = () => {
+      const headerElement = document.getElementById("blog-info");
+      if (headerElement) {
+        const rect = headerElement.getBoundingClientRect();
+        if (rect.bottom <= 80) {
+          setShowBlogHeader(true);
+        } else {
+          setShowBlogHeader(false);
+        }
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     if (userSlug) {
       fetchUserInfo();
       fetchPosts();
       checkOwnership();
+      checkStudioPost();
     }
-  }, [userSlug, selectedType, currentPage, searchTerm]);
+  }, [userSlug, selectedType, searchTerm]);
 
   const fetchUserInfo = async () => {
     setUser({
@@ -90,14 +116,45 @@ export default function BlogListPage() {
     });
   };
 
-  const fetchPosts = async () => {
+  // 스튜디오 포스트가 있는지 확인하는 함수
+  const checkStudioPost = async () => {
     try {
-      setIsLoading(true);
-      setError(null);
-
       const params = new URLSearchParams({
         user: userSlug,
-        page: currentPage.toString(),
+        post_type: "STUDIO",
+        is_published: "true",
+        limit: "1",
+      });
+
+      const response = await fetch(`${backendUrl}/api/blog/posts?${params}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setHasStudioPost(data.posts && data.posts.length > 0);
+      }
+    } catch (error) {
+      console.error("스튜디오 포스트 확인 실패:", error);
+    }
+  };
+
+  const fetchPosts = async (isLoadMore = false) => {
+    try {
+      if (!isLoadMore) {
+        setIsLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+      setError(null);
+
+      const pageToFetch = isLoadMore ? currentPage + 1 : currentPage;
+      const params = new URLSearchParams({
+        user: userSlug,
+        page: pageToFetch.toString(),
         limit: postsPerPage.toString(),
         is_published: "true",
       });
@@ -126,9 +183,25 @@ export default function BlogListPage() {
         const data = await response.json();
         console.log("응답 데이터:", data);
 
-        setPosts(data.posts || []);
-        setTotalPages(data.pages || 1);
-        setTotalPosts(data.total || 0);
+        // filteredPosts 변수 선언
+        let filteredPosts = data.posts || [];
+
+        // 비소유자일 경우 스튜디오 포스트 제외
+        if (!isOwner) {
+          filteredPosts = filteredPosts.filter(
+            (post: BlogPost) => post.post_type !== "STUDIO"
+          );
+        }
+
+        if (isLoadMore) {
+          setPosts((prev) => [...prev, ...(filteredPosts || [])]);
+          setCurrentPage(pageToFetch);
+        } else {
+          setPosts(filteredPosts || []);
+        }
+
+        setTotalPages(filteredPosts.pages || 1);
+        setTotalPosts(filteredPosts.total || 0);
         setError(null);
       } else {
         const errorText = await response.text();
@@ -147,6 +220,13 @@ export default function BlogListPage() {
       setError("블로그 목록을 불러올 수 없습니다.");
     } finally {
       setIsLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const loadMorePosts = () => {
+    if (!loadingMore && currentPage < totalPages) {
+      fetchPosts(true);
     }
   };
 
@@ -175,6 +255,10 @@ export default function BlogListPage() {
     setCurrentPage(1);
   };
 
+  const handleProfileClick = () => {
+    router.push("/profile/manage");
+  };
+
   const getTypeIcon = (type: string) => {
     switch (type) {
       case "NOTICE":
@@ -185,6 +269,8 @@ export default function BlogListPage() {
         return <Award className="w-3 h-3 sm:w-4 sm:h-4" />;
       case "NEWS":
         return <Newspaper className="w-3 h-3 sm:w-4 sm:h-4" />;
+      case "STUDIO":
+        return <FaEdit className="w-3 h-3 sm:w-4 sm:h-4" />;
       default:
         return <FileText className="w-3 h-3 sm:w-4 sm:h-4" />;
     }
@@ -200,6 +286,8 @@ export default function BlogListPage() {
         return "bg-yellow-100 text-yellow-700 border-yellow-200";
       case "NEWS":
         return "bg-blue-100 text-blue-700 border-blue-200";
+      case "STUDIO":
+        return "bg-indigo-100 text-indigo-700 border-indigo-200";
       default:
         return "bg-gray-100 text-gray-700 border-gray-200";
     }
@@ -215,6 +303,8 @@ export default function BlogListPage() {
         return "수상";
       case "NEWS":
         return "뉴스";
+      case "STUDIO":
+        return "스튜디오";
       default:
         return "블로그";
     }
@@ -226,7 +316,6 @@ export default function BlogListPage() {
     return tmp.textContent || tmp.innerText || "";
   };
 
-  // excerpt가 있으면 사용하고, 없으면 content에서 추출
   const getPreview = (post: BlogPost) => {
     if (post.excerpt) {
       return post.excerpt.length > 100
@@ -259,47 +348,57 @@ export default function BlogListPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* 헤더 - 모바일 최적화 */}
-      <header className="bg-white border-b sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-4">
-              <button
-                onClick={() => router.push(`/${userSlug}`)}
-                className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
-              <div>
-                <h1 className="text-base sm:text-xl font-bold">
-                  <span className="hidden sm:inline">
-                    {user?.name || userSlug.toUpperCase()} 블로그
-                  </span>
-                  <span className="sm:hidden">블로그</span>
-                </h1>
-                <p className="text-xs sm:text-sm text-gray-500">
-                  {totalPosts}개의 글
-                </p>
-              </div>
+    <div className="min-h-screen bg-white">
+      {/* 스크롤 기반 고정 헤더 */}
+      <BlogHeader
+        showBlogHeader={showBlogHeader}
+        blogUser={user}
+        currentSlug={userSlug}
+        isOwner={isOwner}
+        onProfileClick={handleProfileClick}
+        totalPosts={totalPosts}
+      />
+
+      {/* 기본 헤더 */}
+      <header id="blog-info" className="bg-white -mt-10">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-0">
+          <div className="flex items-center justify-between mb-1">
+            <h1 className="text-2xl sm:text-3xl font-bold">
+              {user?.name || userSlug.toUpperCase()} 블로그
+            </h1>
+
+            <div className="flex items-center space-x-2">
+              {/* 새 글 작성 아이콘 - 소유자일 때만 */}
+              {isOwner && (
+                <>
+                  <Link
+                    href={`/blog/${userSlug}/write`}
+                    className="text-gray-600 hover:text-black transition-colors p-1"
+                    title="새 글 작성"
+                  >
+                    <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
+                  </Link>
+                  <button
+                    onClick={handleProfileClick}
+                    className="text-gray-600 hover:text-black transition-colors"
+                    title="Edit Profile"
+                  >
+                    <FaUser className="text-lg sm:text-xl md:text-2xl" />
+                  </button>
+                </>
+              )}
             </div>
-            {isOwner && (
-              <Link
-                href={`/blog/${userSlug}/write`}
-                className="p-2 sm:px-4 sm:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                title="새 글 작성"
-              >
-                <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline ml-2 text-sm">
-                  새 글 작성
-                </span>
-              </Link>
-            )}
           </div>
+
+          <p className="text-sm text-gray-600 mb-2">
+            {totalPosts}개의 글이 작성되었습니다.
+          </p>
+
+          <div className="py-2 border-b border-gray-200"></div>
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-2 sm:px-4 py-4 sm:py-6">
+      <div className="max-w-4xl mx-auto px-6 sm:px-12 py-4 sm:py-6 pb-32 ">
         {/* 필터 & 검색 - 모바일 최적화 */}
         <div className="bg-white rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 shadow-sm">
           <div className="flex flex-col gap-3 sm:gap-4">
@@ -309,6 +408,7 @@ export default function BlogListPage() {
                 onClick={() => {
                   setSelectedType("ALL");
                   setCurrentPage(1);
+                  setPosts([]);
                 }}
                 className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                   selectedType === "ALL"
@@ -322,6 +422,7 @@ export default function BlogListPage() {
                 onClick={() => {
                   setSelectedType("NOTICE");
                   setCurrentPage(1);
+                  setPosts([]);
                 }}
                 className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                   selectedType === "NOTICE"
@@ -335,6 +436,7 @@ export default function BlogListPage() {
                 onClick={() => {
                   setSelectedType("BLOG");
                   setCurrentPage(1);
+                  setPosts([]);
                 }}
                 className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                   selectedType === "BLOG"
@@ -348,6 +450,7 @@ export default function BlogListPage() {
                 onClick={() => {
                   setSelectedType("NEWS");
                   setCurrentPage(1);
+                  setPosts([]);
                 }}
                 className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                   selectedType === "NEWS"
@@ -361,6 +464,7 @@ export default function BlogListPage() {
                 onClick={() => {
                   setSelectedType("EXHIBITION");
                   setCurrentPage(1);
+                  setPosts([]);
                 }}
                 className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                   selectedType === "EXHIBITION"
@@ -374,6 +478,7 @@ export default function BlogListPage() {
                 onClick={() => {
                   setSelectedType("AWARD");
                   setCurrentPage(1);
+                  setPosts([]);
                 }}
                 className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                   selectedType === "AWARD"
@@ -383,6 +488,22 @@ export default function BlogListPage() {
               >
                 수상
               </button>
+              {isOwner && (
+                <button
+                  onClick={() => {
+                    setSelectedType("STUDIO");
+                    setCurrentPage(1);
+                    setPosts([]);
+                  }}
+                  className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                    selectedType === "STUDIO"
+                      ? "bg-indigo-500 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  스튜디오
+                </button>
+              )}
             </div>
 
             {/* 검색 */}
@@ -402,21 +523,44 @@ export default function BlogListPage() {
         </div>
 
         {/* 포스트 목록 - 모바일 최적화 */}
-        <div className="space-y-3 sm:space-y-4">
+        <div className="space-y-3 sm:space-y-4 ">
           {posts.length === 0 ? (
             <div className="bg-white rounded-lg p-8 sm:p-12 text-center">
               <FileText className="w-10 h-10 sm:w-12 sm:h-12 text-gray-300 mx-auto mb-4" />
               <p className="text-sm sm:text-base text-gray-500">
-                아직 작성된 글이 없습니다.
+                {selectedType === "STUDIO" && !isOwner
+                  ? "스튜디오 포스트는 작가 본인만 조회할 수 있습니다."
+                  : "아직 작성된 글이 없습니다."}
               </p>
               {isOwner && (
-                <Link
-                  href={`/blog/${userSlug}/write`}
-                  className="inline-flex items-center gap-2 mt-4 px-3 sm:px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>첫 글 작성하기</span>
-                </Link>
+                <>
+                  {selectedType === "STUDIO" && !hasStudioPost && (
+                    <div className="mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg text-left max-w-md mx-auto">
+                      <h3 className="font-semibold text-indigo-900 mb-2">
+                        🎬 스튜디오 포스트 만들기
+                      </h3>
+                      <ul className="text-xs text-indigo-700 space-y-1 mb-3">
+                        <li>• 작업 공간, 도구, 창작 과정을 소개해보세요</li>
+                        <li>• 작품 제작 비하인드 스토리를 공유해보세요</li>
+                        <li>• 예술 철학과 영감의 원천을 들려주세요</li>
+                        <li className="font-semibold">
+                          • 작성 완료 시 하단 메뉴에 Studio 탭이 생성됩니다!
+                        </li>
+                      </ul>
+                    </div>
+                  )}
+                  <Link
+                    href={`/blog/${userSlug}/write`}
+                    className="inline-flex items-center gap-2 mt-4 px-3 sm:px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>
+                      {selectedType === "STUDIO"
+                        ? "스튜디오 포스트 작성하기"
+                        : "첫 글 작성하기"}
+                    </span>
+                  </Link>
+                </>
               )}
             </div>
           ) : (
@@ -431,7 +575,7 @@ export default function BlogListPage() {
                   <Link href={`/blog/${userSlug}/${post.id}`}>
                     <div className="p-4 sm:p-6">
                       <div className="flex items-start gap-3 sm:gap-4">
-                        {/* 대표 이미지 표시 - featured_image 사용 */}
+                        {/* 대표 이미지 표시 */}
                         {post.featured_image && (
                           <div className="flex-shrink-0">
                             <img
@@ -439,7 +583,6 @@ export default function BlogListPage() {
                               alt={post.title}
                               className="w-16 h-16 sm:w-24 sm:h-24 object-cover rounded-lg"
                               onError={(e) => {
-                                // 이미지 로드 실패 시 숨기기
                                 (e.target as HTMLElement).style.display =
                                   "none";
                               }}
@@ -447,6 +590,7 @@ export default function BlogListPage() {
                           </div>
                         )}
 
+                        {/* 콘텐츠 */}
                         {/* 콘텐츠 */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2 sm:gap-4 mb-2">
@@ -466,13 +610,18 @@ export default function BlogListPage() {
                               </span>
                             </div>
                             {isOwner && (
-                              <Link
-                                href={`/blog/${userSlug}/${post.id}/edit`}
-                                onClick={(e) => e.stopPropagation()}
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  router.push(
+                                    `/blog/${userSlug}/${post.id}/edit`
+                                  );
+                                }}
                                 className="p-1 sm:p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
                               >
                                 <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                              </Link>
+                              </button>
                             )}
                           </div>
 
@@ -520,31 +669,29 @@ export default function BlogListPage() {
           )}
         </div>
 
-        {/* 페이지네이션 - 모바일 최적화 */}
-        {totalPages > 1 && (
-          <div className="flex justify-center gap-2 mt-6 sm:mt-8">
+        {/* Load More 버튼 */}
+        {currentPage < totalPages && (
+          <div className="flex justify-center mt-8">
             <button
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={loadMorePosts}
+              disabled={loadingMore}
+              className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              이전
-            </button>
-            <span className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm">
-              {currentPage} / {totalPages}
-            </span>
-            <button
-              onClick={() =>
-                setCurrentPage(Math.min(totalPages, currentPage + 1))
-              }
-              disabled={currentPage === totalPages}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              다음
+              {loadingMore ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>로딩 중...</span>
+                </div>
+              ) : (
+                "Load More"
+              )}
             </button>
           </div>
         )}
       </div>
+      <div className="h-24"></div>
+      {/* 하단 네비게이션 */}
+      <BottomNavigation currentSlug={userSlug} isOwner={isOwner} />
     </div>
   );
 }

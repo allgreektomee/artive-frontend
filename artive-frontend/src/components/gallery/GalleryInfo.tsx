@@ -32,7 +32,7 @@ const GalleryInfo: React.FC<GalleryInfoProps> = ({
   onMobileGridChange,
 }) => {
   return (
-    <div id="gallery-info" className="mb-2">
+    <div id="gallery-info" className="mb-2 -mt-10">
       <p className="text-xl sm:text-2xl mb-8 sm:mb-10">{"ArtiveForMe"}</p>
 
       <h1 className="text-2xl sm:text-3xl font-bold mb-1">
@@ -41,9 +41,7 @@ const GalleryInfo: React.FC<GalleryInfoProps> = ({
           currentSlug?.toUpperCase() + " Gallery"}
       </h1>
       <p className="text-gray-600 text-sm sm:text-base mb-3 whitespace-pre-wrap">
-        {galleryUser?.gallery_description ||
-          galleryUser?.bio ||
-          "작품을 통해 색채와 형태의 조화를 탐구합니다."}
+        {galleryUser?.gallery_description || galleryUser?.bio}
       </p>
 
       {/* 통계와 아이콘 */}
@@ -73,17 +71,6 @@ const GalleryInfo: React.FC<GalleryInfoProps> = ({
               <FaBars className="text-lg" />
             )}
           </button>
-
-          {/* 블로그 아이콘 - 소유자일 때만 표시 */}
-          {isOwner && (
-            <Link
-              href={`/blog/${currentSlug}`}
-              className="text-gray-600 hover:text-blue-600 transition-colors"
-              title="Blog"
-            >
-              <FaEdit className="text-lg sm:text-xl md:text-2xl" />
-            </Link>
-          )}
 
           {/* 프로필 아이콘 - 소유자일 때만 표시 */}
           {isOwner && (

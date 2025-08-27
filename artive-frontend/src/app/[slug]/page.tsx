@@ -9,13 +9,7 @@ import GalleryHeader from "@/components/gallery/GalleryHeader";
 import GalleryInfo from "@/components/gallery/GalleryInfo";
 import AddArtworkButton from "@/components/gallery/AddArtworkButton";
 import ArtworkGrid from "@/components/gallery/ArtworkGrid";
-import NoticeSection from "@/components/gallery/NoticeSection";
-
-// About 섹션 컴포넌트들 직접 import
-import ArtistStatement from "@/components/gallery/about/ArtistStatement";
-import StudioProcess from "@/components/gallery/about/StudioProcess";
-import ArtistInterview from "@/components/gallery/about/ArtistInterview";
-import ExhibitionsRecognition from "@/components/gallery/about/ExhibitionsRecognition";
+import BottomNavigation from "@/components/gallery/BottomNavigation";
 
 // 타입들 import
 import { User, Artwork } from "@/components/gallery/types";
@@ -42,11 +36,9 @@ export default function GalleryPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const ITEMS_PER_PAGE = 12;
+  const ITEMS_PER_PAGE = 10;
 
   const currentSlug = pathname?.split("/")[1];
-
-  const [noticesCount, setNoticesCount] = useState<number | null>(null);
 
   const [mobileGridMode, setMobileGridMode] = useState<"single" | "double">(
     "double"
@@ -89,14 +81,7 @@ export default function GalleryPage() {
     const fetchCurrentUser = async () => {
       try {
         const token = localStorage.getItem("token");
-        console.log("🔍 토큰:", token ? "있음" : "없음");
-
-        if (!token) {
-          console.log("🚨 토큰 없음");
-          return;
-        }
-
-        console.log("🔍 API 호출 시작:", `${backEndUrl}/api/auth/me`);
+        if (!token) return;
 
         const res = await fetch(`${backEndUrl}/api/auth/me`, {
           method: "GET",
@@ -106,20 +91,13 @@ export default function GalleryPage() {
           },
         });
 
-        console.log("🔍 응답 상태:", res.status);
-        console.log("🔍 응답 OK:", res.ok);
-
         if (res.ok) {
           const userData = await res.json();
-          console.log("🎯 받은 사용자 데이터:", userData);
           setCurrentUser(userData);
           setIsOwner(userData.slug === currentSlug);
-        } else {
-          const errorText = await res.text();
-          console.error("🚨 API 에러:", res.status, errorText);
         }
       } catch (err) {
-        console.error("🚨 네트워크 에러:", err);
+        console.error("사용자 정보 조회 실패:", err);
       }
     };
 
@@ -142,27 +120,16 @@ export default function GalleryPage() {
           headers.Authorization = `Bearer ${token}`;
         }
 
-        console.log("🔍 갤러리 요청:", {
-          url: `${backEndUrl}/api/artworks/user/${currentSlug}`,
-          token: token ? "있음" : "없음",
-          currentSlug,
-        });
-
         // 1. 작품 목록 가져오기
         const artworksRes = await fetch(
-          `${backEndUrl}/api/artworks/user/${currentSlug}?sort_by=created_at&sort_order=desc&page=1&limit=${ITEMS_PER_PAGE}`,
+          `${backEndUrl}/api/artworks/user/${currentSlug}?sort_by=created_at&sort_order=desc&page=1&size=${ITEMS_PER_PAGE}`,
           {
             method: "GET",
             headers,
           }
         );
 
-        console.log("🔍 갤러리 응답:", artworksRes.status);
-
         if (!artworksRes.ok) {
-          const errorText = await artworksRes.text();
-          console.error("🔍 갤러리 에러:", artworksRes.status, errorText);
-
           if (artworksRes.status === 404) {
             setError("갤러리를 찾을 수 없습니다.");
           } else if (artworksRes.status === 403) {
@@ -170,11 +137,11 @@ export default function GalleryPage() {
           } else {
             setError("갤러리를 불러오는데 실패했습니다.");
           }
+          setLoading(false);
           return;
         }
 
         const artworksData = await artworksRes.json();
-        console.log("🔍 작품 데이터:", artworksData);
 
         // 2. 사용자 프로필 정보 가져오기
         const profileRes = await fetch(
@@ -188,9 +155,6 @@ export default function GalleryPage() {
         let profileData = null;
         if (profileRes.ok) {
           profileData = await profileRes.json();
-          console.log("🔍 프로필 데이터:", profileData);
-        } else {
-          console.log("🔍 프로필 데이터 없음 또는 오류");
         }
 
         setArtworks(artworksData.artworks || artworksData.items || []);
@@ -203,34 +167,23 @@ export default function GalleryPage() {
           artworksData.has_next || artworksData.page < artworksData.pages
         );
 
-        // 갤러리 사용자 정보 설정 (프로필 데이터 포함)
+        // 갤러리 사용자 정보 설정
         setGalleryUser({
           id: profileData?.id || 1,
           name: profileData?.name || currentSlug.toUpperCase(),
           slug: currentSlug,
           bio: profileData?.bio || "",
-
-          // About the Artist 관련 - 필드 추가!
-          artist_statement:
-            profileData?.artist_statement || profileData?.about_text || "",
-          about_text: profileData?.about_text || "", // 추가
-          about_image: profileData?.about_image || "", // 추가
-          about_video: profileData?.about_video || "", // 추가
-
-          // Studio Process 관련
+          artist_statement: profileData?.artist_statement || "",
+          about_text: profileData?.about_text || "",
+          about_image: profileData?.about_image || "",
+          about_video: profileData?.about_video || "",
           studio_description: profileData?.studio_description || "",
           studio_image: profileData?.studio_image || "",
           process_video: profileData?.process_video || "",
-
-          // Artist Interview
           artist_interview: profileData?.artist_interview || "",
-
-          // Exhibitions & Recognition
           cv_education: profileData?.cv_education || "",
           cv_exhibitions: profileData?.cv_exhibitions || "",
           cv_awards: profileData?.cv_awards || "",
-
-          // 갤러리 정보
           gallery_title:
             profileData?.gallery_title ||
             `${currentSlug.toUpperCase()} Gallery`,
@@ -254,29 +207,6 @@ export default function GalleryPage() {
     fetchGalleryData();
   }, [currentSlug, backEndUrl]);
 
-  // 기존 useEffect들 다음에 추가
-  useEffect(() => {
-    const checkNoticesCount = async () => {
-      try {
-        const response = await fetch(
-          `${backEndUrl}/api/blog/posts?user=${currentSlug}&post_type=NOTICE&is_published=true&limit=1`
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          setNoticesCount(data.total || 0);
-        } else {
-          setNoticesCount(0);
-        }
-      } catch (error) {
-        console.log("공지사항 개수 확인 실패:", error);
-        setNoticesCount(0);
-      }
-    };
-
-    checkNoticesCount();
-  }, [currentSlug, backEndUrl]);
-
   // Load More 함수
   const loadMoreArtworks = async () => {
     if (!hasMore || loadingMore || !currentSlug) return;
@@ -293,7 +223,7 @@ export default function GalleryPage() {
 
       const nextPage = currentPage + 1;
       const artworksRes = await fetch(
-        `${backEndUrl}/api/artworks/user/${currentSlug}?sort_by=created_at&sort_order=desc&page=${nextPage}&limit=${ITEMS_PER_PAGE}`,
+        `${backEndUrl}/api/artworks/user/${currentSlug}?sort_by=created_at&sort_order=desc&page=${nextPage}&size=${ITEMS_PER_PAGE}`,
         {
           method: "GET",
           headers,
@@ -302,6 +232,8 @@ export default function GalleryPage() {
 
       if (artworksRes.ok) {
         const artworksData = await artworksRes.json();
+
+        // 백엔드에서 받은 데이터 그대로 사용
         setArtworks((prev) => [
           ...prev,
           ...(artworksData.artworks || artworksData.items || []),
@@ -327,16 +259,8 @@ export default function GalleryPage() {
     router.push("/artworks/new");
   };
 
-  // 로딩 상태
-  if (!mounted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-      </div>
-    );
-  }
-
-  if (loading) {
+  // 로딩 상태 - 통합
+  if (!mounted || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
@@ -370,61 +294,48 @@ export default function GalleryPage() {
       />
 
       {/* 메인 콘텐츠 */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10">
-        {/* 갤러리 정보 컴포넌트 */}
-        <GalleryInfo
-          galleryUser={galleryUser}
-          currentSlug={currentSlug}
-          artworks={artworks}
-          isOwner={isOwner}
-          onProfileClick={handleProfileClick}
-          mobileGridMode={mobileGridMode}
-          onMobileGridChange={setMobileGridMode}
-        />
-
-        {/* 작품 추가 버튼 컴포넌트 */}
-        {isOwner && (
-          <AddArtworkButton
+      <div className="bg-white ">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-32">
+          {/* 갤러리 정보 컴포넌트 */}
+          <GalleryInfo
+            galleryUser={galleryUser}
+            currentSlug={currentSlug}
+            artworks={artworks}
             isOwner={isOwner}
-            onClick={handleAddArtwork}
-            isMobileGridMode={mobileGridMode}
+            onProfileClick={handleProfileClick}
+            mobileGridMode={mobileGridMode}
             onMobileGridChange={setMobileGridMode}
           />
-        )}
 
-        {noticesCount !== null && noticesCount > 0 && (
-          <NoticeSection userId={currentSlug} />
-        )}
+          {/* 작품 추가 버튼 컴포넌트 */}
+          {isOwner && (
+            <AddArtworkButton
+              isOwner={isOwner}
+              onClick={handleAddArtwork}
+              isMobileGridMode={mobileGridMode}
+              onMobileGridChange={setMobileGridMode}
+            />
+          )}
 
-        {/* 작품 그리드 컴포넌트 */}
-        <div
-          style={{
-            height: "2px",
-            background: "white",
-            marginTop: "-1px",
-            marginBottom: "-1px",
-            position: "relative",
-            zIndex: 10,
-          }}
-        />
-        <ArtworkGrid
-          artworks={artworks}
-          isOwner={isOwner}
-          hasMore={hasMore}
-          loadingMore={loadingMore}
-          totalArtworks={galleryUser?.total_artworks || 0}
-          onAddArtwork={handleAddArtwork}
-          onLoadMore={loadMoreArtworks}
-          mobileGridMode={mobileGridMode}
-        />
-
-        <div className="mt-20 pb-20">
-          <ArtistStatement galleryUser={galleryUser} isOwner={isOwner} />
-          <StudioProcess galleryUser={galleryUser} isOwner={isOwner} />
-          <ArtistInterview galleryUser={galleryUser} isOwner={isOwner} />
-          <ExhibitionsRecognition galleryUser={galleryUser} isOwner={isOwner} />
+          {/* 작품 그리드 컴포넌트 */}
+          <ArtworkGrid
+            artworks={artworks}
+            isOwner={isOwner}
+            hasMore={hasMore}
+            loadingMore={loadingMore}
+            totalArtworks={galleryUser?.total_artworks || 0}
+            onAddArtwork={handleAddArtwork}
+            onLoadMore={loadMoreArtworks}
+            mobileGridMode={mobileGridMode}
+          />
         </div>
       </div>
+
+      {/* 하단 네비게이션과의 간격을 위한 빈 영역 */}
+      <div className="h-24"></div>
+
+      {/* PC용 하단 네비게이션 */}
+      <BottomNavigation currentSlug={currentSlug} isOwner={isOwner} />
     </div>
   );
 }

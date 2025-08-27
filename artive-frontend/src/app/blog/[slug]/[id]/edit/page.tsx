@@ -250,6 +250,7 @@ export default function BlogEditPage() {
       NEWS: "bg-green-100 text-green-800",
       EXHIBITION: "bg-purple-100 text-purple-800",
       AWARD: "bg-yellow-100 text-yellow-800",
+      STUDIO: "bg-indigo-100 text-indigo-800", // 스튜디오 추가
     };
     return colors[type as keyof typeof colors] || "bg-gray-100 text-gray-800";
   };
@@ -439,6 +440,7 @@ export default function BlogEditPage() {
                   { value: "NEWS", label: "뉴스", icon: "📰" },
                   { value: "EXHIBITION", label: "전시", icon: "🎨" },
                   { value: "AWARD", label: "수상", icon: "🏆" },
+                  { value: "STUDIO", label: "스튜디오", icon: "🎬" }, // 스튜디오 추가
                 ].map((type) => (
                   <button
                     key={type.value}
@@ -504,48 +506,11 @@ export default function BlogEditPage() {
             {/* 공개 설정 */}
             <div className="mb-4 p-3 bg-gray-50 rounded-lg">
               <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isPublic}
-                  onChange={(e) => setIsPublic(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                />
-                <div className="flex items-center gap-2">
-                  {isPublic ? (
-                    <Eye className="w-4 h-4 text-green-600" />
-                  ) : (
-                    <EyeOff className="w-4 h-4 text-gray-600" />
-                  )}
-                  <span className="font-medium">공개 포스트</span>
-                </div>
-              </label>
-              <p className="text-sm text-gray-600 ml-7 mt-1">
-                {isPublic
-                  ? "✅ 모든 사용자가 볼 수 있습니다"
-                  : "🔒 로그인한 사용자만 볼 수 있습니다"}
-              </p>
-            </div>
-
-            {/* 핀 고정 (공지사항만) */}
-            {postType === "NOTICE" && (
-              <div className="mb-6 p-3 bg-gray-50 rounded-lg">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isPinned}
-                    onChange={(e) => setIsPinned(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                  />
-                  <div className="flex items-center gap-2">
-                    <Pin className="w-4 h-4 text-orange-600" />
-                    <span className="font-medium">상단 고정</span>
-                  </div>
-                </label>
-                <p className="text-sm text-gray-600 ml-7 mt-1">
-                  공지사항을 목록 최상단에 고정합니다
+                <p className="text-sm text-gray-600 ml-1 mt-1">
+                  모든 사용자가 볼 수 있습니다
                 </p>
-              </div>
-            )}
+              </label>
+            </div>
 
             {/* 버튼 */}
             <div className="flex gap-3">

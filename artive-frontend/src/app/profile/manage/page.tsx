@@ -354,14 +354,79 @@ const ProfileManagement: React.FC = () => {
           break;
 
         case "interview":
-          endpoint = `${backEndUrl}/api/profile/interview`;
-          // artist_interview를 JSON string으로 전송
-          sectionData = {
-            artist_interview:
-              profileData.artist_interview ||
-              JSON.stringify(profileData.qa_list || []),
-          };
-          break;
+          console.log("Interview 저장 시작");
+          console.log("qa_list:", profileData.qa_list);
+
+          endpoint = `${backEndUrl}/api/profile/qa`; // 엔드포인트 수정!
+
+          // qa_list 배열을 백엔드 형식에 맞게 변환
+          const qaData = profileData.qa_list || [];
+
+          // PUT 요청 body는 배열이어야 함
+          sectionData = qaData.map((qa: any, index: number) => ({
+            question: qa.question || "",
+            answer: qa.answer || "",
+            question_ko: qa.question || "",
+            answer_ko: qa.answer || "",
+            question_en: "",
+            answer_en: "",
+            order_index: qa.order_index || index,
+          }));
+
+          console.log("전송할 Q&A 데이터:", sectionData);
+
+          // PUT 메서드로 배열 직접 전송
+          const qaResponse = await fetch(endpoint, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(sectionData), // 배열을 직접 전송
+          });
+
+          if (qaResponse.ok) {
+            console.log("Q&A 저장 성공");
+
+            // artist_interview 필드도 업데이트 (선택사항)
+            const interviewUpdateResponse = await fetch(
+              `${backEndUrl}/api/profile/about`,
+              {
+                method: "PUT",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  artist_interview: JSON.stringify(qaData),
+                }),
+              }
+            );
+
+            if (interviewUpdateResponse.ok) {
+              console.log("artist_interview 필드도 업데이트 완료");
+            }
+
+            // 성공 처리
+            setSectionChanges((prev) => ({
+              ...prev,
+              interview: false,
+            }));
+
+            const hasOtherChanges = Object.entries(sectionChanges).some(
+              ([key, value]) => key !== "interview" && value
+            );
+
+            setHasChanges(hasOtherChanges);
+            alert("인터뷰 Q&A 저장 완료!");
+          } else {
+            const errorText = await qaResponse.text();
+            console.error("Q&A 저장 실패:", errorText);
+            throw new Error("Q&A 저장 실패");
+          }
+
+          setSaving(false);
+          return; // switch문 빠져나가지 않고 바로 리턴
 
         case "exhibitions":
           endpoint = `${backEndUrl}/api/profile/exhibitions`;
@@ -402,6 +467,20 @@ const ProfileManagement: React.FC = () => {
           ...prev,
           [sectionId]: false,
         }));
+
+        if (sectionId === "interview") {
+          // User 테이블의 artist_interview 필드 업데이트
+          await fetch(`${backEndUrl}/api/profile/about`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              artist_interview: JSON.stringify(profileData.qa_list || []),
+            }),
+          });
+        }
 
         // 다른 섹션에 변경사항이 있는지 확인
         const hasOtherChanges = Object.entries(sectionChanges).some(

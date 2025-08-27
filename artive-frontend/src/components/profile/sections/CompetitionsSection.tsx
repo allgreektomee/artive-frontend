@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { SectionProps } from "../../../utils/types";
 
 interface Award {
@@ -7,9 +8,7 @@ interface Award {
   organization_ko: string;
   year: string;
   award_type: string;
-  description_ko: string;
-  image_url?: string;
-  video_url?: string;
+  blog_post_url?: string; // 블로그 URL로 변경
   is_featured: boolean;
 }
 
@@ -21,91 +20,33 @@ const CompetitionsSection: React.FC<SectionProps> = ({
   saving,
   hasChanges,
 }) => {
+  const router = useRouter();
   const [awards, setAwards] = useState<Award[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [tempEditData, setTempEditData] = useState<{ [key: number]: Award }>(
     {}
   );
-  const [uploadingImage, setUploadingImage] = useState<number | null>(null);
 
   const backEndUrl =
     process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+  const userSlug = data?.slug || "";
 
   useEffect(() => {
     if (data?.awards && Array.isArray(data.awards)) {
-      console.log("로드된 수상 데이터:", data.awards);
       setAwards(data.awards);
     } else {
       setAwards([]);
     }
   }, [data?.awards]);
 
-  const handleImageUpload = async (awardId: number, file: File) => {
-    if (file.size > 5 * 1024 * 1024) {
-      alert("파일 크기는 5MB 이하여야 합니다.");
-      return;
-    }
-
-    setUploadingImage(awardId);
-
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${backEndUrl}/api/upload/image`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("업로드된 이미지 URL:", data.url);
-
-        // 편집 중인 경우 tempEditData 직접 업데이트
-        if (editingId === awardId) {
-          setTempEditData((prev) => ({
-            ...prev,
-            [awardId]: {
-              ...(prev[awardId] || awards.find((a) => a.id === awardId)),
-              image_url: data.url,
-            },
-          }));
-        } else {
-          updateAward(awardId, "image_url", data.url);
-        }
-      } else {
-        alert("이미지 업로드에 실패했습니다.");
-      }
-    } catch (error) {
-      console.error("Upload error:", error);
-      alert("이미지 업로드 중 오류가 발생했습니다.");
-    } finally {
-      setUploadingImage(null);
-    }
-  };
-
-  const extractYoutubeId = (url: string) => {
-    if (!url) return null;
-    const match = url.match(
-      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/
-    );
-    return match ? match[1] : null;
-  };
-
-  const addAward = async () => {
+  const addAward = () => {
     const newAward: Award = {
       id: Date.now(),
       title_ko: "",
       organization_ko: "",
       year: new Date().getFullYear().toString(),
       award_type: "",
-      description_ko: "",
-      image_url: "",
-      video_url: "",
+      blog_post_url: "",
       is_featured: false,
     };
 
@@ -117,7 +58,6 @@ const CompetitionsSection: React.FC<SectionProps> = ({
 
   const updateAward = (id: number, field: string, value: any) => {
     if (editingId === id) {
-      // tempEditData 업데이트 개선
       const currentData =
         tempEditData[id] || awards.find((a) => a.id === id) || ({} as Award);
       setTempEditData((prev) => ({
@@ -171,29 +111,24 @@ const CompetitionsSection: React.FC<SectionProps> = ({
     }
   };
 
+  // finishEditing 함수 수정 부분
   const finishEditing = async () => {
     if (editingId && tempEditData[editingId]) {
       try {
         const token = localStorage.getItem("token");
         const awardData = tempEditData[editingId];
 
-        console.log("저장할 수상 데이터:", awardData);
+        const requestBody = {
+          title_ko: awardData.title_ko,
+          organization_ko: awardData.organization_ko,
+          year: awardData.year,
+          award_type: awardData.award_type,
+          blog_post_url: awardData.blog_post_url || null,
+          is_featured: awardData.is_featured,
+        };
 
         // 새로 추가하는 경우
         if (awardData.id >= Date.now() - 1000000000) {
-          const requestBody = {
-            title_ko: awardData.title_ko,
-            organization_ko: awardData.organization_ko,
-            year: awardData.year,
-            award_type: awardData.award_type,
-            description_ko: awardData.description_ko,
-            image_url: awardData.image_url || null, // null 처리
-            video_url: awardData.video_url || null, // null 처리
-            is_featured: awardData.is_featured,
-          };
-
-          console.log("POST 요청 body:", requestBody);
-
           const response = await fetch(`${backEndUrl}/api/profile/awards`, {
             method: "POST",
             headers: {
@@ -205,41 +140,21 @@ const CompetitionsSection: React.FC<SectionProps> = ({
 
           if (response.ok) {
             const result = await response.json();
-            console.log("서버 응답:", result);
             const newAward = result.award || result;
 
-            // URL 유지하면서 ID 교체
             const updatedAwards = awards.map((award) =>
-              award.id === editingId
-                ? {
-                    ...newAward,
-                    image_url: awardData.image_url || newAward.image_url,
-                    video_url: awardData.video_url || newAward.video_url,
-                  }
-                : award
+              award.id === editingId ? newAward : award
             );
             setAwards(updatedAwards);
             if (onChange) {
               onChange("awards", updatedAwards);
             }
           } else {
-            throw new Error("저장 실패");
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "저장 실패");
           }
         } else {
           // 기존 수상 수정
-          const requestBody = {
-            title_ko: awardData.title_ko,
-            organization_ko: awardData.organization_ko,
-            year: awardData.year,
-            award_type: awardData.award_type,
-            description_ko: awardData.description_ko,
-            image_url: awardData.image_url || null,
-            video_url: awardData.video_url || null,
-            is_featured: awardData.is_featured,
-          };
-
-          console.log("PUT 요청 body:", requestBody);
-
           const response = await fetch(
             `${backEndUrl}/api/profile/awards/${awardData.id}`,
             {
@@ -253,15 +168,19 @@ const CompetitionsSection: React.FC<SectionProps> = ({
           );
 
           if (response.ok) {
+            const result = await response.json();
+            const updatedAward = result.award || awardData; // 서버 응답 사용, 없으면 로컬 데이터 사용
+
             const updatedAwards = awards.map((award) =>
-              award.id === editingId ? tempEditData[editingId] : award
+              award.id === editingId ? updatedAward : award
             );
             setAwards(updatedAwards);
             if (onChange) {
               onChange("awards", updatedAwards);
             }
           } else {
-            throw new Error("수정 실패");
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "수정 실패");
           }
         }
 
@@ -269,7 +188,7 @@ const CompetitionsSection: React.FC<SectionProps> = ({
         setTempEditData({});
       } catch (error) {
         console.error("Save error:", error);
-        alert("저장 중 오류가 발생했습니다.");
+        alert(`저장 중 오류가 발생했습니다: ${error.message}`);
       }
     }
   };
@@ -282,12 +201,26 @@ const CompetitionsSection: React.FC<SectionProps> = ({
     return award ? award[field] : "";
   };
 
-  // 편집 시작 시 데이터 복사 개선
   const startEditing = (award: Award) => {
     setEditingId(award.id);
     setTempEditData({
       [award.id]: { ...award },
     });
+  };
+
+  const createAwardPost = (award: Award) => {
+    // 수상 정보를 쿼리 파라미터로 전달하여 블로그 새글 페이지로 이동
+    const queryParams = new URLSearchParams({
+      type: "AWARD",
+      title: `[수상] ${award.title_ko}`,
+      award_id: award.id.toString(),
+      award_name: award.title_ko,
+      award_org: award.organization_ko,
+      award_year: award.year,
+      award_type: award.award_type,
+    });
+
+    router.push(`/blog/${userSlug}/new?${queryParams.toString()}`);
   };
 
   // 유형별 배지 색상 결정 함수
@@ -325,7 +258,7 @@ const CompetitionsSection: React.FC<SectionProps> = ({
         <div>
           <h3 className="text-lg font-semibold">수상 및 선정 이력</h3>
           <p className="text-sm text-gray-500">
-            수상, 공모전, 레지던시, 지원사업 선정 등을 관리하세요
+            기본 정보만 입력하고, 상세 내용은 블로그로 작성하세요
           </p>
         </div>
         <button
@@ -345,7 +278,7 @@ const CompetitionsSection: React.FC<SectionProps> = ({
               d="M12 4v16m8-8H4"
             />
           </svg>
-          <span>수상 추가</span>
+          <span>추가</span>
         </button>
       </div>
 
@@ -440,184 +373,33 @@ const CompetitionsSection: React.FC<SectionProps> = ({
                         onChange={(e) =>
                           updateAward(award.id, "award_type", e.target.value)
                         }
-                        placeholder="예: 대상, 최우수상, 우수상, 입상, 선정, 레지던시"
+                        placeholder="예: 대상, 최우수상, 우수상, 입상, 선정"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        블로그 URL (선택)
+                      </label>
+                      <input
+                        type="url"
+                        value={
+                          (getCurrentValue(
+                            award.id,
+                            "blog_post_url"
+                          ) as string) || ""
+                        }
+                        onChange={(e) =>
+                          updateAward(award.id, "blog_post_url", e.target.value)
+                        }
+                        placeholder="https://blog.example.com/award-review"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                       <p className="text-xs text-gray-500 mt-1">
-                        💡 수상 등급을 자유롭게 입력하세요 (대상, 금상, 은상,
-                        동상, 우수상, 장려상, 입상 등)
+                        수상 소감이나 상세 내용을 작성한 블로그 링크
                       </p>
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      설명
-                    </label>
-                    <textarea
-                      value={
-                        (getCurrentValue(
-                          award.id,
-                          "description_ko"
-                        ) as string) || ""
-                      }
-                      onChange={(e) =>
-                        updateAward(award.id, "description_ko", e.target.value)
-                      }
-                      placeholder="수상 내용이나 선정 이유 등을 간단히 설명하세요"
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      공모전 포스터 및 증서
-                    </label>
-                    {getCurrentValue(award.id, "image_url") ? (
-                      <div className="relative group w-full">
-                        <img
-                          src={getCurrentValue(award.id, "image_url") as string}
-                          alt="수상 이미지"
-                          className="w-full h-auto rounded-lg border border-gray-200"
-                        />
-                        <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() =>
-                              updateAward(award.id, "image_url", "")
-                            }
-                            className="p-2 bg-white rounded-lg shadow-lg hover:bg-gray-100 transition-colors"
-                          >
-                            <svg
-                              className="w-4 h-4 text-gray-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                          </button>
-                          <label
-                            htmlFor={`award-image-upload-${award.id}`}
-                            className="p-2 bg-white rounded-lg shadow-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                          >
-                            <svg
-                              className="w-4 h-4 text-gray-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                              />
-                            </svg>
-                          </label>
-                        </div>
-                      </div>
-                    ) : (
-                      <label className="block w-full">
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 cursor-pointer">
-                          {uploadingImage === award.id ? (
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                          ) : (
-                            <>
-                              <svg
-                                className="w-8 h-8 text-gray-400 mx-auto mb-2"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                                />
-                              </svg>
-                              <p className="text-sm text-gray-600">
-                                클릭하여 이미지 업로드
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                JPG, PNG (최대 5MB)
-                              </p>
-                            </>
-                          )}
-                        </div>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          id={`award-image-upload-${award.id}`}
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              handleImageUpload(award.id, file);
-                            }
-                          }}
-                        />
-                      </label>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      관련 영상 (YouTube)
-                    </label>
-                    <input
-                      type="url"
-                      value={
-                        (getCurrentValue(award.id, "video_url") as string) || ""
-                      }
-                      onChange={(e) =>
-                        updateAward(award.id, "video_url", e.target.value)
-                      }
-                      placeholder="https://youtube.com/watch?v=..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                    {getCurrentValue(award.id, "video_url") &&
-                      extractYoutubeId(
-                        getCurrentValue(award.id, "video_url") as string
-                      ) && (
-                        <div className="mt-2 aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                          <iframe
-                            src={`https://www.youtube.com/embed/${extractYoutubeId(
-                              getCurrentValue(award.id, "video_url") as string
-                            )}`}
-                            className="w-full h-full"
-                            frameBorder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                          />
-                        </div>
-                      )}
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id={`featured-${award.id}`}
-                      checked={
-                        getCurrentValue(award.id, "is_featured") as boolean
-                      }
-                      onChange={(e) =>
-                        updateAward(award.id, "is_featured", e.target.checked)
-                      }
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <label
-                      htmlFor={`featured-${award.id}`}
-                      className="text-sm text-gray-700"
-                    >
-                      주요 수상으로 표시
-                    </label>
                   </div>
 
                   <div className="flex justify-end space-x-2">
@@ -626,6 +408,15 @@ const CompetitionsSection: React.FC<SectionProps> = ({
                       className="px-4 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
                     >
                       삭제
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingId(null);
+                        setTempEditData({});
+                      }}
+                      className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      취소
                     </button>
                     <button
                       onClick={finishEditing}
@@ -642,11 +433,6 @@ const CompetitionsSection: React.FC<SectionProps> = ({
                       <h4 className="text-lg font-semibold text-gray-900">
                         {award.title_ko || "제목 없음"}
                       </h4>
-                      {award.is_featured && (
-                        <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
-                          주요 수상
-                        </span>
-                      )}
                       {award.award_type && (
                         <span
                           className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeBadgeColor(
@@ -695,37 +481,52 @@ const CompetitionsSection: React.FC<SectionProps> = ({
                         <span>{award.year}년</span>
                       </p>
 
-                      {award.description_ko && (
-                        <p className="text-gray-700 mt-2">
-                          {award.description_ko}
-                        </p>
-                      )}
-
-                      {award.image_url && (
-                        <div className="mt-3">
-                          <img
-                            src={award.image_url}
-                            alt="수상 이미지"
-                            className="w-full h-auto rounded-lg border border-gray-200"
-                          />
-                        </div>
-                      )}
-
-                      {award.video_url && (
-                        <div className="flex items-center space-x-2 mt-2">
-                          <svg
-                            className="w-4 h-4 text-red-600"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
+                      {/* 블로그 연동 부분 */}
+                      <div className="mt-3 pt-3 border-t border-gray-100">
+                        {award.blog_post_url ? (
+                          <a
+                            href={award.blog_post_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
                           >
-                            <path d="M23 7l-7 5 7 5V7z" />
-                            <rect x="1" y="5" width="15" height="14" rx="2" />
-                          </svg>
-                          <span className="text-sm text-gray-600">
-                            영상 포함
-                          </span>
-                        </div>
-                      )}
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                              />
+                            </svg>
+                            <span>수상 상세보기</span>
+                          </a>
+                        ) : (
+                          <button
+                            onClick={() => createAwardPost(award)}
+                            className="inline-flex items-center space-x-1 text-gray-500 hover:text-blue-600 text-sm"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 4v16m8-8H4"
+                              />
+                            </svg>
+                            <span>상세 리뷰 작성</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -772,13 +573,9 @@ const CompetitionsSection: React.FC<SectionProps> = ({
           <div className="text-sm text-amber-800">
             <p className="font-medium mb-1">💡 수상 관리 팁</p>
             <ul className="space-y-1 text-amber-700">
-              <li>• 최신 수상부터 시간순으로 정리하세요</li>
-              <li>
-                • 수상 등급을 구체적으로 명시하세요 (대상, 우수상, 입상 등)
-              </li>
-              <li>• 중요한 수상은 "주요 수상" 옵션을 체크하여 강조하세요</li>
-              <li>• 레지던시나 지원사업도 이력에 포함시킬 수 있습니다</li>
-              <li>• 수상 내용을 구체적으로 작성하면 신뢰도가 높아집니다</li>
+              <li>• 기본 정보만 간단히 입력하세요</li>
+              <li>• 수상 소감이나 상세 내용은 블로그로 작성할 수 있습니다</li>
+              <li>• 상세 리뷰(블로그) 작성 후 공유 링크를 추가하세요</li>
             </ul>
           </div>
         </div>

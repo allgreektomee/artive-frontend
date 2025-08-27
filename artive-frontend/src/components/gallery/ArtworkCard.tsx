@@ -1,5 +1,5 @@
 // components/gallery/ArtworkCard.tsx
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 
 interface Artwork {
@@ -20,6 +20,8 @@ interface ArtworkCardProps {
 }
 
 const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork }) => {
+  const [imageError, setImageError] = useState(false);
+
   // 이미지 URL 결정 로직
   const getDisplayImage = (artwork: Artwork) => {
     // work_in_progress 상태이고 work_in_progress_url이 있으면 그것을 사용
@@ -27,29 +29,30 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork }) => {
       return artwork.work_in_progress_url;
     }
 
-    // 그 외의 경우 thumbnail_url 사용
-    return (
-      artwork.thumbnail_url ||
-      "https://via.placeholder.com/400x600/f0f0f0/999999?text=No+Image"
-    );
+    // 그 외의 경우 thumbnail_url 사용 또는 placeholder
+    return artwork.thumbnail_url || "";
+  };
+
+  const handleImageError = () => {
+    // 이미지 로드 실패 시 에러 상태만 설정
+    setImageError(true);
   };
 
   return (
     <Link href={`/artworks/${artwork.id}`} className="block">
       <div className="relative bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 break-inside-avoid mb-4">
-        {/* 이미지 컨테이너 - 동적 비율 */}
-        <div className="relative w-full overflow-hidden bg-gray-100">
-          <img
-            src={getDisplayImage(artwork)}
-            alt={artwork.title}
-            className="w-full h-auto object-cover transition-transform duration-300"
-            onError={(e) => {
-              console.error("이미지 로딩 실패:", artwork.title);
-              e.currentTarget.src =
-                "https://via.placeholder.com/400x600/f0f0f0/999999?text=Image+Not+Found";
-            }}
-          />
-        </div>
+        {/* 이미지 컨테이너 - 에러 시 숨김 처리 */}
+        {!imageError && getDisplayImage(artwork) && (
+          <div className="relative w-full overflow-hidden bg-gray-100">
+            <img
+              src={getDisplayImage(artwork)}
+              alt={artwork.title}
+              className="w-full h-auto object-cover transition-transform duration-300"
+              onError={handleImageError}
+              loading="lazy"
+            />
+          </div>
+        )}
 
         {/* 카드 하단 정보 */}
         <div className="p-3">

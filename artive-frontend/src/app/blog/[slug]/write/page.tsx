@@ -57,6 +57,31 @@ export default function BlogWritePage() {
   const backendUrl =
     process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
+  const [hasStudioPost, setHasStudioPost] = useState(false);
+
+  useEffect(() => {
+    checkExistingStudioPost();
+  }, []);
+
+  const checkExistingStudioPost = async () => {
+    try {
+      const params = new URLSearchParams({
+        user: userSlug,
+        post_type: "STUDIO",
+        is_published: "true",
+        limit: "1",
+      });
+
+      const response = await fetch(`${backendUrl}/api/blog/posts?${params}`);
+      if (response.ok) {
+        const data = await response.json();
+        setHasStudioPost(data.posts && data.posts.length > 0);
+      }
+    } catch (error) {
+      console.error("스튜디오 포스트 확인 실패:", error);
+    }
+  };
+
   // ✅ 자동 저장 기능 (5분마다)
   useEffect(() => {
     const autoSave = setInterval(() => {
@@ -107,7 +132,15 @@ export default function BlogWritePage() {
         if (confirmLoad) {
           setTitle(draft.title || "");
           setContent(draft.content || "");
-          setPostType(draft.postType || "BLOG");
+          // 스튜디오 타입이 이미 작성되어 있으면 BLOG로 변경
+          if (draft.postType === "STUDIO" && hasStudioPost) {
+            setPostType("BLOG");
+            alert(
+              "스튜디오 포스트는 이미 작성되어 있어 블로그 타입으로 변경되었습니다."
+            );
+          } else {
+            setPostType(draft.postType || "BLOG");
+          }
           if (draft.tags) {
             setTagList(
               draft.tags
@@ -126,7 +159,7 @@ export default function BlogWritePage() {
     if (isLoading) {
       loadDraft();
     }
-  }, [userSlug, isLoading]);
+  }, [userSlug, isLoading, hasStudioPost]);
 
   // 권한 체크
   useEffect(() => {
@@ -199,6 +232,12 @@ export default function BlogWritePage() {
       return;
     }
 
+    // 스튜디오 타입 체크
+    if (postType === "STUDIO" && hasStudioPost) {
+      alert("스튜디오 포스트는 1개만 작성할 수 있습니다.");
+      return;
+    }
+
     setIsSaving(true);
     const token = localStorage.getItem("token");
 
@@ -256,6 +295,12 @@ export default function BlogWritePage() {
       return;
     }
 
+    // 스튜디오 타입 체크
+    if (postType === "STUDIO" && hasStudioPost) {
+      alert("스튜디오 포스트는 1개만 작성할 수 있습니다.");
+      return;
+    }
+
     setIsPublishing(true);
     const token = localStorage.getItem("token");
 
@@ -300,6 +345,10 @@ export default function BlogWritePage() {
         const result = await response.json();
         // ✅ 발행 성공 시 로컬 draft 삭제
         localStorage.removeItem(`draft_${userSlug}`);
+        // 스튜디오 포스트 작성 시 상태 업데이트
+        if (postType === "STUDIO") {
+          setHasStudioPost(true);
+        }
         alert("발행이 완료되었습니다!");
         router.push(`/blog/${userSlug}/${result.id}`);
       } else {
@@ -323,6 +372,7 @@ export default function BlogWritePage() {
       NEWS: "bg-green-100 text-green-800",
       EXHIBITION: "bg-purple-100 text-purple-800",
       AWARD: "bg-yellow-100 text-yellow-800",
+      STUDIO: "bg-indigo-100 text-indigo-800",
     };
     return colors[type as keyof typeof colors] || "bg-gray-100 text-gray-800";
   };
@@ -518,22 +568,43 @@ export default function BlogWritePage() {
                   { value: "NEWS", label: "뉴스", icon: "📰" },
                   { value: "EXHIBITION", label: "전시", icon: "🎨" },
                   { value: "AWARD", label: "수상", icon: "🏆" },
+                  {
+                    value: "STUDIO",
+                    label: "스튜디오",
+                    icon: "🎬",
+                    disabled: hasStudioPost,
+                  },
                 ].map((type) => (
                   <button
                     key={type.value}
-                    onClick={() => setPostType(type.value)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all transform hover:scale-105 ${
-                      postType === type.value
+                    onClick={() => {
+                      if (type.disabled) {
+                        alert("스튜디오 포스트는 1개만 작성할 수 있습니다.");
+                        return;
+                      }
+                      setPostType(type.value);
+                    }}
+                    disabled={type.disabled}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all transform ${
+                      type.disabled
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
+                        : postType === type.value
                         ? getTypeColor(type.value) +
-                          " ring-2 ring-offset-2 ring-blue-500"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                          " ring-2 ring-offset-2 ring-blue-500 hover:scale-105"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:scale-105"
                     }`}
                   >
                     <span className="mr-1">{type.icon}</span>
                     {type.label}
+                    {type.disabled && " (작성완료)"}
                   </button>
                 ))}
               </div>
+              {hasStudioPost && (
+                <p className="text-xs text-gray-500 mt-2">
+                  * 스튜디오 포스트는 사용자당 1개만 작성 가능합니다.
+                </p>
+              )}
             </div>
 
             {/* 태그 입력 */}
@@ -580,51 +651,23 @@ export default function BlogWritePage() {
           <div className="bg-white rounded-xl max-w-md w-full p-6">
             <h3 className="text-lg font-bold mb-4">발행 설정</h3>
 
-            {/* 공개 설정 */}
-            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isPublic}
-                  onChange={(e) => setIsPublic(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                />
-                <div className="flex items-center gap-2">
-                  {isPublic ? (
-                    <Eye className="w-4 h-4 text-green-600" />
-                  ) : (
-                    <EyeOff className="w-4 h-4 text-gray-600" />
-                  )}
-                  <span className="font-medium">공개 포스트</span>
-                </div>
-              </label>
-              <p className="text-sm text-gray-600 ml-7 mt-1">
-                {isPublic
-                  ? "✅ 모든 사용자가 볼 수 있습니다"
-                  : "🔒 로그인한 사용자만 볼 수 있습니다"}
-              </p>
-            </div>
-
-            {/* 핀 고정 (공지사항만) */}
-            {postType === "NOTICE" && (
-              <div className="mb-6 p-3 bg-gray-50 rounded-lg">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isPinned}
-                    onChange={(e) => setIsPinned(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                  />
-                  <div className="flex items-center gap-2">
-                    <Pin className="w-4 h-4 text-orange-600" />
-                    <span className="font-medium">상단 고정</span>
-                  </div>
-                </label>
-                <p className="text-sm text-gray-600 ml-7 mt-1">
-                  공지사항을 목록 최상단에 고정합니다
+            {/* 스튜디오 타입 경고 */}
+            {postType === "STUDIO" && hasStudioPost && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-600">
+                  스튜디오 포스트는 이미 작성되어 있습니다.
                 </p>
               </div>
             )}
+
+            {/* 공개 설정 */}
+            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <p className="text-sm text-gray-600 ml-7 mt-1">
+                  모든 사용자가 볼 수 있습니다
+                </p>
+              </label>
+            </div>
 
             {/* 버튼 */}
             <div className="flex gap-3">
@@ -636,7 +679,9 @@ export default function BlogWritePage() {
               </button>
               <button
                 onClick={handlePublish}
-                disabled={isPublishing}
+                disabled={
+                  isPublishing || (postType === "STUDIO" && hasStudioPost)
+                }
                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isPublishing && <Loader2 className="w-4 h-4 animate-spin" />}
