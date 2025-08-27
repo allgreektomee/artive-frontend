@@ -18,6 +18,17 @@ export interface User {
   created_at: string;
   updated_at: string;
   last_login?: string;
+
+  artist_statement?: string;
+  about_text?: string;
+  about_image?: string;
+  educations?: any[];
+  solo_exhibitions?: any[];
+  group_exhibitions?: any[];
+  awards?: any[];
+  collections?: any[];
+  press?: any[];
+  publications?: any[];
 }
 
 // Q&A 타입
