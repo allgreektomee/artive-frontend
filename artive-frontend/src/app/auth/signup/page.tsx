@@ -21,7 +21,7 @@ export default function SignupPage() {
     name: "",
     slug: "",
     bio: "",
-    role: "artist" as UserRole, // role 추가
+    role: "artist" as UserRole,
   });
 
   const [errors, setErrors] = useState<string | null>(null);
@@ -31,6 +31,7 @@ export default function SignupPage() {
   const [slugStatus, setSlugStatus] = useState<
     "idle" | "checking" | "available" | "duplicate"
   >("idle");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -90,7 +91,7 @@ export default function SignupPage() {
 
   const validate = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const slugRegex = /^[a-z0-9-_]+$/; // 하이픈, 언더스코어 추가
+    const slugRegex = /^[a-z0-9-_]+$/;
 
     if (!emailRegex.test(form.email)) return "유효한 이메일 형식을 입력하세요.";
     if (form.password.length < 8)
@@ -105,6 +106,7 @@ export default function SignupPage() {
       return "갤러리 주소는 최소 3자 이상이어야 합니다.";
     if (emailStatus !== "available") return "이메일 중복확인을 해주세요.";
     if (slugStatus !== "available") return "갤러리 주소 중복확인을 해주세요.";
+    if (!agreedToTerms) return "개인정보처리방침에 동의해주세요.";
     return null;
   };
 
@@ -136,7 +138,7 @@ export default function SignupPage() {
   };
 
   const checkSlugAvailability = async (slugValue: string) => {
-    const slugRegex = /^[a-z0-9-_]+$/; // 하이픈, 언더스코어 추가
+    const slugRegex = /^[a-z0-9-_]+$/;
     if (!slugValue || slugValue.length < 3) {
       alert("갤러리 주소는 3자 이상이어야 합니다.");
       return;
@@ -159,12 +161,10 @@ export default function SignupPage() {
       });
 
       const data = await response.json();
-      console.log("받은 데이터:", data); // 디버깅
+      console.log("받은 데이터:", data);
 
-      // ✅ 상태 업데이트 수정
       if (data.available === true) {
         setSlugStatus("available");
-        // alert 제거 (UI로 충분함)
       } else {
         setSlugStatus("duplicate");
       }
@@ -186,17 +186,16 @@ export default function SignupPage() {
     setErrors(null);
     setIsLoading(true);
 
-    // 전송할 데이터 확인
     const requestData = {
       email: form.email.trim(),
       password: form.password,
       name: form.name.trim(),
       slug: form.slug.trim(),
       bio: form.bio.trim() || null,
-      role: form.role, // "artist", "academy", "gallery" 중 하나
+      role: form.role,
     };
 
-    console.log("전송 데이터:", requestData); // 디버깅용
+    console.log("전송 데이터:", requestData);
 
     try {
       const res = await fetch(`${backEndUrl}/api/auth/register`, {
@@ -216,8 +215,8 @@ export default function SignupPage() {
       });
 
       const data = await res.json();
-      console.log("응답 상태:", res.status); // 디버깅용
-      console.log("응답 데이터:", data); // 디버깅용
+      console.log("응답 상태:", res.status);
+      console.log("응답 데이터:", data);
 
       if (res.ok) {
         alert(
@@ -225,9 +224,7 @@ export default function SignupPage() {
         );
         router.push("/auth/login");
       } else {
-        // 422 에러 처리 - FastAPI validation error
         if (res.status === 422 && data.detail) {
-          // detail이 배열인 경우 (validation errors)
           if (data.detail && Array.isArray(data.detail)) {
             const firstError = data.detail[0];
             const field =
@@ -235,14 +232,11 @@ export default function SignupPage() {
             const message = firstError.msg || "유효하지 않은 값입니다";
             setErrors(`${field}: ${message}`);
           } else if (typeof data.detail === "string") {
-            // detail이 문자열인 경우
             setErrors(data.detail);
           } else {
-            // detail이 객체인 경우
             setErrors(JSON.stringify(data.detail));
           }
         } else {
-          // 기타 에러
           setErrors(data.detail || data.message || "회원가입에 실패했습니다.");
         }
       }
@@ -284,6 +278,7 @@ export default function SignupPage() {
             className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:border-blue-500"
             required
             disabled={isLoading}
+            autoComplete="email"
           />
 
           <div className="flex justify-between items-center mt-3">
@@ -331,6 +326,7 @@ export default function SignupPage() {
             className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:border-blue-500 mb-4"
             required
             disabled={isLoading}
+            autoComplete="name"
           />
 
           {/* 갤러리 주소 안내 */}
@@ -353,6 +349,7 @@ export default function SignupPage() {
                 className="flex-1 border border-gray-300 p-3 rounded-r-lg focus:outline-none focus:border-blue-500"
                 required
                 disabled={isLoading}
+                autoComplete="username"
               />
             </div>
 
@@ -418,6 +415,7 @@ export default function SignupPage() {
               className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:border-blue-500"
               required
               disabled={isLoading}
+              autoComplete="new-password"
             />
             <input
               type="password"
@@ -428,6 +426,7 @@ export default function SignupPage() {
               className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:border-blue-500 bg-white"
               required
               disabled={isLoading}
+              autoComplete="new-password"
             />
           </div>
         </div>
@@ -473,31 +472,45 @@ export default function SignupPage() {
             ))}
           </div>
         </div>
-        {/* 개인정보 처리방침 동의 */}
-        <div className="flex items-center space-x-2 text-sm">
-          <input
-            type="checkbox"
-            id="agree"
-            required
-            className="w-4 h-4"
-            disabled={isLoading}
-          />
-          <label htmlFor="agree" className="text-gray-700">
-            <a
-              href="https://www.artivefor.me/terms"
-              target="_blank"
-              className="text-blue-600 underline hover:text-blue-800"
+
+        {/* === 개인정보 처리방침 동의 === */}
+        <div className="bg-white border border-gray-300 p-4 rounded-lg">
+          <div className="flex items-center space-x-3">
+            <input
+              type="checkbox"
+              id="agree"
+              checked={agreedToTerms}
+              onChange={(e) => setAgreedToTerms(e.target.checked)}
+              required
+              className="h-5 w-5 text-blue-600 bg-white border-2 border-gray-400 rounded focus:ring-blue-500 focus:ring-2"
+              style={{
+                accentColor: "#3b82f6",
+                minWidth: "20px",
+                minHeight: "20px",
+              }}
+              disabled={isLoading}
+            />
+            <label
+              htmlFor="agree"
+              className="text-sm text-gray-700 cursor-pointer flex-1"
             >
-              개인정보처리방침
-            </a>
-            에 동의합니다.
-          </label>
+              <a
+                href="https://www.artivefor.me/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline hover:text-blue-800"
+              >
+                개인정보처리방침
+              </a>
+              에 동의합니다.
+            </label>
+          </div>
         </div>
 
         <button
           type="submit"
           className="w-full bg-black text-white py-3 rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-          disabled={isLoading}
+          disabled={isLoading || !agreedToTerms}
         >
           {isLoading ? "가입 중..." : "가입하기"}
         </button>
@@ -518,6 +531,7 @@ export default function SignupPage() {
           <p>이름: 테스트 사용자</p>
           <p>갤러리 주소: testuser</p>
           <p>회원 유형: {form.role}</p>
+          <p>동의 상태: {agreedToTerms ? "동의함" : "동의안함"}</p>
           <p className="text-gray-600 mt-1">
             API 서버: {backEndUrl || "환경변수 설정 필요"}
           </p>
