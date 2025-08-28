@@ -59,6 +59,24 @@ export default function SignupPage() {
     setMounted(true);
   }, []);
 
+  // 가입하기 버튼 활성화 조건 체크
+  const isFormValid = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const slugRegex = /^[a-z0-9-_]+$/;
+
+    return (
+      emailRegex.test(form.email) &&
+      form.password.length >= 8 &&
+      form.password === form.confirmPassword &&
+      form.name.length >= 2 &&
+      form.slug.length >= 3 &&
+      slugRegex.test(form.slug) &&
+      emailStatus === "available" &&
+      slugStatus === "available" &&
+      agreedToTerms
+    );
+  };
+
   if (!mounted) return null;
 
   const handleChange = (
@@ -476,19 +494,13 @@ export default function SignupPage() {
 
         {/* === 개인정보 처리방침 동의 === */}
         <div className="bg-white border border-gray-300 p-4 rounded-lg">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-start space-x-3">
             <input
               type="checkbox"
               id="agree"
               checked={agreedToTerms}
               onChange={(e) => setAgreedToTerms(e.target.checked)}
-              required
-              className="h-5 w-5 text-blue-600 bg-white border-2 border-gray-400 rounded focus:ring-blue-500 focus:ring-2"
-              style={{
-                accentColor: "#3b82f6",
-                minWidth: "20px",
-                minHeight: "20px",
-              }}
+              className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               disabled={isLoading}
             />
             <label
@@ -500,6 +512,7 @@ export default function SignupPage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 underline hover:text-blue-800"
+                onClick={(e) => e.stopPropagation()}
               >
                 개인정보처리방침
               </a>
@@ -511,7 +524,7 @@ export default function SignupPage() {
         <button
           type="submit"
           className="w-full bg-black text-white py-3 rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-          disabled={isLoading || !agreedToTerms}
+          disabled={isLoading || !isFormValid()}
         >
           {isLoading ? "가입 중..." : "가입하기"}
         </button>
@@ -528,11 +541,19 @@ export default function SignupPage() {
       {process.env.NODE_ENV === "development" && (
         <div className="mt-8 p-4 bg-gray-100 rounded text-xs">
           <p className="font-semibold mb-2">개발 테스트용 예시:</p>
-          <p>이메일: test@example.com</p>
-          <p>이름: 테스트 사용자</p>
-          <p>갤러리 주소: testuser</p>
+          <p>이메일: test@example.com (중복확인: {emailStatus})</p>
+          <p>이름: 테스트 사용자 ({form.name.length}자)</p>
+          <p>갤러리 주소: testuser (중복확인: {slugStatus})</p>
+          <p>
+            비밀번호 일치:{" "}
+            {form.password === form.confirmPassword ? "일치" : "불일치"}
+          </p>
+          <p>비밀번호 길이: {form.password.length}자</p>
           <p>회원 유형: {form.role}</p>
           <p>동의 상태: {agreedToTerms ? "동의함" : "동의안함"}</p>
+          <p className="font-semibold mt-2">
+            가입버튼 활성화: {isFormValid() ? "✅" : "❌"}
+          </p>
           <p className="text-gray-600 mt-1">
             API 서버: {backEndUrl || "환경변수 설정 필요"}
           </p>
