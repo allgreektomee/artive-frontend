@@ -200,7 +200,7 @@ export default function LoginPage() {
             <div className="text-sm">
               <Link
                 href="/auth/forgot-password"
-                className="font-medium text-gray-600 gray:text-indigo-500"
+                className="font-medium text-gray-600 hover:text-indigo-500"
               >
                 비밀번호를 잊으셨나요?
               </Link>
