@@ -64,6 +64,7 @@ export default function LoginPage() {
 
     setError("");
     setLoading(true);
+    setShowResendButton(false);
 
     try {
       const res = await fetch(`${backEndUrl}/api/auth/login`, {
@@ -76,29 +77,30 @@ export default function LoginPage() {
         body: JSON.stringify(form),
       });
 
+      // 403 상태 코드를 먼저 체크 (이메일 미인증)
+      if (res.status === 403) {
+        const errorData = await res
+          .json()
+          .catch(() => ({ detail: "이메일 인증이 필요합니다" }));
+        setError(
+          errorData.detail ||
+            "이메일 인증이 필요합니다. 인증 메일을 확인해주세요."
+        );
+        setShowResendButton(true);
+        return;
+      }
+
       if (res.ok) {
         const data = await res.json();
-
         localStorage.setItem("token", data.access_token);
         localStorage.setItem("user", JSON.stringify(data.user));
-
         router.push(`/${data.user.slug}`);
       } else {
         const errorData = await res
           .json()
           .catch(() => ({ detail: "로그인에 실패했습니다" }));
-
-        // 이메일 인증이 필요한 경우 체크
-        if (
-          errorData.detail &&
-          errorData.detail.includes("이메일 인증이 필요")
-        ) {
-          setError("이메일 인증이 필요합니다. 인증 메일을 확인해주세요.");
-          setShowResendButton(true);
-        } else {
-          setError(errorData.detail || "로그인에 실패했습니다");
-          setShowResendButton(false);
-        }
+        setError(errorData.detail || "로그인에 실패했습니다");
+        setShowResendButton(false);
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -106,6 +108,7 @@ export default function LoginPage() {
       } else {
         setError("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
       }
+      setShowResendButton(false);
     } finally {
       setLoading(false);
     }
@@ -200,7 +203,7 @@ export default function LoginPage() {
             <div className="text-sm">
               <Link
                 href="/auth/forgot-password"
-                className="font-medium text-indigo-600 hover:text-indigo-500"
+                className="font-medium text-gray-600 hover:text-indigo-500"
               >
                 비밀번호를 잊으셨나요?
               </Link>
