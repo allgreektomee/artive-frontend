@@ -76,7 +76,7 @@ export default function Home() {
               </Link>
 
               {/* 둘러보기 링크 */}
-              <div className="pt-1">
+              <div className="pt-3">
                 <a
                   href="https://www.artivefor.me/art"
                   target="_blank"
