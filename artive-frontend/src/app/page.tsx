@@ -66,14 +66,12 @@ export default function Home() {
 
               {/* 둘러보기 링크 */}
               <div className="pt-3">
-                <a
-                  href="https://www.artivefor.me/art"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  href="/art"
                   className="text-sm text-gray-600 hover:text-gray-800 transition-colors underline"
                 >
                   artiveforme 둘러보기 →
-                </a>
+                </Link>
               </div>
             </div>
           </div>
