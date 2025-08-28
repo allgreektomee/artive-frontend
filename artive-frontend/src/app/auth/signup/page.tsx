@@ -500,12 +500,17 @@ export default function SignupPage() {
               id="agree"
               checked={agreedToTerms}
               onChange={(e) => setAgreedToTerms(e.target.checked)}
-              className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              className="mt-1 h-5 w-5 border-2 border-gray-300 rounded text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
+              style={{
+                appearance: "auto",
+                WebkitAppearance: "checkbox",
+                MozAppearance: "checkbox",
+              }}
               disabled={isLoading}
             />
             <label
               htmlFor="agree"
-              className="text-sm text-gray-700 cursor-pointer flex-1"
+              className="text-sm text-gray-700 cursor-pointer flex-1 select-none"
             >
               <a
                 href="https://www.artivefor.me/terms"
