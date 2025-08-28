@@ -13,7 +13,7 @@ export default function Home() {
       </p>
 
       <div className="flex justify-center gap-4">
-        <Link href="/auth/login">
+        <Link href="/login">
           <button className="px-6 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors">
             로그인
           </button>
