@@ -33,15 +33,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* 로그인 버튼 */}
-      <div className="px-6 pb-8">
-        <Link href="/login">
-          <button className="w-full bg-gray-800 text-white py-4 rounded-2xl font-semibold text-lg shadow-lg hover:bg-gray-700 active:scale-95 transition-all duration-200">
-            Artive 작가 로그인
-          </button>
-        </Link>
-      </div>
-
       {/* 안내 카드 */}
       <div className="px-6 pb-8">
         <div className="bg-gray-50 rounded-3xl p-6 border border-gray-200">
@@ -62,7 +53,7 @@ export default function Home() {
                 가능합니다.
               </p>
             </div>
-            <div className="pt-2">
+            <div className="pt-2 space-y-3">
               <a
                 href="https://instagram.com/artiveforme"
                 target="_blank"
@@ -72,6 +63,27 @@ export default function Home() {
                 <span className="text-base">📸</span>
                 Instagram @artiveforme
               </a>
+
+              {/* 로그인 버튼 */}
+              <div className="w-full">
+                <Link href="/login">
+                  <button className="w-full bg-gray-100 border border-gray-300 text-gray-700 py-3 rounded-2xl font-medium text-base hover:bg-gray-200 active:scale-95 transition-all duration-200">
+                    Artive 작가 로그인
+                  </button>
+                </Link>
+              </div>
+
+              {/* 둘러보기 링크 */}
+              <div className="pt-1">
+                <a
+                  href="https://www.artivefor.me/art"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-gray-600 hover:text-gray-800 transition-colors underline"
+                >
+                  artiveforme 둘러보기 →
+                </a>
+              </div>
             </div>
           </div>
         </div>
