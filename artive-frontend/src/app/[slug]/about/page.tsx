@@ -10,7 +10,6 @@ import ArtistInterview from "@/components/gallery/about/ArtistInterview";
 import ExhibitionsRecognition from "@/components/gallery/about/ExhibitionsRecognition";
 import StudioProcess from "@/components/gallery/about/StudioProcess";
 import BottomNavigation from "@/components/gallery/BottomNavigation";
-import AboutHeader from "@/components/gallery/AboutHeader";
 import { FaUser } from "react-icons/fa";
 // 타입 import
 import { User } from "@/components/gallery/types";
@@ -26,26 +25,8 @@ export default function AboutArtistPage() {
   const [isOwner, setIsOwner] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showAboutHeader, setShowAboutHeader] = useState(false);
 
   const currentSlug = pathname?.split("/")[1];
-
-  // 스크롤 기반 헤더 전환 로직
-  useEffect(() => {
-    const handleScroll = () => {
-      // 페이지 상단에서 200px 이상 스크롤했을 때 고정 헤더 표시
-      if (window.scrollY > 200) {
-        setShowAboutHeader(true);
-      } else {
-        setShowAboutHeader(false);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    handleScroll(); // 초기 실행
-
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   // 현재 로그인한 사용자 정보 가져오기
   useEffect(() => {
@@ -185,13 +166,6 @@ export default function AboutArtistPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* 스크롤 기반 고정 헤더 - GalleryHeader 스타일 */}
-      <AboutHeader
-        showAboutHeader={showAboutHeader}
-        galleryUser={galleryUser}
-        currentSlug={currentSlug}
-        isOwner={isOwner}
-        onProfileClick={handleProfileClick}
-      />
 
       {/* 기본 헤더 - 처음에 보이는 헤더 */}
       <div className="bg-white pt-1 -mt-10">

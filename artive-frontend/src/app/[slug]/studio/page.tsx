@@ -37,27 +37,10 @@ export default function StudioPage() {
   const [isOwner, setIsOwner] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showAboutHeader, setShowAboutHeader] = useState(false);
+
   const [studioPost, setStudioPost] = useState<StudioPost | null>(null);
 
   const currentSlug = pathname?.split("/")[1];
-
-  // 스크롤 기반 헤더 전환 로직
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollThreshold = 100;
-      if (window.scrollY > scrollThreshold) {
-        setShowAboutHeader(true);
-      } else {
-        setShowAboutHeader(false);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    handleScroll();
-
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   // 현재 로그인한 사용자 정보 가져오기
   useEffect(() => {
@@ -251,71 +234,6 @@ export default function StudioPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* 스크롤 기반 고정 헤더 */}
-      {showAboutHeader && (
-        <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <h2 className="text-lg font-semibold text-gray-900">
-                {studioPost?.title || "Art Studio"}
-              </h2>
-              <div className="flex items-center gap-2">
-                {isOwner && studioPost && (
-                  <button
-                    onClick={handleEdit}
-                    className="p-2 text-gray-600 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
-                    title="Edit Studio Post"
-                  >
-                    <Edit className="w-5 h-5" />
-                  </button>
-                )}
-                {isOwner && (
-                  <button
-                    onClick={handleProfileClick}
-                    title="Edit Profile"
-                    className="p-2 text-gray-600 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <FaUser className="text-lg" />
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
-      )}
-
-      {/* 기본 헤더 - Artist 페이지 스타일 */}
-      <div className="bg-white">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl sm:text-3xl font-bold">
-              {studioPost?.title || "Art Studio"}
-            </h1>
-
-            <div className="flex items-center gap-2">
-              {isOwner && studioPost && (
-                <button
-                  onClick={handleEdit}
-                  className="p-2 text-gray-600 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
-                  title="Edit Studio Post"
-                >
-                  <Edit className="w-5 h-5" />
-                </button>
-              )}
-              {isOwner && (
-                <button
-                  onClick={handleProfileClick}
-                  title="Edit Profile"
-                  className="p-2 text-gray-600 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <FaUser className="text-lg" />
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* 메인 콘텐츠 - Artist 페이지 스타일, 여백 증가 */}
       <div className="bg-white">
         <div className="max-w-5xl mx-auto px-8 sm:px-10 lg:px-16 pb-24">
