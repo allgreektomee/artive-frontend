@@ -3,7 +3,7 @@
 
 import { ReactNode, useState, useEffect } from "react";
 import { useParams, usePathname } from "next/navigation";
-import UnifiedHeader from "@/components/gallery/UnifiedHeader";
+import GalleryHeader from "@/components/gallery/GalleryHeader";
 import GalleryInfo from "@/components/gallery/GalleryInfo";
 import BottomNavigation from "@/components/gallery/BottomNavigation";
 import { User } from "@/components/gallery/types";
@@ -19,17 +19,52 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
 
   const [galleryUser, setGalleryUser] = useState<User | null>(null);
   const [isOwner, setIsOwner] = useState(false);
+  const [showGalleryHeader, setShowGalleryHeader] = useState(false);
   const [mobileGridMode, setMobileGridMode] = useState<"single" | "double">(
     "double"
   );
   const [totalArtworks, setTotalArtworks] = useState(0);
   const [totalViews, setTotalViews] = useState(0);
   const [postCount, setPostCount] = useState(0);
+  const [studioPostId, setStudioPostId] = useState<number | undefined>();
 
   const backEndUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   // Gallery 페이지인지 체크
   const isGalleryPage = pathname === `/${currentSlug}`;
+
+  // 스크롤 기반 헤더 전환 로직
+  useEffect(() => {
+    const handleScroll = () => {
+      // 페이지별로 다른 스크롤 임계값 설정
+      let threshold = 200;
+      if (pathname?.includes("/blog")) {
+        threshold = 150;
+      } else if (
+        pathname?.includes("/about") ||
+        pathname?.includes("/studio")
+      ) {
+        threshold = 100;
+      }
+
+      // Gallery 페이지는 GalleryInfo 하단 기준
+      if (isGalleryPage) {
+        const galleryElement = document.getElementById("gallery-info");
+        if (galleryElement) {
+          const rect = galleryElement.getBoundingClientRect();
+          setShowGalleryHeader(rect.bottom <= 80);
+        }
+      } else {
+        // 다른 페이지는 스크롤 값 기준
+        setShowGalleryHeader(window.scrollY > threshold);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    handleScroll(); // 초기 실행
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isGalleryPage, pathname]);
 
   // 작품 정보 업데이트 리스너
   useEffect(() => {
@@ -57,6 +92,9 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
       checkOwnership();
       if (pathname?.includes("/blog")) {
         fetchBlogPostCount();
+      }
+      if (pathname?.includes("/studio")) {
+        fetchStudioPost();
       }
     }
   }, [currentSlug, pathname]);
@@ -153,17 +191,54 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
     }
   };
 
+  const fetchStudioPost = async () => {
+    try {
+      const params = new URLSearchParams({
+        user: currentSlug,
+        post_type: "STUDIO",
+        is_published: "true",
+        limit: "1",
+      });
+
+      const response = await fetch(`${backEndUrl}/api/blog/posts?${params}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.posts && data.posts.length > 0) {
+          setStudioPostId(data.posts[0].id);
+        }
+      }
+    } catch (error) {
+      console.error("스튜디오 포스트 조회 실패:", error);
+    }
+  };
+
+  const handleProfileClick = () => {
+    window.location.href = "/profile/manage";
+  };
+
+  // 작품 데이터를 위한 더미 배열 (헤더 컴포넌트가 요구하는 경우)
   const artworks: any[] = [];
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* 통합 헤더 */}
-      <UnifiedHeader
-        currentSlug={currentSlug}
-        isOwner={isOwner}
+      {/* 기존 GalleryHeader 사용 */}
+      <GalleryHeader
+        showGalleryHeader={showGalleryHeader}
         galleryUser={galleryUser}
-        totalArtworks={totalArtworks}
+        currentSlug={currentSlug}
+        artworks={artworks}
+        isOwner={isOwner}
+        onProfileClick={handleProfileClick}
+        mobileGridMode={mobileGridMode}
+        onMobileGridChange={setMobileGridMode}
         postCount={postCount}
+        studioPostId={studioPostId}
       />
 
       {/* Gallery Info - Gallery 페이지에서만 표시 */}
@@ -179,7 +254,7 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
               currentSlug={currentSlug}
               artworks={artworks}
               isOwner={isOwner}
-              onProfileClick={() => {}}
+              onProfileClick={handleProfileClick}
               mobileGridMode={mobileGridMode}
               onMobileGridChange={setMobileGridMode}
             />
