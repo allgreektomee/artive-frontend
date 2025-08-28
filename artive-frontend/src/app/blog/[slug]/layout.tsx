@@ -1,126 +1,152 @@
-// app/blog/[slug]/layout.tsx
+// app/[slug]/layout.tsx
 "use client";
 
 import { ReactNode, useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
+import { useParams, usePathname } from "next/navigation";
+import GalleryHeader from "@/components/gallery/GalleryHeader";
+import GalleryInfo from "@/components/gallery/GalleryInfo";
 import BottomNavigation from "@/components/gallery/BottomNavigation";
-import BlogHeader from "@/components/gallery/BlogHeader";
-import { FaUser } from "react-icons/fa";
-import {
-  Search,
-  Plus,
-  Bell,
-  FileText,
-  Award,
-  Newspaper,
-  Image as ImageIcon,
-} from "lucide-react";
-import { FaEdit } from "react-icons/fa";
+import { User } from "@/components/gallery/types";
 
-interface BlogLayoutProps {
+interface GalleryLayoutProps {
   children: ReactNode;
 }
 
-interface User {
-  id: number;
-  name: string;
-  slug: string;
-  bio?: string;
-  profile_image?: string;
-}
-
-export default function BlogLayout({ children }: BlogLayoutProps) {
+export default function GalleryLayout({ children }: GalleryLayoutProps) {
   const params = useParams();
-  const router = useRouter();
-  const userSlug = params?.slug as string;
+  const pathname = usePathname();
+  const currentSlug = params?.slug as string;
 
-  const [user, setUser] = useState<User | null>(null);
+  const [galleryUser, setGalleryUser] = useState<User | null>(null);
   const [isOwner, setIsOwner] = useState(false);
-  const [showBlogHeader, setShowBlogHeader] = useState(false);
-  const [selectedType, setSelectedType] = useState<string>("ALL");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [totalPosts, setTotalPosts] = useState(0);
-  const [hasStudioPost, setHasStudioPost] = useState(false);
+  const [showGalleryHeader, setShowGalleryHeader] = useState(false);
+  const [mobileGridMode, setMobileGridMode] = useState<"single" | "double">(
+    "double"
+  );
+  const [totalArtworks, setTotalArtworks] = useState(0);
+  const [totalViews, setTotalViews] = useState(0);
+  const [postCount, setPostCount] = useState(0);
+  const [studioPostId, setStudioPostId] = useState<number | undefined>();
 
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const backEndUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+  // Gallery 페이지인지 체크
+  const isGalleryPage = pathname === `/${currentSlug}`;
+
+  // 블로그 상세 페이지인지 체크 (blog/[slug]/[id] 형태)
+  const isBlogDetailPage =
+    pathname?.includes("/blog/") && pathname?.split("/").length === 4;
 
   // 스크롤 기반 헤더 전환 로직
   useEffect(() => {
     const handleScroll = () => {
-      const headerElement = document.getElementById("blog-info");
-      if (headerElement) {
-        const rect = headerElement.getBoundingClientRect();
-        if (rect.bottom <= 80) {
-          setShowBlogHeader(true);
-        } else {
-          setShowBlogHeader(false);
+      // 페이지별로 다른 스크롤 임계값 설정
+      let threshold = 200;
+      if (pathname?.includes("/blog")) {
+        threshold = 150;
+      } else if (
+        pathname?.includes("/about") ||
+        pathname?.includes("/studio")
+      ) {
+        threshold = 100;
+      }
+
+      // Gallery 페이지는 GalleryInfo 하단 기준
+      if (isGalleryPage) {
+        const galleryElement = document.getElementById("gallery-info");
+        if (galleryElement) {
+          const rect = galleryElement.getBoundingClientRect();
+          setShowGalleryHeader(rect.bottom <= 80);
         }
+      } else {
+        // 다른 페이지는 스크롤 값 기준
+        setShowGalleryHeader(window.scrollY > threshold);
       }
     };
 
     window.addEventListener("scroll", handleScroll);
-    handleScroll();
+    handleScroll(); // 초기 실행
+
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [isGalleryPage, pathname]);
 
-  // 초기 데이터 로드
+  // 작품 정보 업데이트 리스너
   useEffect(() => {
-    if (userSlug) {
-      fetchUserInfo();
-      checkOwnership();
-      checkStudioPost();
-    }
-  }, [userSlug]);
-
-  // 포스트 업데이트 이벤트 리스너
-  useEffect(() => {
-    const handlePostsUpdate = (e: CustomEvent) => {
-      setTotalPosts(e.detail.total || 0);
+    const handleArtworksUpdate = (e: CustomEvent) => {
+      setTotalArtworks(e.detail.total || 0);
+      setTotalViews(e.detail.totalViews || 0);
     };
 
     window.addEventListener(
-      "blogPostsUpdate",
-      handlePostsUpdate as EventListener
+      "galleryArtworksUpdate",
+      handleArtworksUpdate as EventListener
     );
     return () => {
       window.removeEventListener(
-        "blogPostsUpdate",
-        handlePostsUpdate as EventListener
+        "galleryArtworksUpdate",
+        handleArtworksUpdate as EventListener
       );
     };
   }, []);
 
-  const fetchUserInfo = async () => {
-    setUser({
-      id: 0,
-      name: userSlug.toUpperCase(),
-      slug: userSlug,
-    });
-  };
-
-  const checkStudioPost = async () => {
-    try {
-      const params = new URLSearchParams({
-        user: userSlug,
-        post_type: "STUDIO",
-        is_published: "true",
-        limit: "1",
-      });
-
-      const response = await fetch(`${backendUrl}/api/blog/posts?${params}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setHasStudioPost(data.posts && data.posts.length > 0);
+  // 사용자 정보 로드
+  useEffect(() => {
+    if (currentSlug) {
+      fetchGalleryUser();
+      checkOwnership();
+      if (pathname?.includes("/blog")) {
+        fetchBlogPostCount();
       }
+      if (pathname?.includes("/studio")) {
+        fetchStudioPost();
+      }
+    }
+  }, [currentSlug, pathname]);
+
+  const fetchGalleryUser = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const headers: HeadersInit = { Accept: "application/json" };
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const profileRes = await fetch(
+        `${backEndUrl}/api/profile/${currentSlug}`,
+        { method: "GET", headers }
+      );
+
+      let profileData = null;
+      if (profileRes.ok) {
+        profileData = await profileRes.json();
+      }
+
+      setGalleryUser({
+        id: profileData?.id || 1,
+        name: profileData?.name || currentSlug.toUpperCase(),
+        slug: currentSlug,
+        bio: profileData?.bio || "",
+        gallery_title:
+          profileData?.gallery_title || `${currentSlug.toUpperCase()} Gallery`,
+        gallery_description: profileData?.gallery_description || "",
+        total_artworks: totalArtworks,
+        total_views: totalViews,
+        is_public_gallery: profileData?.is_public_gallery !== false,
+      } as User);
     } catch (error) {
-      console.error("스튜디오 포스트 확인 실패:", error);
+      console.error("갤러리 사용자 정보 로드 실패:", error);
+      setGalleryUser({
+        id: 1,
+        name: currentSlug.toUpperCase(),
+        slug: currentSlug,
+        bio: "",
+        gallery_title: `${currentSlug.toUpperCase()} Gallery`,
+        gallery_description: "",
+        total_artworks: 0,
+        total_views: 0,
+        is_public_gallery: true,
+      } as User);
     }
   };
 
@@ -129,213 +155,128 @@ export default function BlogLayout({ children }: BlogLayoutProps) {
     if (!token) return;
 
     try {
-      const response = await fetch(`${backendUrl}/api/auth/me`, {
+      const res = await fetch(`${backEndUrl}/api/auth/me`, {
+        method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
+          Accept: "application/json",
         },
       });
-      if (response.ok) {
-        const userData = await response.json();
-        setIsOwner(userData.slug === userSlug);
+
+      if (res.ok) {
+        const userData = await res.json();
+        setIsOwner(userData.slug === currentSlug);
       }
     } catch (error) {
       console.error("소유권 확인 실패:", error);
     }
   };
 
-  const handleProfileClick = () => {
-    router.push("/profile/manage");
-  };
+  const fetchBlogPostCount = async () => {
+    try {
+      const params = new URLSearchParams({
+        user: currentSlug,
+        is_published: "true",
+      });
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // 검색 로직은 children 컴포넌트에서 처리
-    const event = new CustomEvent("blogSearch", { detail: searchQuery });
-    window.dispatchEvent(event);
-  };
+      const response = await fetch(`${backEndUrl}/api/blog/posts?${params}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
-  const handleTypeChange = (type: string) => {
-    setSelectedType(type);
-    // 타입 변경 이벤트를 children에게 전달
-    const event = new CustomEvent("blogTypeChange", { detail: type });
-    window.dispatchEvent(event);
-  };
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "NOTICE":
-        return <Bell className="w-3 h-3 sm:w-4 sm:h-4" />;
-      case "EXHIBITION":
-        return <ImageIcon className="w-3 h-3 sm:w-4 sm:h-4" />;
-      case "AWARD":
-        return <Award className="w-3 h-3 sm:w-4 sm:h-4" />;
-      case "NEWS":
-        return <Newspaper className="w-3 h-3 sm:w-4 sm:h-4" />;
-      case "STUDIO":
-        return <FaEdit className="w-3 h-3 sm:w-4 sm:h-4" />;
-      default:
-        return <FileText className="w-3 h-3 sm:w-4 sm:h-4" />;
+      if (response.ok) {
+        const data = await response.json();
+        setPostCount(data.total || 0);
+      }
+    } catch (error) {
+      console.error("블로그 포스트 수 조회 실패:", error);
     }
   };
 
+  const fetchStudioPost = async () => {
+    try {
+      const params = new URLSearchParams({
+        user: currentSlug,
+        post_type: "STUDIO",
+        is_published: "true",
+        limit: "1",
+      });
+
+      const response = await fetch(`${backEndUrl}/api/blog/posts?${params}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.posts && data.posts.length > 0) {
+          setStudioPostId(data.posts[0].id);
+        }
+      }
+    } catch (error) {
+      console.error("스튜디오 포스트 조회 실패:", error);
+    }
+  };
+
+  const handleProfileClick = () => {
+    window.location.href = "/profile/manage";
+  };
+
+  // 작품 데이터를 위한 더미 배열 (헤더 컴포넌트가 요구하는 경우)
+  const artworks: any[] = [];
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* 스크롤 기반 고정 헤더 */}
-      <BlogHeader
-        showBlogHeader={showBlogHeader}
-        blogUser={user}
-        currentSlug={userSlug}
+      {/* 기존 GalleryHeader 사용 */}
+      <GalleryHeader
+        showGalleryHeader={showGalleryHeader}
+        galleryUser={galleryUser}
+        currentSlug={currentSlug}
+        artworks={artworks}
         isOwner={isOwner}
         onProfileClick={handleProfileClick}
-        totalPosts={totalPosts}
+        mobileGridMode={mobileGridMode}
+        onMobileGridChange={setMobileGridMode}
+        postCount={postCount}
+        studioPostId={studioPostId}
       />
 
-      {/* 기본 헤더 - 항상 표시 */}
-      <header id="blog-info" className="bg-white sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-          <div className="flex items-center justify-between mb-1">
-            <h1 className="text-2xl sm:text-3xl font-bold">
-              {user?.name || userSlug.toUpperCase()} 블로그
-            </h1>
-
-            <div className="flex items-center space-x-2">
-              {isOwner && (
-                <>
-                  <Link
-                    href={`/blog/${userSlug}/write`}
-                    className="text-gray-600 hover:text-black transition-colors p-1"
-                    title="새 글 작성"
-                  >
-                    <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
-                  </Link>
-                  <button
-                    onClick={handleProfileClick}
-                    className="text-gray-600 hover:text-black transition-colors"
-                    title="Edit Profile"
-                  >
-                    <FaUser className="text-lg sm:text-xl md:text-2xl" />
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-
-          <p className="text-sm text-gray-600 mb-2">
-            {totalPosts}개의 글이 작성되었습니다.
-          </p>
-
-          <div className="py-2 border-b border-gray-200"></div>
+      {/* Gallery Info - 모든 페이지에서 표시 */}
+      <div className="bg-white">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <GalleryInfo
+            galleryUser={{
+              ...galleryUser,
+              total_artworks: totalArtworks,
+              total_views: totalViews,
+            }}
+            currentSlug={currentSlug}
+            artworks={artworks}
+            isOwner={isOwner}
+            onProfileClick={handleProfileClick}
+            mobileGridMode={mobileGridMode}
+            onMobileGridChange={setMobileGridMode}
+            postCount={postCount}
+          />
         </div>
-
-        {/* 필터 & 검색 - 헤더에 포함되어 고정 */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 bg-white border-b">
-          <div className="py-3 sm:py-4">
-            <div className="flex flex-col gap-3 sm:gap-4">
-              {/* 타입 필터 */}
-              <div className="flex gap-1 sm:gap-2 overflow-x-auto scrollbar-hide">
-                <button
-                  onClick={() => handleTypeChange("ALL")}
-                  className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
-                    selectedType === "ALL"
-                      ? "bg-gray-900 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  전체
-                </button>
-                <button
-                  onClick={() => handleTypeChange("NOTICE")}
-                  className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
-                    selectedType === "NOTICE"
-                      ? "bg-red-500 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  공지
-                </button>
-                <button
-                  onClick={() => handleTypeChange("BLOG")}
-                  className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
-                    selectedType === "BLOG"
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  블로그
-                </button>
-                <button
-                  onClick={() => handleTypeChange("NEWS")}
-                  className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
-                    selectedType === "NEWS"
-                      ? "bg-green-500 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  뉴스
-                </button>
-                <button
-                  onClick={() => handleTypeChange("EXHIBITION")}
-                  className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
-                    selectedType === "EXHIBITION"
-                      ? "bg-purple-500 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  전시
-                </button>
-                <button
-                  onClick={() => handleTypeChange("AWARD")}
-                  className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
-                    selectedType === "AWARD"
-                      ? "bg-yellow-500 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  수상
-                </button>
-                {isOwner && (
-                  <button
-                    onClick={() => handleTypeChange("STUDIO")}
-                    className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
-                      selectedType === "STUDIO"
-                        ? "bg-indigo-500 text-white"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    스튜디오
-                  </button>
-                )}
-              </div>
-
-              {/* 검색 */}
-              <form onSubmit={handleSearch} className="w-full">
-                <div className="relative">
-                  <Search className="absolute left-2.5 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="검색..."
-                    className="w-full pl-8 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 text-sm border rounded-lg focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      </header>
+      </div>
 
       {/* 메인 콘텐츠 영역 */}
-      <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-32">
-        {children}
+      <main className="flex-1 bg-white">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-32">
+          {children}
+        </div>
       </main>
 
-      {/* 하단 네비게이션 - 항상 고정 */}
-      <BottomNavigation
-        currentSlug={userSlug}
-        isOwner={isOwner}
-        hasStudioPost={hasStudioPost}
-      />
+      {/* 하단 여백 */}
+      <div className="h-24"></div>
+
+      {/* 하단 네비게이션 */}
+      <BottomNavigation currentSlug={currentSlug} isOwner={isOwner} />
     </div>
   );
 }

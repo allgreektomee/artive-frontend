@@ -165,28 +165,6 @@ export default function AboutArtistPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* 스크롤 기반 고정 헤더 - GalleryHeader 스타일 */}
-
-      {/* 기본 헤더 - 처음에 보이는 헤더 */}
-      <div className="bg-white pt-1 -mt-10">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-1">
-            <h1 className="text-2xl sm:text-3xl font-bold">About the Artist</h1>
-
-            {/* 프로필 아이콘 - 소유자일 때만 표시 */}
-            {isOwner && (
-              <button
-                onClick={handleProfileClick}
-                title="Edit Profile"
-                className="text-gray-600 hover:text-black transition-colors"
-              >
-                <FaUser className="text-lg sm:text-xl md:text-2xl" />
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* 메인 콘텐츠 */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20">
         {/* About 섹션들 */}
