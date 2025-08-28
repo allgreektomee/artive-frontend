@@ -77,36 +77,46 @@ export default function LoginPage() {
         body: JSON.stringify(form),
       });
 
-      // 403 상태 코드를 먼저 체크 (이메일 미인증)
+      const responseData = await res.json().catch(() => null);
+
+      // 403 상태 코드 체크 (이메일 미인증)
       if (res.status === 403) {
-        const errorData = await res
-          .json()
-          .catch(() => ({ detail: "이메일 인증이 필요합니다" }));
         setError(
-          errorData.detail ||
+          responseData?.detail ||
             "이메일 인증이 필요합니다. 인증 메일을 확인해주세요."
         );
         setShowResendButton(true);
         return;
       }
 
-      if (res.ok) {
-        const data = await res.json();
-        localStorage.setItem("token", data.access_token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-        router.push(`/${data.user.slug}`);
-      } else {
-        const errorData = await res
-          .json()
-          .catch(() => ({ detail: "로그인에 실패했습니다" }));
-        setError(errorData.detail || "로그인에 실패했습니다");
+      // 401 상태 코드 체크 (인증 실패)
+      if (res.status === 401) {
+        setError(
+          responseData?.detail || "이메일 또는 비밀번호가 올바르지 않습니다."
+        );
         setShowResendButton(false);
+        return;
       }
+
+      // 200 OK 체크
+      if (res.ok && responseData) {
+        localStorage.setItem("token", responseData.access_token);
+        localStorage.setItem("user", JSON.stringify(responseData.user));
+        router.push(`/${responseData.user.slug}`);
+        return;
+      }
+
+      // 기타 에러
+      setError(responseData?.detail || "로그인에 실패했습니다.");
+      setShowResendButton(false);
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(`서버 연결 실패: ${err.message}`);
+      console.error("Login error:", err);
+      if (err instanceof TypeError && err.message.includes("Failed to fetch")) {
+        setError("서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.");
+      } else if (err instanceof Error) {
+        setError(`오류: ${err.message}`);
       } else {
-        setError("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+        setError("알 수 없는 오류가 발생했습니다.");
       }
       setShowResendButton(false);
     } finally {
