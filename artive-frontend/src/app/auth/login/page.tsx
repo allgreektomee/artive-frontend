@@ -9,160 +9,210 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showResendButton, setShowResendButton] = useState(false);
+  const [resendEmail, setResendEmail] = useState("");
+  const [resendLoading, setResendLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    setError("");
+    setShowResendButton(false);
   };
 
-  const backEndUrl =
-    process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+  const backEndUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
+
     setError("");
     setLoading(true);
+    setShowResendButton(false);
 
     try {
-      const response = await fetch(`${backEndUrl}/api/auth/login`, {
+      const res = await fetch(`${backEndUrl}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Accept: "application/json",
         },
-        body: JSON.stringify({
-          email: form.email,
-          password: form.password,
-        }),
+        credentials: "include",
+        body: JSON.stringify(form),
       });
 
-      const data = await response.json();
-      console.log("🔍 로그인 응답 상태:", response.status);
-      console.log("🔍 로그인 응답 데이터:", data);
+      if (res.ok) {
+        const data = await res.json();
 
-      if (response.ok) {
-        // 로그인 성공
-        // 1. 토큰 저장
         localStorage.setItem("token", data.access_token);
+        localStorage.setItem("user", JSON.stringify(data.user));
 
-        // 2. ⭐ user 정보도 저장해야 함! (이게 빠져있었음)
-        if (data.user) {
-          localStorage.setItem("user", JSON.stringify(data.user));
-          console.log("✅ user 정보 저장됨:", data.user);
-        }
-
-        // 3. 리다이렉트
-        if (data.user && data.user.slug) {
-          console.log("🚀 리다이렉트:", `/${data.user.slug}`);
-          router.push(`/${data.user.slug}`); // jaeyoungpark로 이동
-        } else {
-          // user 정보가 없으면 /auth/me 호출해서 정보 가져오기
-          try {
-            const meResponse = await fetch(`${backEndUrl}/api/auth/me`, {
-              headers: {
-                Authorization: `Bearer ${data.access_token}`,
-              },
-            });
-
-            if (meResponse.ok) {
-              const userData = await meResponse.json();
-              // /auth/me로 가져온 user 정보도 저장
-              localStorage.setItem("user", JSON.stringify(userData));
-              console.log("✅ /auth/me로 user 정보 가져옴:", userData);
-              router.push(`/${userData.slug}`);
-            } else {
-              router.push("/"); // 실패시 홈으로
-            }
-          } catch {
-            router.push("/"); // 에러시 홈으로
-          }
-        }
+        router.push(`/${data.user.slug}`);
       } else {
-        // 로그인 실패
-        setError(data.detail || "로그인에 실패했습니다.");
+        const errorData = await res
+          .json()
+          .catch(() => ({ detail: "로그인에 실패했습니다" }));
+
+        // 이메일 인증이 필요한 경우
+        if (
+          errorData.detail &&
+          errorData.detail.includes("이메일 인증이 필요")
+        ) {
+          setError(
+            "이메일 인증이 필요합니다. 아래 버튼을 클릭해서 인증 메일을 재발송하세요."
+          );
+          setShowResendButton(true);
+          setResendEmail(form.email);
+        } else {
+          setError(errorData.detail || "로그인에 실패했습니다");
+          setShowResendButton(false);
+        }
       }
-    } catch (error) {
-      console.error("로그인 에러:", error);
-      setError("서버 연결에 실패했습니다.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(`서버 연결 실패: ${err.message}`);
+      } else {
+        setError("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+      }
+      setShowResendButton(false);
     } finally {
       setLoading(false);
     }
   };
 
-  // 임시로 구글 로그인 비활성화 (FastAPI에서 구현 후 활성화)
-  const handleGoogleLogin = () => {
-    alert("구글 로그인은 곧 지원될 예정입니다.");
-    // TODO: FastAPI OAuth2 구현 후 활성화
-    // window.location.href = `${backEndUrl}/auth/google`;
+  const handleResendVerification = async () => {
+    if (resendLoading || !resendEmail) return;
+
+    setResendLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch(`${backEndUrl}/api/auth/resend-verification`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ email: resendEmail }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(
+          data.message || "인증 메일이 재발송되었습니다. 이메일을 확인해주세요."
+        );
+        setShowResendButton(false);
+        setError("");
+      } else {
+        setError(data.detail || "재발송에 실패했습니다.");
+      }
+    } catch (err) {
+      setError("재발송 중 오류가 발생했습니다.");
+    } finally {
+      setResendLoading(false);
+    }
   };
 
   return (
-    <div className="max-w-md mx-auto py-16 px-4 text-center space-y-6">
-      <h1 className="text-2xl font-bold">로그인</h1>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded text-sm">
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-4 text-left">
-        <input
-          type="email"
-          name="email"
-          placeholder="이메일"
-          value={form.email}
-          onChange={handleChange}
-          required
-          disabled={loading}
-          className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:border-blue-500 disabled:bg-gray-100"
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="비밀번호"
-          value={form.password}
-          onChange={handleChange}
-          required
-          disabled={loading}
-          className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:border-blue-500 disabled:bg-gray-100"
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-black text-white py-3 rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-        >
-          {loading ? "로그인 중..." : "로그인"}
-        </button>
-      </form>
-
-      <div className="text-sm text-gray-500">또는</div>
-
-      <button
-        onClick={handleGoogleLogin}
-        disabled={loading}
-        className="w-full border border-gray-300 py-3 rounded-lg text-sm hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
-      >
-        구글 로그인 (준비중)
-      </button>
-
-      <p className="text-sm text-gray-500">
-        아직 계정이 없으신가요?{" "}
-        <Link href="/auth/signup">
-          <span className="text-blue-600 hover:underline">회원가입</span>
-        </Link>
-      </p>
-
-      {/* 개발환경 테스트용 */}
-      {process.env.NODE_ENV === "development" && (
-        <div className="mt-8 p-4 bg-gray-100 rounded text-xs text-left">
-          <p className="font-semibold mb-2">개발 테스트용:</p>
-          <p>이메일: user@example.com</p>
-          <p>비밀번호: (가입시 설정한 비밀번호)</p>
-          <p className="text-gray-600 mt-1">
-            API 서버: {backEndUrl || "환경변수 설정 필요"}
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            로그인
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            아직 계정이 없으시나요?{" "}
+            <Link
+              href="/auth/signup"
+              className="font-medium text-indigo-600 hover:text-indigo-500"
+            >
+              회원가입
+            </Link>
           </p>
         </div>
-      )}
+
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div className="rounded-md shadow-sm -space-y-px">
+            <div>
+              <label htmlFor="email" className="sr-only">
+                이메일
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="이메일 주소"
+                value={form.email}
+                onChange={handleChange}
+                disabled={loading}
+              />
+            </div>
+            <div>
+              <label htmlFor="password" className="sr-only">
+                비밀번호
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="비밀번호"
+                value={form.password}
+                onChange={handleChange}
+                disabled={loading}
+              />
+            </div>
+          </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* 이메일 인증 재발송 버튼 */}
+          {showResendButton && (
+            <div className="bg-blue-50 border border-blue-200 p-4 rounded">
+              <p className="text-blue-800 text-sm mb-3">
+                <strong>{resendEmail}</strong>로 인증 메일을 재발송하시겠습니까?
+              </p>
+              <button
+                type="button"
+                onClick={handleResendVerification}
+                disabled={resendLoading}
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-400 disabled:cursor-not-allowed"
+              >
+                {resendLoading ? "재발송 중..." : "인증 메일 재발송"}
+              </button>
+            </div>
+          )}
+
+          <div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400 disabled:cursor-not-allowed"
+            >
+              {loading ? "로그인 중..." : "로그인"}
+            </button>
+          </div>
+
+          <div className="text-sm text-center">
+            <Link
+              href="/auth/forgot-password"
+              className="font-medium text-indigo-600 hover:text-indigo-500"
+            >
+              비밀번호를 잊으셨나요?
+            </Link>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
