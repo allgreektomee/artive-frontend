@@ -1,4 +1,6 @@
 // app/blog/[slug]/layout.tsx
+"use client";
+
 import { ReactNode, useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -70,6 +72,24 @@ export default function BlogLayout({ children }: BlogLayoutProps) {
       checkStudioPost();
     }
   }, [userSlug]);
+
+  // 포스트 업데이트 이벤트 리스너
+  useEffect(() => {
+    const handlePostsUpdate = (e: CustomEvent) => {
+      setTotalPosts(e.detail.total || 0);
+    };
+
+    window.addEventListener(
+      "blogPostsUpdate",
+      handlePostsUpdate as EventListener
+    );
+    return () => {
+      window.removeEventListener(
+        "blogPostsUpdate",
+        handlePostsUpdate as EventListener
+      );
+    };
+  }, []);
 
   const fetchUserInfo = async () => {
     setUser({
