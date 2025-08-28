@@ -6,7 +6,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       {/* 헤더 섹션 */}
-      <div className="px-6 pt-16 pb-8">
+      <div className="px-6 pt-10 pb-8">
         <div className="text-center space-y-6">
           {/* 로고/제목 */}
           <div className="space-y-3">
@@ -17,19 +17,11 @@ export default function Home() {
           </div>
 
           {/* 타이틀과 설명 */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold text-gray-800">
-              Welcome to Artive
-            </h2>
-            <p className="text-base font-semibold text-gray-700">
-              선별된 작가들의 프리미엄 포트폴리오
-            </p>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              창작 여정을 기록하고
-              <br />
-              작품의 가치를 빛나게 하세요
-            </p>
-          </div>
+          <p className="text-sm text-gray-600 leading-relaxed">
+            창작 여정을 기록하고
+            <br />
+            작품의 가치를 빛나게 하세요
+          </p>
         </div>
       </div>
 
@@ -40,17 +32,12 @@ export default function Home() {
             <div className="text-3xl">🎨</div>
             <div className="space-y-3">
               <h3 className="font-bold text-gray-800 text-lg">
-                큐레이션 플랫폼
+                Artive의 특별한 여정이 시작됩니다
               </h3>
               <p className="text-sm text-gray-600 leading-relaxed">
-                Artive는 엄선된 작가들만이 참여할 수 있는
+                예술가를 만나는 아름다운 플랫폼
                 <br />
-                특별한 공간입니다.
-              </p>
-              <p className="text-sm text-gray-700 leading-relaxed">
-                회원가입은 관리자와의 협의를 통해서만
-                <br />
-                가능합니다.
+                창작의 가치를 발견하는 공간
               </p>
             </div>
             <div className="pt-2 space-y-3">
@@ -62,8 +49,10 @@ export default function Home() {
               >
                 <button className="w-full bg-gray-700 text-white py-3 rounded-2xl font-medium text-base hover:bg-gray-600 active:scale-95 transition-all duration-200">
                   <span className="inline-flex items-center gap-2">
-                    <span className="text-base">📸</span>
-                    Instagram @artiveforme
+                    <p className="text-sm text-gray-200 leading-relaxed">
+                      About Membership
+                    </p>
+                    @artiveforme
                   </span>
                 </button>
               </a>
