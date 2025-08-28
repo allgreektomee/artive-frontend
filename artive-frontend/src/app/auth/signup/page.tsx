@@ -120,17 +120,18 @@ export default function SignupPage() {
     setEmailStatus("checking");
 
     try {
-      // FastAPI 엔드포인트는 아직 없으므로 임시로 available로 설정
-      // TODO: FastAPI에서 이메일 중복 확인 API 구현 필요
-      setEmailStatus("available");
+      const res = await fetch(
+        `${backEndUrl}/api/auth/check-email?email=${encodeURIComponent(
+          form.email.trim()
+        )}`,
+        {
+          method: "GET",
+          headers: { Accept: "application/json" },
+        }
+      );
 
-      // 실제 구현시:
-      // const res = await fetch(`${backEndUrl}/auth/check-email?email=${encodeURIComponent(form.email.trim())}`, {
-      //   method: "GET",
-      //   headers: { "Accept": "application/json" }
-      // });
-      // const data = await res.json();
-      // setEmailStatus(data.available ? "available" : "duplicate");
+      const data = await res.json();
+      setEmailStatus(data.available ? "available" : "duplicate");
     } catch {
       alert("중복 확인 중 오류가 발생했습니다.");
       setEmailStatus("idle");

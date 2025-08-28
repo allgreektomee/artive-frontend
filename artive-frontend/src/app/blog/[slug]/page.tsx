@@ -183,7 +183,6 @@ export default function BlogListPage() {
         const data = await response.json();
         console.log("응답 데이터:", data);
 
-        // filteredPosts 변수 선언
         let filteredPosts = data.posts || [];
 
         // 비소유자일 경우 스튜디오 포스트 제외
@@ -194,14 +193,18 @@ export default function BlogListPage() {
         }
 
         if (isLoadMore) {
-          setPosts((prev) => [...prev, ...(filteredPosts || [])]);
+          setPosts((prev) => [...prev, ...filteredPosts]);
           setCurrentPage(pageToFetch);
         } else {
-          setPosts(filteredPosts || []);
+          setPosts(filteredPosts);
         }
 
-        setTotalPages(filteredPosts.pages || 1);
-        setTotalPosts(filteredPosts.total || 0);
+        // 수정된 부분
+        setTotalPages(data.pages || 1); // 이 줄이 누락되어 있었음
+
+        // 단순하게 data.total 사용 (백엔드에서 이미 필터링된 결과)
+        setTotalPosts(data.total || 0);
+
         setError(null);
       } else {
         const errorText = await response.text();
