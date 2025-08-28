@@ -17,7 +17,7 @@ export default function Home() {
           </div>
 
           {/* 타이틀과 설명 */}
-          <div className="space-y-3">
+          <div className="space-y-4">
             <h2 className="text-xl font-bold text-gray-800">
               Welcome to Artive
             </h2>
@@ -34,8 +34,8 @@ export default function Home() {
       </div>
 
       {/* 안내 카드 */}
-      <div className="px-6 pb-8">
-        <div className="bg-gray-50 rounded-3xl p-6 border border-gray-200">
+      <div className="px-6 pb-8 flex justify-center">
+        <div className="bg-gray-50 rounded-3xl p-6 border border-gray-200 w-full max-w-sm">
           <div className="text-center space-y-4">
             <div className="text-3xl">🎨</div>
             <div className="space-y-3">
@@ -58,20 +58,22 @@ export default function Home() {
                 href="https://instagram.com/artiveforme"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-gray-700 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-gray-600 transition-colors"
+                className="w-full block"
               >
-                <span className="text-base">📸</span>
-                Instagram @artiveforme
+                <button className="w-full bg-gray-700 text-white py-3 rounded-2xl font-medium text-base hover:bg-gray-600 active:scale-95 transition-all duration-200">
+                  <span className="inline-flex items-center gap-2">
+                    <span className="text-base">📸</span>
+                    Instagram @artiveforme
+                  </span>
+                </button>
               </a>
 
               {/* 로그인 버튼 */}
-              <div className="w-full">
-                <Link href="/login">
-                  <button className="w-full bg-gray-100 border border-gray-300 text-gray-700 py-3 rounded-2xl font-medium text-base hover:bg-gray-200 active:scale-95 transition-all duration-200">
-                    Artive 작가 로그인
-                  </button>
-                </Link>
-              </div>
+              <Link href="/login">
+                <button className="w-full bg-gray-100 border border-gray-300 text-gray-700 py-3 rounded-2xl font-medium text-base hover:bg-gray-200 active:scale-95 transition-all duration-200">
+                  Artive 작가 로그인
+                </button>
+              </Link>
 
               {/* 둘러보기 링크 */}
               <div className="pt-1">
@@ -86,21 +88,6 @@ export default function Home() {
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* 작품 구경 링크 */}
-      <div className="px-6 pb-8">
-        <div className="text-center">
-          <p className="text-sm text-gray-500 mb-3">👀 작품을 구경하려면</p>
-          <a
-            href="https://www.artivefor.me/art"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block bg-gray-100 border border-gray-300 px-6 py-3 rounded-full text-gray-700 font-medium text-sm hover:bg-gray-200 transition-all duration-200"
-          >
-            대표 작가 페이지 →
-          </a>
         </div>
       </div>
 
