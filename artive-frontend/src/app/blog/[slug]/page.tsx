@@ -65,7 +65,8 @@ export default function BlogListPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [isOwner, setIsOwner] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true); // 최초 로딩
+  const [isListLoading, setIsListLoading] = useState(false); // 리스트만 로딩
   const [error, setError] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
@@ -99,12 +100,19 @@ export default function BlogListPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // 최초 로딩 시에만
   useEffect(() => {
-    if (userSlug) {
+    if (userSlug && isInitialLoading) {
       fetchUserInfo();
-      fetchPosts();
       checkOwnership();
       checkStudioPost();
+    }
+  }, [userSlug]);
+
+  // 필터 변경 시
+  useEffect(() => {
+    if (userSlug) {
+      fetchPosts();
     }
   }, [userSlug, selectedType, searchTerm]);
 
@@ -116,7 +124,6 @@ export default function BlogListPage() {
     });
   };
 
-  // 스튜디오 포스트가 있는지 확인하는 함수
   const checkStudioPost = async () => {
     try {
       const params = new URLSearchParams({
@@ -144,14 +151,20 @@ export default function BlogListPage() {
 
   const fetchPosts = async (isLoadMore = false) => {
     try {
+      // 최초 로딩과 리스트 로딩 구분
       if (!isLoadMore) {
-        setIsLoading(true);
+        if (posts.length === 0) {
+          setIsInitialLoading(true);
+        } else {
+          setIsListLoading(true);
+        }
       } else {
         setLoadingMore(true);
       }
+
       setError(null);
 
-      const pageToFetch = isLoadMore ? currentPage + 1 : currentPage;
+      const pageToFetch = isLoadMore ? currentPage + 1 : 1; // 필터 변경 시 항상 1페이지
       const params = new URLSearchParams({
         user: userSlug,
         page: pageToFetch.toString(),
@@ -168,7 +181,6 @@ export default function BlogListPage() {
       }
 
       const url = `${backendUrl}/api/blog/posts?${params}`;
-      console.log("API 호출:", url);
 
       const response = await fetch(url, {
         method: "GET",
@@ -177,12 +189,8 @@ export default function BlogListPage() {
         },
       });
 
-      console.log("응답 상태:", response.status);
-
       if (response.ok) {
         const data = await response.json();
-        console.log("응답 데이터:", data);
-
         let filteredPosts = data.posts || [];
 
         // 비소유자일 경우 스튜디오 포스트 제외
@@ -197,19 +205,13 @@ export default function BlogListPage() {
           setCurrentPage(pageToFetch);
         } else {
           setPosts(filteredPosts);
+          setCurrentPage(1);
         }
 
-        // 수정된 부분
-        setTotalPages(data.pages || 1); // 이 줄이 누락되어 있었음
-
-        // 단순하게 data.total 사용 (백엔드에서 이미 필터링된 결과)
+        setTotalPages(data.pages || 1);
         setTotalPosts(data.total || 0);
-
         setError(null);
       } else {
-        const errorText = await response.text();
-        console.error("API 오류:", response.status, errorText);
-
         if (response.status === 404) {
           setError("블로그를 찾을 수 없습니다.");
         } else if (response.status >= 500) {
@@ -222,7 +224,8 @@ export default function BlogListPage() {
       console.error("블로그 목록 가져오기 실패:", error);
       setError("블로그 목록을 불러올 수 없습니다.");
     } finally {
-      setIsLoading(false);
+      setIsInitialLoading(false);
+      setIsListLoading(false);
       setLoadingMore(false);
     }
   };
@@ -255,11 +258,16 @@ export default function BlogListPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setSearchTerm(searchQuery);
-    setCurrentPage(1);
   };
 
   const handleProfileClick = () => {
     router.push("/profile/manage");
+  };
+
+  const handleTypeChange = (type: string) => {
+    setSelectedType(type);
+    setCurrentPage(1);
+    // setPosts([]); 제거 - 리스트를 비우지 않음
   };
 
   const getTypeIcon = (type: string) => {
@@ -328,7 +336,8 @@ export default function BlogListPage() {
     return stripHtml(post.content).substring(0, 100) + "...";
   };
 
-  if (isLoading) {
+  // 최초 로딩 시에만 전체 화면 로딩 표시
+  if (isInitialLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
@@ -336,7 +345,7 @@ export default function BlogListPage() {
     );
   }
 
-  if (error) {
+  if (error && posts.length === 0) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
         <p className="text-red-600 mb-4">{error}</p>
@@ -371,7 +380,6 @@ export default function BlogListPage() {
             </h1>
 
             <div className="flex items-center space-x-2">
-              {/* 새 글 작성 아이콘 - 소유자일 때만 */}
               {isOwner && (
                 <>
                   <Link
@@ -401,18 +409,14 @@ export default function BlogListPage() {
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-6 sm:px-12 py-4 sm:py-6 pb-32 ">
-        {/* 필터 & 검색 - 모바일 최적화 */}
+      <div className="max-w-4xl mx-auto px-6 sm:px-12 py-4 sm:py-6 pb-32">
+        {/* 필터 & 검색 - 고정 */}
         <div className="bg-white rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 shadow-sm">
           <div className="flex flex-col gap-3 sm:gap-4">
-            {/* 타입 필터 - 모바일에서 스크롤 가능 */}
+            {/* 타입 필터 */}
             <div className="flex gap-1 sm:gap-2 overflow-x-auto scrollbar-hide">
               <button
-                onClick={() => {
-                  setSelectedType("ALL");
-                  setCurrentPage(1);
-                  setPosts([]);
-                }}
+                onClick={() => handleTypeChange("ALL")}
                 className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                   selectedType === "ALL"
                     ? "bg-gray-900 text-white"
@@ -422,11 +426,7 @@ export default function BlogListPage() {
                 전체
               </button>
               <button
-                onClick={() => {
-                  setSelectedType("NOTICE");
-                  setCurrentPage(1);
-                  setPosts([]);
-                }}
+                onClick={() => handleTypeChange("NOTICE")}
                 className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                   selectedType === "NOTICE"
                     ? "bg-red-500 text-white"
@@ -436,11 +436,7 @@ export default function BlogListPage() {
                 공지
               </button>
               <button
-                onClick={() => {
-                  setSelectedType("BLOG");
-                  setCurrentPage(1);
-                  setPosts([]);
-                }}
+                onClick={() => handleTypeChange("BLOG")}
                 className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                   selectedType === "BLOG"
                     ? "bg-blue-500 text-white"
@@ -450,11 +446,7 @@ export default function BlogListPage() {
                 블로그
               </button>
               <button
-                onClick={() => {
-                  setSelectedType("NEWS");
-                  setCurrentPage(1);
-                  setPosts([]);
-                }}
+                onClick={() => handleTypeChange("NEWS")}
                 className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                   selectedType === "NEWS"
                     ? "bg-green-500 text-white"
@@ -464,11 +456,7 @@ export default function BlogListPage() {
                 뉴스
               </button>
               <button
-                onClick={() => {
-                  setSelectedType("EXHIBITION");
-                  setCurrentPage(1);
-                  setPosts([]);
-                }}
+                onClick={() => handleTypeChange("EXHIBITION")}
                 className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                   selectedType === "EXHIBITION"
                     ? "bg-purple-500 text-white"
@@ -478,11 +466,7 @@ export default function BlogListPage() {
                 전시
               </button>
               <button
-                onClick={() => {
-                  setSelectedType("AWARD");
-                  setCurrentPage(1);
-                  setPosts([]);
-                }}
+                onClick={() => handleTypeChange("AWARD")}
                 className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                   selectedType === "AWARD"
                     ? "bg-yellow-500 text-white"
@@ -493,11 +477,7 @@ export default function BlogListPage() {
               </button>
               {isOwner && (
                 <button
-                  onClick={() => {
-                    setSelectedType("STUDIO");
-                    setCurrentPage(1);
-                    setPosts([]);
-                  }}
+                  onClick={() => handleTypeChange("STUDIO")}
                   className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                     selectedType === "STUDIO"
                       ? "bg-indigo-500 text-white"
@@ -525,9 +505,15 @@ export default function BlogListPage() {
           </div>
         </div>
 
-        {/* 포스트 목록 - 모바일 최적화 */}
-        <div className="space-y-3 sm:space-y-4 ">
-          {posts.length === 0 ? (
+        {/* 포스트 목록 - 리스트 로딩 상태 */}
+        <div className="space-y-3 sm:space-y-4 relative min-h-[200px]">
+          {isListLoading && (
+            <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-10">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            </div>
+          )}
+
+          {posts.length === 0 && !isListLoading ? (
             <div className="bg-white rounded-lg p-8 sm:p-12 text-center">
               <FileText className="w-10 h-10 sm:w-12 sm:h-12 text-gray-300 mx-auto mb-4" />
               <p className="text-sm sm:text-base text-gray-500">
@@ -554,7 +540,7 @@ export default function BlogListPage() {
                   )}
                   <Link
                     href={`/blog/${userSlug}/write`}
-                    className="inline-flex items-center gap-2 mt-4 px-3 sm:px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors"
+                    className="inline-flex items-center gap-2 mt-4 px-3 sm:px-4 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
                     <span>
@@ -578,7 +564,6 @@ export default function BlogListPage() {
                   <Link href={`/blog/${userSlug}/${post.id}`}>
                     <div className="p-4 sm:p-6">
                       <div className="flex items-start gap-3 sm:gap-4">
-                        {/* 대표 이미지 표시 */}
                         {post.featured_image && (
                           <div className="flex-shrink-0">
                             <img
@@ -593,8 +578,6 @@ export default function BlogListPage() {
                           </div>
                         )}
 
-                        {/* 콘텐츠 */}
-                        {/* 콘텐츠 */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2 sm:gap-4 mb-2">
                             <div className="flex items-center gap-1 sm:gap-2">
