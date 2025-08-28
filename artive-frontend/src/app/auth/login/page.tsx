@@ -173,28 +173,28 @@ export default function LoginPage() {
             </div>
           )}
 
-          {showResendButton && (
-            <div className="mt-4">
-              <button
-                type="button"
-                onClick={handleResendVerification}
-                disabled={resendLoading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-400 disabled:cursor-not-allowed"
-              >
-                {resendLoading ? "재발송 중..." : "인증 메일 재발송"}
-              </button>
-            </div>
-          )}
-
           <div>
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400 disabled:cursor-not-allowed"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               {loading ? "로그인 중..." : "로그인"}
             </button>
           </div>
+
+          {showResendButton && (
+            <div>
+              <button
+                type="button"
+                onClick={handleResendVerification}
+                disabled={resendLoading}
+                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              >
+                {resendLoading ? "재발송 중..." : "이메일 인증 재발송"}
+              </button>
+            </div>
+          )}
 
           <div className="flex items-center justify-between">
             <div className="text-sm">
