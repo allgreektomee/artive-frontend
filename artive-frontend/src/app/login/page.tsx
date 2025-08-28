@@ -57,86 +57,83 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Artive 로그인
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            작가 포트폴리오 플랫폼에 오신 것을 환영합니다
-          </p>
-        </div>
-
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email" className="sr-only">
-                이메일
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-gray-500 focus:border-gray-500 focus:z-10 sm:text-sm"
-                placeholder="이메일 주소"
-                value={form.email}
-                onChange={handleChange}
-                disabled={loading}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                비밀번호
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-gray-500 focus:border-gray-500 focus:z-10 sm:text-sm"
-                placeholder="비밀번호"
-                value={form.password}
-                onChange={handleChange}
-                disabled={loading}
-              />
-            </div>
+    <div className="min-h-screen bg-white">
+      <div className="px-8 pt-16 pb-8">
+        <div className="max-w-sm mx-auto">
+          <div className="text-center space-y-4 mb-8">
+            <h2 className="text-2xl font-bold text-gray-800">Artive Login</h2>
+            <p className="text-sm text-gray-600">
+              당신의 예술적 순간들을 기다립니다
+            </p>
           </div>
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded text-sm">
-              {error}
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="email" className="sr-only">
+                  이메일
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                  placeholder="이메일 주소"
+                  value={form.email}
+                  onChange={handleChange}
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <label htmlFor="password" className="sr-only">
+                  비밀번호
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                  placeholder="비밀번호"
+                  value={form.password}
+                  onChange={handleChange}
+                  disabled={loading}
+                />
+              </div>
             </div>
-          )}
 
-          <div>
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-2xl text-sm">
+                {error}
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              className="w-full bg-gray-800 text-white py-4 rounded-2xl font-medium text-base hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors active:scale-95 duration-200"
             >
               {loading ? "로그인 중..." : "로그인"}
             </button>
-          </div>
 
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              가입 문의는{" "}
-              <a
-                href="https://instagram.com/artiveforme"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium text-pink-600 hover:text-pink-500"
-              >
-                @artiveforme
-              </a>{" "}
-              DM으로
-            </p>
-          </div>
-        </form>
+            <div className="text-center pt-4">
+              <p className="text-sm text-gray-600">
+                About Membership{" "}
+                <a
+                  href="https://instagram.com/artiveforme"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-gray-800 hover:text-gray-600 underline"
+                >
+                  @artiveforme
+                </a>{" "}
+              </p>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
