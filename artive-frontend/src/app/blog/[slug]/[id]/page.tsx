@@ -286,14 +286,14 @@ export default function BlogDetailPage() {
                 <>
                   <Link
                     href={`/blog/${userSlug}/${postId}/edit`}
-                    className="p-2 sm:px-4 sm:py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                    className="p-2 sm:px-4 sm:py-2 text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors flex items-center"
                   >
                     <Edit className="w-4 h-4" />
                     <span className="hidden sm:inline ml-2 text-sm">수정</span>
                   </Link>
                   <button
                     onClick={() => setShowDeleteModal(true)}
-                    className="p-2 sm:px-4 sm:py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+                    className="p-2 sm:px-4 sm:py-2 text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors flex items-center"
                   >
                     <Trash2 className="w-4 h-4" />
                     <span className="hidden sm:inline ml-2 text-sm">삭제</span>
@@ -302,7 +302,7 @@ export default function BlogDetailPage() {
               )}
               <button
                 onClick={handleShare}
-                className="p-2 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="p-2 sm:px-4 sm:py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center"
               >
                 <Share2 className="w-4 h-4" />
                 <span className="hidden sm:inline ml-2 text-sm">공유</span>
@@ -490,7 +490,7 @@ export default function BlogDetailPage() {
               {post.tags.map((tag, index) => (
                 <span
                   key={index}
-                  className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
                 >
                   <Tag className="w-3 h-3" />
                   {tag}
@@ -519,7 +519,7 @@ export default function BlogDetailPage() {
               <button
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
               >
                 {isDeleting ? "삭제 중..." : "삭제"}
               </button>
