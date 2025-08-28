@@ -10,7 +10,6 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showResendButton, setShowResendButton] = useState(false);
-  const [resendEmail, setResendEmail] = useState("");
   const [resendLoading, setResendLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -22,13 +21,49 @@ export default function LoginPage() {
 
   const backEndUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
+  const handleGoogleLogin = () => {
+    window.location.href = `${backEndUrl}/oauth2/authorization/google`;
+  };
+
+  const handleResendVerification = async () => {
+    if (resendLoading) return;
+
+    setResendLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch(`${backEndUrl}/api/auth/resend-verification`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ email: form.email }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(
+          data.message || "인증 메일이 재발송되었습니다. 이메일을 확인해주세요."
+        );
+        setShowResendButton(false);
+      } else {
+        setError(data.detail || "재발송에 실패했습니다.");
+      }
+    } catch (err) {
+      setError("재발송 중 오류가 발생했습니다.");
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
 
     setError("");
     setLoading(true);
-    setShowResendButton(false);
 
     try {
       const res = await fetch(`${backEndUrl}/api/auth/login`, {
@@ -53,16 +88,13 @@ export default function LoginPage() {
           .json()
           .catch(() => ({ detail: "로그인에 실패했습니다" }));
 
-        // 이메일 인증이 필요한 경우
+        // 이메일 인증이 필요한 경우 체크
         if (
           errorData.detail &&
           errorData.detail.includes("이메일 인증이 필요")
         ) {
-          setError(
-            "이메일 인증이 필요합니다. 아래 버튼을 클릭해서 인증 메일을 재발송하세요."
-          );
+          setError("이메일 인증이 필요합니다. 인증 메일을 확인해주세요.");
           setShowResendButton(true);
-          setResendEmail(form.email);
         } else {
           setError(errorData.detail || "로그인에 실패했습니다");
           setShowResendButton(false);
@@ -74,43 +106,8 @@ export default function LoginPage() {
       } else {
         setError("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
       }
-      setShowResendButton(false);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleResendVerification = async () => {
-    if (resendLoading || !resendEmail) return;
-
-    setResendLoading(true);
-    setError("");
-
-    try {
-      const res = await fetch(`${backEndUrl}/api/auth/resend-verification`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({ email: resendEmail }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        alert(
-          data.message || "인증 메일이 재발송되었습니다. 이메일을 확인해주세요."
-        );
-        setShowResendButton(false);
-        setError("");
-      } else {
-        setError(data.detail || "재발송에 실패했습니다.");
-      }
-    } catch (err) {
-      setError("재발송 중 오류가 발생했습니다.");
-    } finally {
-      setResendLoading(false);
     }
   };
 
@@ -176,17 +173,13 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* 이메일 인증 재발송 버튼 */}
           {showResendButton && (
-            <div className="bg-blue-50 border border-blue-200 p-4 rounded">
-              <p className="text-blue-800 text-sm mb-3">
-                <strong>{resendEmail}</strong>로 인증 메일을 재발송하시겠습니까?
-              </p>
+            <div className="mt-4">
               <button
                 type="button"
                 onClick={handleResendVerification}
                 disabled={resendLoading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-400 disabled:cursor-not-allowed"
+                className="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 {resendLoading ? "재발송 중..." : "인증 메일 재발송"}
               </button>
@@ -203,13 +196,37 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <div className="text-sm text-center">
-            <Link
-              href="/auth/forgot-password"
-              className="font-medium text-indigo-600 hover:text-indigo-500"
-            >
-              비밀번호를 잊으셨나요?
-            </Link>
+          <div className="flex items-center justify-between">
+            <div className="text-sm">
+              <Link
+                href="/auth/forgot-password"
+                className="font-medium text-gray-600 gray:text-indigo-500"
+              >
+                비밀번호를 잊으셨나요?
+              </Link>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-gray-50 text-gray-500">또는</span>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={loading}
+                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                구글 계정으로 로그인
+              </button>
+            </div>
           </div>
         </form>
       </div>
