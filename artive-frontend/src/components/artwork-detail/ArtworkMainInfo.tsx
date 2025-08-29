@@ -166,16 +166,16 @@ const ArtworkMainInfo: React.FC<ArtworkMainInfoProps> = ({
             className="relative group cursor-pointer max-w-4xl w-full"
             onClick={onImageClick}
           >
-            <div className="rounded-3xl overflow-hidden bg-gray-50 shadow-lg">
+            <div className=" overflow-hidden bg-gray-50 shadow-lg">
               <img
-                src={artwork.thumbnail_url}
+                src={artwork.thumbnail_url || undefined}
                 alt={artwork.title}
                 className="w-full h-auto object-cover group-hover:scale-[1.02] transition-transform duration-700"
               />
             </div>
 
             {/* Zoom Indicator */}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 rounded-3xl flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center">
               <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 backdrop-blur-sm px-4 py-3 rounded-full shadow-lg">
                 <div className="flex items-center space-x-2">
                   <span className="text-lg">🔍</span>

@@ -52,9 +52,11 @@ export default function ArtistStatement({
   const hasText = !!statementText;
 
   return (
-    <div className="border-t">
+    <div>
+      {" "}
+      {/* border-t 제거 */}
       {/* 섹션 헤더 */}
-      <div className="py-8 sm:py-16 lg:py-20">
+      <div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {hasContent ? (
             <div className="space-y-16">

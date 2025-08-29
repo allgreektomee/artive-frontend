@@ -166,9 +166,10 @@ export default function AboutArtistPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* 메인 콘텐츠 */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20">
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-20">
         {/* About 섹션들 */}
-        <div className="space-y-12">
+        <div className="">
           {/* Artist Statement - 맨 위로 이동 */}
           <div id="artist-statement" className="artist-statement-section">
             <ArtistStatement galleryUser={galleryUser} isOwner={isOwner} />
@@ -182,7 +183,7 @@ export default function AboutArtistPage() {
             />
           </div>
           {/* 안내 문구 - 구분선 포함 */}
-          <div className="text-center -mt-10">
+          <div className="text-center">
             <p className="text-gray-700 font-normal mb-2">
               {galleryUser?.name || currentSlug?.toUpperCase()}'s Major
               Activities

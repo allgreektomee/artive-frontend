@@ -52,9 +52,22 @@ export default function BlogDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
 
   const backendUrl =
     process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+
+  // useEffect에 이벤트 리스너 추가
+  useEffect(() => {
+    const handleOpenFilter = () => {
+      setShowFilterModal(true);
+    };
+
+    window.addEventListener("openBlogFilter", handleOpenFilter);
+    return () => {
+      window.removeEventListener("openBlogFilter", handleOpenFilter);
+    };
+  }, []);
 
   useEffect(() => {
     if (userSlug && postId) {
@@ -500,7 +513,38 @@ export default function BlogDetailPage() {
           )}
         </div>
       </div>
-
+      {/* 필터 모달 */}
+      {showFilterModal && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
+          onClick={() => setShowFilterModal(false)}
+        >
+          <div
+            className="bg-white rounded-lg p-6 max-w-sm w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold mb-4">카테고리 선택</h3>
+            <div className="space-y-2">
+              {["ALL", "EXHIBITION", "AWARD", "NEWS", "STUDIO"].map((type) => (
+                <button
+                  key={type}
+                  onClick={() => {
+                    setSelectedType(type);
+                    setShowFilterModal(false);
+                  }}
+                  className={`w-full text-left px-4 py-2 rounded-lg ${
+                    selectedType === type
+                      ? "bg-gray-800 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  {getTypeLabel(type === "ALL" ? "전체" : type)}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       {/* 삭제 확인 모달 */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

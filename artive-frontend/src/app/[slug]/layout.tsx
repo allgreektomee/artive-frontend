@@ -225,23 +225,50 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
   // 작품 데이터를 위한 더미 배열 (헤더 컴포넌트가 요구하는 경우)
   const artworks: any[] = [];
 
+  // 1. 상태 추가 (기존 useState들과 함께)
+  const [selectedBlogType, setSelectedBlogType] = useState<string>("ALL");
+
+  // 2. useEffect 추가 (다른 useEffect들과 함께)
+  useEffect(() => {
+    const handleBlogTypeUpdate = (e: CustomEvent) => {
+      setSelectedBlogType(e.detail.type);
+    };
+
+    window.addEventListener(
+      "blogTypeUpdate",
+      handleBlogTypeUpdate as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        "blogTypeUpdate",
+        handleBlogTypeUpdate as EventListener
+      );
+    };
+  }, []);
+
+  const isDetailPage =
+    pathname?.includes("/artworks/") ||
+    (pathname?.includes("/blog/") && pathname?.split("/").length > 3);
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* 기존 GalleryHeader 사용 */}
-      <GalleryHeader
-        showGalleryHeader={showGalleryHeader}
-        galleryUser={galleryUser}
-        currentSlug={currentSlug}
-        artworks={artworks}
-        isOwner={isOwner}
-        onProfileClick={handleProfileClick}
-        mobileGridMode={mobileGridMode}
-        onMobileGridChange={setMobileGridMode}
-        postCount={postCount}
-        studioPostId={studioPostId}
-      />
-
-      {/* Gallery Info - 모든 페이지에서 표시 */}
+      {!isDetailPage && (
+        <GalleryHeader
+          showGalleryHeader={showGalleryHeader}
+          galleryUser={galleryUser}
+          currentSlug={currentSlug}
+          artworks={artworks}
+          isOwner={isOwner}
+          onProfileClick={handleProfileClick}
+          mobileGridMode={mobileGridMode}
+          onMobileGridChange={setMobileGridMode}
+          postCount={postCount}
+          studioPostId={studioPostId}
+        />
+      )}
+      ;{/* Gallery Info - 모든 페이지에서 표시 */}
       <div className="bg-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <GalleryInfo
@@ -257,22 +284,22 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
             mobileGridMode={mobileGridMode}
             onMobileGridChange={setMobileGridMode}
             postCount={postCount}
+            selectedBlogType={selectedBlogType} // 추가
           />
         </div>
       </div>
-
       {/* 메인 콘텐츠 영역 */}
       <main className="flex-1 bg-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-32">
           {children}
         </div>
       </main>
-
       {/* 하단 여백 */}
       <div className="h-24"></div>
-
       {/* 하단 네비게이션 */}
-      <BottomNavigation currentSlug={currentSlug} isOwner={isOwner} />
+      {!isDetailPage && (
+        <BottomNavigation currentSlug={currentSlug} isOwner={isOwner} />
+      )}
     </div>
   );
 }

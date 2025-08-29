@@ -50,6 +50,8 @@ export default function BlogListPage() {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   const postsPerPage = 10;
 
+  const [showFilterModal, setShowFilterModal] = useState(false); // 추가
+
   // 레이아웃에서 이벤트 수신
   useEffect(() => {
     const handleTypeChange = (e: CustomEvent) => {
@@ -76,6 +78,54 @@ export default function BlogListPage() {
       window.removeEventListener("blogSearch", handleSearch as EventListener);
     };
   }, []);
+
+  // useEffect 수정
+  useEffect(() => {
+    const handleTypeChange = (e: CustomEvent) => {
+      setSelectedType(e.detail);
+      setCurrentPage(1);
+    };
+
+    const handleSearch = (e: CustomEvent) => {
+      setSearchTerm(e.detail);
+      setCurrentPage(1);
+    };
+
+    // 추가
+    const handleOpenFilter = () => {
+      setShowFilterModal(true);
+    };
+
+    window.addEventListener(
+      "blogTypeChange",
+      handleTypeChange as EventListener
+    );
+    window.addEventListener("blogSearch", handleSearch as EventListener);
+    window.addEventListener(
+      "openBlogFilter",
+      handleOpenFilter as EventListener
+    ); // 추가
+
+    return () => {
+      window.removeEventListener(
+        "blogTypeChange",
+        handleTypeChange as EventListener
+      );
+      window.removeEventListener("blogSearch", handleSearch as EventListener);
+      window.removeEventListener(
+        "openBlogFilter",
+        handleOpenFilter as EventListener
+      ); // 추가
+    };
+  }, []);
+
+  // 선택된 타입 업데이트 이벤트 추가
+  useEffect(() => {
+    const event = new CustomEvent("blogTypeUpdate", {
+      detail: { type: selectedType },
+    });
+    window.dispatchEvent(event);
+  }, [selectedType]);
 
   // 초기 로딩 및 필터 변경 시
   useEffect(() => {
@@ -181,10 +231,13 @@ export default function BlogListPage() {
     }
   };
 
+  // getTypeColor 함수
   const getTypeColor = (type: string) => {
     switch (type) {
-      case "NOTICE":
-        return "bg-red-100 text-red-700 border-red-200";
+      case "ALL":
+        return "bg-gray-100 text-gray-700 border-gray-200";
+      case "TRAVEL":
+        return "bg-green-100 text-green-700 border-green-200";
       case "EXHIBITION":
         return "bg-purple-100 text-purple-700 border-purple-200";
       case "AWARD":
@@ -198,10 +251,13 @@ export default function BlogListPage() {
     }
   };
 
+  // getTypeLabel 함수
   const getTypeLabel = (type: string) => {
     switch (type) {
-      case "NOTICE":
-        return "공지";
+      case "ALL":
+        return "전체";
+      case "TRAVEL":
+        return "여행";
       case "EXHIBITION":
         return "전시";
       case "AWARD":
@@ -209,7 +265,7 @@ export default function BlogListPage() {
       case "NEWS":
         return "뉴스";
       case "STUDIO":
-        return "스튜디오";
+        return "공간";
       default:
         return "블로그";
     }
@@ -376,6 +432,48 @@ export default function BlogListPage() {
               "Load More"
             )}
           </button>
+        </div>
+      )}
+
+      {showFilterModal && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
+          onClick={() => setShowFilterModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl p-4 max-w-xs w-full mx-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-sm font-semibold text-gray-500 mb-3 px-2">
+              카테고리
+            </h3>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { value: "ALL", label: "전체", icon: "📝" },
+                { value: "TRAVEL", label: "여행", icon: "✈️" },
+                { value: "EXHIBITION", label: "전시", icon: "🖼️" },
+                { value: "AWARD", label: "수상", icon: "🏆" },
+                { value: "NEWS", label: "뉴스", icon: "📰" },
+                { value: "STUDIO", label: "공간", icon: "🎨" },
+              ].map((item) => (
+                <button
+                  key={item.value}
+                  onClick={() => {
+                    setSelectedType(item.value);
+                    setShowFilterModal(false);
+                  }}
+                  className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl transition-all ${
+                    selectedType === item.value
+                      ? "bg-gray-600 text-white shadow-lg scale-105"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  <span className="text-sm">{item.icon}</span>
+                  <span className="text-sm font-medium">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </>

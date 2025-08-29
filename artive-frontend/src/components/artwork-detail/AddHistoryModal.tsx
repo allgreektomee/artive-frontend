@@ -121,19 +121,7 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
   };
 
   const [selectedEmoji, setSelectedEmoji] = useState("🎨");
-  const quickEmojis = [
-    "🎨",
-    "🖌️",
-    "📸",
-    "🎬",
-    "🚀",
-    "✨",
-    "📺",
-    "😊",
-    "🔥",
-    "💡",
-    "🖼️",
-  ];
+  const quickEmojis = ["🎨", "🎬", "✨", "😊", "🔥", "💡", "🖼️"];
 
   const handleMediaTypeChange = (type: "text" | "image" | "youtube") => {
     if (editingHistory) return;
@@ -283,7 +271,7 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
       {/* Header - 고정 */}
       <div className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="text-xl  font-bold text-gray-900">
             {editingHistory ? "Edit Process" : "Add New Process"}
           </h2>
           <button
@@ -323,7 +311,7 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
               </div>
             )}
 
-            {/* Media Type Selection */}
+            {/* Media Type Selection - 컴팩트한 높이 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
                 Type{" "}
@@ -340,7 +328,7 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
                       !editingHistory && handleMediaTypeChange(type)
                     }
                     disabled={editingHistory}
-                    className={`p-4 rounded-xl border-2 transition-all ${
+                    className={`p-3 rounded-xl border-2 transition-all ${
                       form.media_type === type
                         ? "border-blue-500 bg-blue-50 text-blue-700"
                         : "border-gray-200 hover:border-gray-300 text-gray-600"
@@ -350,10 +338,9 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
                         : "cursor-pointer"
                     }`}
                   >
-                    <div className="text-2xl mb-2">
-                      {getMediaTypeIcon(type)}
+                    <div className="text-sm mb-1">
+                      {getMediaTypeIcon(type)} {type}
                     </div>
-                    <div className="text-sm font-medium capitalize">{type}</div>
                   </button>
                 ))}
               </div>
@@ -412,15 +399,111 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
               />
             </div>
 
-            {/* Media Upload sections... (image, youtube 부분 그대로) */}
+            {/* Image Upload */}
             {form.media_type === "image" && (
-              // ... 기존 이미지 업로드 코드 그대로 ...
-              <div>{/* 이미지 업로드 UI */}</div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Image
+                </label>
+                {imagePreview ? (
+                  <div className="relative">
+                    <div className="relative w-full bg-gray-100 rounded-lg overflow-hidden">
+                      <div
+                        className="relative w-full"
+                        style={{ paddingBottom: "66.67%" }}
+                      >
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="absolute inset-0 w-full h-full object-contain bg-gray-50"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImagePreview(null);
+                        setUploadedImageUrl(null);
+                        setForm((prev) => ({ ...prev, media_url: "" }));
+                      }}
+                      className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm text-red-500 p-2 rounded-full hover:bg-white shadow-lg"
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400">
+                    <label className="cursor-pointer block p-8">
+                      <svg
+                        className="mx-auto h-12 w-12 text-gray-400"
+                        stroke="currentColor"
+                        fill="none"
+                        viewBox="0 0 48 48"
+                      >
+                        <path
+                          d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                          strokeWidth={2}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <p className="mt-2 text-sm text-gray-600">
+                        클릭하여 이미지 업로드
+                      </p>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                        disabled={uploadingImage}
+                      />
+                    </label>
+                  </div>
+                )}
+              </div>
             )}
 
+            {/* YouTube URL */}
             {form.media_type === "youtube" && (
-              // ... 기존 유튜브 URL 코드 그대로 ...
-              <div>{/* 유튜브 URL 입력 UI */}</div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  YouTube URL
+                </label>
+                <input
+                  type="url"
+                  name="media_url"
+                  value={form.media_url}
+                  onChange={handleInputChange}
+                  placeholder="https://youtube.com/watch?v=..."
+                  className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:border-blue-500"
+                />
+                {youtubePreview && (
+                  <div className="mt-4 rounded-lg overflow-hidden">
+                    <div
+                      className="relative w-full"
+                      style={{ paddingBottom: "56.25%" }}
+                    >
+                      <iframe
+                        src={`https://www.youtube.com/embed/${youtubePreview}`}
+                        className="absolute inset-0 w-full h-full"
+                        allowFullScreen
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
 
             {/* Work Date */}

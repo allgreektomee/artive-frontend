@@ -78,11 +78,11 @@ const ArtworkGrid: React.FC<ArtworkGridProps> = ({
           <button
             onClick={onLoadMore}
             disabled={loadingMore}
-            className="bg-black text-white px-8 py-3 rounded-full hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-gray-600 text-white px-8 py-3 rounded-full hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loadingMore ? (
               <div className="flex items-center space-x-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <div className="animate-spin rounded-full h-4 w-5 border-b-2 border-white"></div>
                 <span>Loading...</span>
               </div>
             ) : (

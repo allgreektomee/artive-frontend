@@ -297,6 +297,7 @@ export default function ArtworkDetailPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
+          title: data.title, // 이 줄 추가
           description: data.description,
           links: data.links,
           youtube_urls: data.youtube_urls,
@@ -432,6 +433,7 @@ export default function ArtworkDetailPage() {
         onClose={() => setShowEditDescriptionModal(false)}
         onSubmit={handleUpdateDescription}
         currentData={{
+          title: artwork?.title || "", // 이 줄 추가
           description: artwork?.description || "",
           links: artwork?.links || [],
           youtube_urls: artwork?.youtube_urls || [],

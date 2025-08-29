@@ -21,11 +21,13 @@ interface EditDescriptionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: {
+    title: string;
     description: string;
     links: Array<{ title: string; url: string }>;
     youtube_urls: string[];
   }) => Promise<void>;
   currentData: {
+    title: string;
     description: string;
     links?: Array<{ title: string; url: string }>;
     youtube_urls?: string[];
@@ -47,6 +49,7 @@ const EditDescriptionModal: React.FC<EditDescriptionModalProps> = ({
   artworkTitle,
   loading = false,
 }) => {
+  const [title, setTitle] = useState(currentData.title || "");
   const [links, setLinks] = useState<LinkItem[]>(currentData.links || []);
   const [youtubeUrls, setYoutubeUrls] = useState<string[]>(
     currentData.youtube_urls || []
@@ -56,7 +59,6 @@ const EditDescriptionModal: React.FC<EditDescriptionModalProps> = ({
   const [newLink, setNewLink] = useState<LinkItem>({ title: "", url: "" });
   const [newYoutubeUrl, setNewYoutubeUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Tiptap 에디터 설정
   const editor = useEditor({
@@ -91,7 +93,7 @@ const EditDescriptionModal: React.FC<EditDescriptionModalProps> = ({
   // ESC 키로 모달 닫기
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !isSubmitting) {
+      if (event.key === "Escape" && !loading) {
         onClose();
       }
     };
@@ -105,12 +107,14 @@ const EditDescriptionModal: React.FC<EditDescriptionModalProps> = ({
       document.removeEventListener("keydown", handleEsc);
       document.body.style.overflow = "unset";
     };
-  }, [isOpen, onClose, isSubmitting]);
+  }, [isOpen, onClose, loading]);
 
   // 모달 열릴 때 데이터 초기화
   useEffect(() => {
     if (isOpen) {
-      editor?.commands.setContent(currentData.description || "");
+      const content = currentData.description || "";
+      editor?.commands.setContent(content);
+      setTitle(currentData.title || "");
       setLinks(currentData.links || []);
       setYoutubeUrls(currentData.youtube_urls || []);
       setError(null);
@@ -177,16 +181,21 @@ const EditDescriptionModal: React.FC<EditDescriptionModalProps> = ({
 
     const description = editor?.getHTML() || "";
 
+    if (!title.trim()) {
+      setError("제목을 입력해주세요.");
+      return;
+    }
+
     if (description.length > 5000) {
       setError("설명은 5000자 이하여야 합니다.");
       return;
     }
 
     setError(null);
-    setIsSubmitting(true);
 
     try {
       await onSubmit({
+        title: title.trim(),
         description,
         links,
         youtube_urls: youtubeUrls,
@@ -194,36 +203,28 @@ const EditDescriptionModal: React.FC<EditDescriptionModalProps> = ({
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "수정에 실패했습니다.");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   if (!isOpen) return null;
 
-  const hasChanges =
-    editor?.getHTML() !== currentData.description ||
-    JSON.stringify(links) !== JSON.stringify(currentData.links || []) ||
-    JSON.stringify(youtubeUrls) !==
-      JSON.stringify(currentData.youtube_urls || []);
-
   return (
     <div className="fixed inset-0 bg-white md:bg-black/50 md:flex md:items-center md:justify-center z-50 md:p-4">
       <div className="bg-white md:rounded-2xl w-full h-full md:h-auto md:max-w-5xl md:max-h-[90vh] flex flex-col">
-        {/* Header - 모바일에서 더 컴팩트 */}
+        {/* Header */}
         <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-2.5 md:py-4 md:rounded-t-2xl flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
               <h2 className="text-lg md:text-2xl font-bold text-gray-900">
-                작품 설명 수정
+                작품 정보 수정
               </h2>
-              <p className="text-xs md:text-sm text-gray-500 truncate">
-                {artworkTitle}
+              <p className="text-xs md:text-sm text-gray-500">
+                제목과 설명을 수정할 수 있습니다
               </p>
             </div>
             <button
               onClick={onClose}
-              disabled={isSubmitting}
+              disabled={loading}
               className="p-1.5 md:p-2 -mr-1.5 md:-mr-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 flex-shrink-0"
             >
               <svg
@@ -243,7 +244,7 @@ const EditDescriptionModal: React.FC<EditDescriptionModalProps> = ({
           </div>
         </div>
 
-        {/* Content - 모바일에서 flex-1로 남은 공간 모두 사용 */}
+        {/* Content */}
         <div className="flex-1 overflow-hidden flex flex-col min-h-0">
           <form
             onSubmit={handleSubmit}
@@ -256,12 +257,25 @@ const EditDescriptionModal: React.FC<EditDescriptionModalProps> = ({
               </div>
             )}
 
-            {/* Editor Container - 패딩을 여기에 적용하고 flex-1 */}
+            {/* Title Input */}
+            <div className="px-4 md:px-6 mb-4 flex-shrink-0">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                작품 제목 *
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="작품 제목을 입력하세요"
+                disabled={loading}
+                className="w-full px-3 md:px-4 py-2 md:py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 disabled:bg-gray-100 text-sm md:text-base"
+              />
+            </div>
+
+            {/* Editor Container */}
             <div className="flex-1 px-4 md:px-6 py-3 md:py-4 overflow-hidden">
-              {/* Editor with Toolbar - 높이 100% */}
               <div className="border border-gray-300 rounded-lg bg-white h-full flex flex-col">
-                {/* overflow-hidden 제거 */}
-                {/* 툴바 - 모바일에서 스크롤 가능 */}
+                {/* 툴바 */}
                 <div className="border-b border-gray-200 bg-gray-50 p-1.5 md:p-2 flex items-center gap-1 overflow-x-auto flex-shrink-0">
                   {/* 텍스트 스타일 */}
                   <div className="flex items-center gap-0.5 md:gap-1 flex-shrink-0">
@@ -305,7 +319,7 @@ const EditDescriptionModal: React.FC<EditDescriptionModalProps> = ({
                   {/* 구분선 */}
                   <div className="w-px h-5 md:h-6 bg-gray-300 mx-0.5 md:mx-1 flex-shrink-0" />
 
-                  {/* 제목 - 모바일에서 간소화 */}
+                  {/* 제목 */}
                   <div className="flex items-center gap-0.5 md:gap-1 flex-shrink-0">
                     <button
                       type="button"
@@ -571,7 +585,7 @@ const EditDescriptionModal: React.FC<EditDescriptionModalProps> = ({
                   </div>
                 )}
 
-                {/* 에디터 본문 - flex-1로 남은 공간 모두 사용 */}
+                {/* 에디터 본문 */}
                 <div className="flex-1 min-h-0 overflow-y-auto">
                   <EditorContent
                     editor={editor}
@@ -579,7 +593,7 @@ const EditDescriptionModal: React.FC<EditDescriptionModalProps> = ({
                   />
                 </div>
 
-                {/* 추가된 링크/유튜브는 스크롤 영역 내에 포함 */}
+                {/* 추가된 링크/유튜브 목록 */}
                 {(links.length > 0 || youtubeUrls.length > 0) && (
                   <div className="flex-shrink-0 max-h-[30vh] overflow-y-auto">
                     {/* 추가된 링크 목록 */}
@@ -655,7 +669,7 @@ const EditDescriptionModal: React.FC<EditDescriptionModalProps> = ({
                                     />
                                   </button>
                                 </div>
-                                {/* 유튜브 미리보기 - 모바일에서는 숨김 옵션 */}
+                                {/* 유튜브 미리보기 */}
                                 {videoId && (
                                   <div
                                     className="hidden md:block relative w-full bg-black rounded-lg overflow-hidden"
@@ -684,62 +698,50 @@ const EditDescriptionModal: React.FC<EditDescriptionModalProps> = ({
           </form>
         </div>
 
-        {/* Footer - 모바일에서 간소화, 하단 고정 */}
+        {/* Footer */}
         <div className="bg-white border-t border-gray-200 px-4 md:px-6 py-2.5 md:py-4 flex-shrink-0">
-          <div className="flex justify-between items-center">
-            <div className="text-xs md:text-sm text-gray-500">
-              {hasChanges && (
-                <span className="flex items-center space-x-1">
-                  <span className="w-1.5 h-1.5 md:w-2 md:h-2 bg-orange-400 rounded-full"></span>
-                  <span className="hidden md:inline">변경사항이 있습니다</span>
-                  <span className="md:hidden">변경됨</span>
-                </span>
+          <div className="flex justify-end space-x-2 md:space-x-3">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="px-4 md:px-6 py-1.5 md:py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 text-sm md:text-base"
+            >
+              취소
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="px-4 md:px-6 py-1.5 md:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 md:space-x-2 text-sm md:text-base"
+            >
+              {loading ? (
+                <>
+                  <svg
+                    className="animate-spin h-3 w-3 md:h-4 md:w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  <span>저장 중...</span>
+                </>
+              ) : (
+                <span>저장</span>
               )}
-            </div>
-
-            <div className="flex space-x-2 md:space-x-3">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={isSubmitting}
-                className="px-4 md:px-6 py-1.5 md:py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 text-sm md:text-base"
-              >
-                취소
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={!hasChanges || isSubmitting}
-                className="px-4 md:px-6 py-1.5 md:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 md:space-x-2 text-sm md:text-base"
-              >
-                {isSubmitting ? (
-                  <>
-                    <svg
-                      className="animate-spin h-3 w-3 md:h-4 md:w-4 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    <span>저장 중...</span>
-                  </>
-                ) : (
-                  <span>저장</span>
-                )}
-              </button>
-            </div>
+            </button>
           </div>
         </div>
       </div>

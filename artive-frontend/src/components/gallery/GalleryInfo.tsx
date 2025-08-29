@@ -1,5 +1,4 @@
 // components/gallery/GalleryInfo.tsx
-
 import React from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -24,6 +23,7 @@ interface GalleryInfoProps {
   mobileGridMode?: "single" | "double";
   onMobileGridChange?: (mode: "single" | "double") => void;
   postCount?: number;
+  selectedBlogType?: string; // 추가
 }
 
 const GalleryInfo: React.FC<GalleryInfoProps> = ({
@@ -35,6 +35,7 @@ const GalleryInfo: React.FC<GalleryInfoProps> = ({
   mobileGridMode = "double",
   onMobileGridChange,
   postCount = 0,
+  selectedBlogType = "ALL", // 추가
 }) => {
   const pathname = usePathname();
 
@@ -48,15 +49,37 @@ const GalleryInfo: React.FC<GalleryInfoProps> = ({
 
   const pageType = getPageType();
 
+  // UI 타입 결정 (Gallery/Blog는 같은 UI, Artist/Studio는 같은 UI)
+  const getUIType = () => {
+    if (pageType === "gallery" || pageType === "blog") return "with-stats";
+    return "simple";
+  };
+
+  const uiType = getUIType();
+
+  // 블로그 타입 라벨
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case "ALL":
+        return "전체";
+      case "EXHIBITION":
+        return "전시";
+      case "AWARD":
+        return "수상";
+      case "NEWS":
+        return "뉴스";
+      case "STUDIO":
+        return "스튜디오";
+      default:
+        return "전체";
+    }
+  };
+
   // 페이지별 타이틀
   const getTitle = () => {
     switch (pageType) {
       case "gallery":
-        return (
-          galleryUser?.gallery_title ||
-          galleryUser?.name ||
-          currentSlug?.toUpperCase() + " Gallery"
-        );
+        return galleryUser?.gallery_title;
       case "blog":
         return `${currentSlug?.toUpperCase()} 블로그`;
       case "studio":
@@ -78,7 +101,9 @@ const GalleryInfo: React.FC<GalleryInfoProps> = ({
       case "studio":
         return "작업 공간과 과정";
       case "artist":
-        return "작가 소개";
+        return (
+          galleryUser?.bio || galleryUser?.gallery_description || "작가 소개"
+        );
       default:
         return "";
     }
@@ -91,31 +116,51 @@ const GalleryInfo: React.FC<GalleryInfoProps> = ({
         return `${galleryUser?.total_artworks || artworks.length} Artworks`;
       case "blog":
         return `${postCount} Posts`;
-      case "studio":
-        return null;
-      case "artist":
-        return null;
       default:
         return null;
     }
   };
 
-  // 그리드 모드 변경 핸들러 - CustomEvent 발생
+  // 그리드 모드 변경 핸들러
   const handleGridToggle = () => {
     const newMode = mobileGridMode === "single" ? "double" : "single";
 
-    // CustomEvent 발생 - GalleryPage에서 리스닝
     const event = new CustomEvent("mobileGridModeChange", {
       detail: newMode,
     });
     window.dispatchEvent(event);
 
-    // props로 전달된 핸들러도 호출 (있는 경우)
     if (onMobileGridChange) {
       onMobileGridChange(newMode);
     }
   };
 
+  // Simple UI (Artist, Studio 페이지)
+  if (uiType === "simple") {
+    return (
+      <div id="gallery-info" className="mb-2 -mt-10">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-1">{getTitle()}</h1>
+
+        <div className="flex justify-between items-start pb-2 border-b border-gray-200">
+          <p className="text-gray-600 text-sm sm:text-base">
+            {getDescription() || ""}
+          </p>
+
+          {isOwner && (
+            <button
+              onClick={onProfileClick}
+              title="Edit Profile"
+              className="text-gray-600 hover:text-black transition-colors flex-shrink-0 -mt-0.5"
+            >
+              <FaUser className="text-lg sm:text-xl md:text-2xl" />
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // With Stats UI (Gallery, Blog 페이지)
   return (
     <div id="gallery-info" className="mb-2 -mt-10">
       <h1 className="text-2xl sm:text-3xl font-bold mb-1">{getTitle()}</h1>
@@ -126,14 +171,39 @@ const GalleryInfo: React.FC<GalleryInfoProps> = ({
         </p>
       )}
 
-      {/* 통계와 아이콘 */}
       <div className="flex justify-between items-center gap-4 py-2 border-b border-gray-200">
         <div className="flex items-center gap-3 sm:gap-6 text-sm text-gray-500">
           {getStats() && <span className="font-medium">{getStats()}</span>}
         </div>
 
         <div className="flex items-center space-x-2 sm:space-x-3">
-          {/* 그리드 토글 버튼 - Gallery 페이지 모바일에서만 표시 */}
+          {/* Blog 페이지 필터 버튼 */}
+          {pageType === "blog" && (
+            <button
+              className="inline-flex items-center gap-1 px-2 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-600"
+              onClick={() => {
+                const event = new CustomEvent("openBlogFilter");
+                window.dispatchEvent(event);
+              }}
+            >
+              <span>{getTypeLabel(selectedBlogType)}</span>
+              <svg
+                className="w-3 h-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+          )}
+
+          {/* Gallery 그리드 토글 버튼 */}
           {pageType === "gallery" && (
             <button
               onClick={handleGridToggle}
@@ -148,7 +218,7 @@ const GalleryInfo: React.FC<GalleryInfoProps> = ({
             </button>
           )}
 
-          {/* 프로필 아이콘 - 소유자일 때만 표시 */}
+          {/* 프로필 아이콘 */}
           {isOwner && (
             <button
               onClick={onProfileClick}

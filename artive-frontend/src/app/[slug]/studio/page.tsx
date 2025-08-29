@@ -233,24 +233,16 @@ export default function StudioPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* 메인 콘텐츠 - Artist 페이지 스타일, 여백 증가 */}
-      <div className="bg-white">
-        <div className="max-w-5xl mx-auto px-8 sm:px-10 lg:px-16 pb-24">
-          {/* HR 태그로 확실한 구분선 */}
-          <hr className="border-0 h-px bg-gray-300 my-4" />
-          <div className="flex justify-center">
-            <div
-              className="blog-content "
-              dangerouslySetInnerHTML={{ __html: studioPost?.content || "" }}
-            />
-          </div>
+    <>
+      {/* 메인 콘텐츠 - Layout의 children으로 렌더링 */}
+      <div className="">
+        <div className="flex justify-center">
+          <div
+            className="blog-content max-w-none"
+            dangerouslySetInnerHTML={{ __html: studioPost?.content || "" }}
+          />
         </div>
       </div>
-
-      <div className="h-24"></div>
-
-      <BottomNavigation currentSlug={currentSlug} isOwner={isOwner} />
-    </div>
+    </>
   );
 }

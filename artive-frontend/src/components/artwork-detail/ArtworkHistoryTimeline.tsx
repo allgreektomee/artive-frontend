@@ -39,7 +39,7 @@ const ArtworkHistoryTimeline: React.FC<ArtworkHistoryTimelineProps> = ({
           {isOwner && (
             <button
               onClick={onAddHistory}
-              className="flex items-center space-x-1 lg:space-x-2 bg-black text-white px-3 lg:px-4 py-2 rounded-full hover:bg-gray-800 transition-colors group text-sm lg:text-base"
+              className="flex items-center space-x-1 lg:space-x-2 bg-gray-600 text-white px-3 lg:px-4 py-2 rounded-full hover:bg-gray-800 transition-colors group text-sm lg:text-base"
             >
               <span className="text-xs lg:text-sm group-hover:rotate-90 transition-transform">
                 +

@@ -154,7 +154,7 @@ export default function ExhibitionsRecognition({
 
   return (
     <div className="py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-0 sm:max-w-4xl sm:mx-auto sm:px-6 lg:px-8">
         {hasContent ? (
           <div className="space-y-12">
             {/* Exhibition 섹션 */}

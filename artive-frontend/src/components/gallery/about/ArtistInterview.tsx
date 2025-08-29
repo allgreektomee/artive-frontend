@@ -169,7 +169,7 @@ export default function ArtistInterview({
   if (loading) {
     return (
       <div className="py-4 sm:py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-0 sm:max-w-7xl sm:mx-auto sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
           </div>
@@ -180,7 +180,7 @@ export default function ArtistInterview({
 
   return (
     <div className="py-4 sm:py-6 lg:py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-0 sm:max-w-7xl sm:mx-auto sm:px-6 lg:px-8">
         {hasContent ? (
           <>
             {/* 헤더 */}

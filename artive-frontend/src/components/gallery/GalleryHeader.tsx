@@ -64,10 +64,18 @@ export default function GalleryHeader({
 
   // 갤러리 페이지일 때만 소개 텍스트 표시
   const getDescription = () => {
-    if (pageType === "gallery" && galleryUser?.gallery_description) {
-      return galleryUser.gallery_description;
+    switch (pageType) {
+      case "gallery":
+        return galleryUser?.gallery_description || "";
+      case "artist":
+        return galleryUser?.bio || galleryUser?.gallery_description || "";
+      case "blog":
+        return "전시, 수상, 활동 기록";
+      case "studio":
+        return "작업 공간과 과정";
+      default:
+        return null;
     }
-    return null;
   };
 
   const handleEditStudio = () => {
@@ -75,22 +83,6 @@ export default function GalleryHeader({
       router.push(`/${currentSlug}/blog/${studioPostId}/edit`);
     } else {
       router.push(`/${currentSlug}/blog/write`);
-    }
-  };
-
-  // 그리드 모드 변경 핸들러 - CustomEvent 발생
-  const handleGridToggle = () => {
-    const newMode = mobileGridMode === "single" ? "double" : "single";
-
-    // CustomEvent 발생 - GalleryPage에서 리스닝
-    const event = new CustomEvent("mobileGridModeChange", {
-      detail: newMode,
-    });
-    window.dispatchEvent(event);
-
-    // props로 전달된 핸들러도 호출 (있는 경우)
-    if (onMobileGridChange) {
-      onMobileGridChange(newMode);
     }
   };
 
@@ -112,7 +104,7 @@ export default function GalleryHeader({
               </h1>
               {/* 갤러리 소개 텍스트 - 갤러리 페이지일 때만 표시 */}
               {getDescription() && (
-                <p className="text-xs sm:text-sm text-gray-500 mt-0.5 truncate">
+                <p className="text-xs sm:text-sm text-gray-500 mt-0.5 truncate max-w-full">
                   {getDescription()}
                 </p>
               )}
@@ -122,10 +114,15 @@ export default function GalleryHeader({
           {/* 오른쪽: 액션 버튼들 */}
           <div className="flex items-center space-x-2 sm:space-x-3">
             {/* Gallery 페이지에서만 그리드 모드 전환 버튼 표시 */}
+
             {pageType === "gallery" && (
               <button
                 className="text-gray-600 hover:text-black transition-colors p-1"
-                onClick={handleGridToggle}
+                onClick={() =>
+                  onMobileGridChange(
+                    mobileGridMode === "single" ? "double" : "single"
+                  )
+                }
                 title="그리드 모드 변경"
               >
                 {mobileGridMode === "single" ? (
