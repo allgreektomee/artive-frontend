@@ -29,6 +29,7 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
   const [studioPostId, setStudioPostId] = useState<number | undefined>();
 
   const backEndUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Gallery 페이지인지 체크
   const isGalleryPage = pathname === `/${currentSlug}`;
@@ -36,6 +37,11 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
   // 스크롤 기반 헤더 전환 로직
   useEffect(() => {
     const handleScroll = () => {
+      // 초기 로딩 상태 해제
+      if (isInitialLoad) {
+        setIsInitialLoad(false);
+      }
+
       // 페이지별로 다른 스크롤 임계값 설정
       let threshold = 200;
       if (pathname?.includes("/blog")) {
@@ -61,10 +67,17 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
     };
 
     window.addEventListener("scroll", handleScroll);
-    handleScroll(); // 초기 실행
 
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [isGalleryPage, pathname]);
+    // 초기 실행을 지연시켜서 DOM이 완전히 렌더링된 후 실행
+    const timer = setTimeout(() => {
+      handleScroll();
+    }, 100);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      clearTimeout(timer);
+    };
+  }, [isGalleryPage, pathname, isInitialLoad]);
 
   // 작품 정보 업데이트 리스너
   useEffect(() => {
@@ -253,7 +266,7 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* 기존 GalleryHeader 사용 */}
+      {/* GalleryHeader - 스크롤했고 초기 로딩이 끝났을 때만 표시 */}
       {!isDetailPage && (
         <GalleryHeader
           showGalleryHeader={showGalleryHeader}
@@ -268,7 +281,8 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
           studioPostId={studioPostId}
         />
       )}
-      {/* Gallery Info - 모든 페이지에서 표시 */}
+
+      {/* GalleryInfo - 스크롤하지 않았을 때만 표시 */}
       {!isDetailPage && (
         <div className="bg-white">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -290,14 +304,17 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
           </div>
         </div>
       )}
+
       {/* 메인 콘텐츠 영역 */}
       <main className="flex-1 bg-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-32">
           {children}
         </div>
       </main>
+
       {/* 하단 여백 */}
       <div className="h-24"></div>
+
       {/* 하단 네비게이션 */}
       {!isDetailPage && (
         <BottomNavigation currentSlug={currentSlug} isOwner={isOwner} />
