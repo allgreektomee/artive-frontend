@@ -3,7 +3,7 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { FaUser } from "react-icons/fa";
-import { Plus, Edit, FileText } from "lucide-react";
+import { Edit, FileText } from "lucide-react";
 import { User, Artwork } from "./types";
 
 interface GalleryHeaderProps {
@@ -62,53 +62,35 @@ export default function GalleryHeader({
     }
   };
 
-  // 페이지별 서브 정보
-  const getSubInfo = () => {
-    switch (pageType) {
-      case "gallery":
-        return artworks.length > 0 ? (
-          <>
-            <svg
-              className="w-3 h-3"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-            {artworks.length}개의 작품
-          </>
-        ) : null;
-      case "blog":
-        return postCount > 0 ? (
-          <>
-            <FileText className="w-3 h-3" />
-            {postCount}개의 글
-          </>
-        ) : null;
-      default:
-        return null;
+  // 갤러리 페이지일 때만 소개 텍스트 표시
+  const getDescription = () => {
+    if (pageType === "gallery" && galleryUser?.gallery_description) {
+      return galleryUser.gallery_description;
     }
-  };
-
-  const handleAddContent = () => {
-    if (pageType === "gallery") {
-      router.push("/artworks/new");
-    } else if (pageType === "blog") {
-      router.push(`/blog/${currentSlug}/write`);
-    }
+    return null;
   };
 
   const handleEditStudio = () => {
     if (studioPostId) {
-      router.push(`/blog/${currentSlug}/${studioPostId}/edit`);
+      router.push(`/${currentSlug}/blog/${studioPostId}/edit`);
     } else {
-      router.push(`/blog/${currentSlug}/write`);
+      router.push(`/${currentSlug}/blog/write`);
+    }
+  };
+
+  // 그리드 모드 변경 핸들러 - CustomEvent 발생
+  const handleGridToggle = () => {
+    const newMode = mobileGridMode === "single" ? "double" : "single";
+
+    // CustomEvent 발생 - GalleryPage에서 리스닝
+    const event = new CustomEvent("mobileGridModeChange", {
+      detail: newMode,
+    });
+    window.dispatchEvent(event);
+
+    // props로 전달된 핸들러도 호출 (있는 경우)
+    if (onMobileGridChange) {
+      onMobileGridChange(newMode);
     }
   };
 
@@ -123,30 +105,27 @@ export default function GalleryHeader({
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
         <div className="flex justify-between items-center">
           {/* 왼쪽: 타이틀과 정보 */}
-          <div className="flex items-center flex-1">
-            <div>
-              <h1 className="text-lg sm:text-xl font-bold">{getTitle()}</h1>
-              {getSubInfo() && (
-                <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500 mt-0.5">
-                  <span className="flex items-center gap-1">
-                    {getSubInfo()}
-                  </span>
-                </div>
+          <div className="flex items-center flex-1 min-w-0">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg sm:text-xl font-bold truncate">
+                {getTitle()}
+              </h1>
+              {/* 갤러리 소개 텍스트 - 갤러리 페이지일 때만 표시 */}
+              {getDescription() && (
+                <p className="text-xs sm:text-sm text-gray-500 mt-0.5 truncate">
+                  {getDescription()}
+                </p>
               )}
             </div>
           </div>
 
           {/* 오른쪽: 액션 버튼들 */}
           <div className="flex items-center space-x-2 sm:space-x-3">
-            {/* Gallery 페이지: 그리드 모드 전환 버튼 (모바일) */}
+            {/* Gallery 페이지에서만 그리드 모드 전환 버튼 표시 */}
             {pageType === "gallery" && (
               <button
-                className="md:hidden text-gray-600 hover:text-black transition-colors p-1"
-                onClick={() =>
-                  onMobileGridChange(
-                    mobileGridMode === "single" ? "double" : "single"
-                  )
-                }
+                className="text-gray-600 hover:text-black transition-colors p-1"
+                onClick={handleGridToggle}
                 title="그리드 모드 변경"
               >
                 {mobileGridMode === "single" ? (
@@ -178,17 +157,6 @@ export default function GalleryHeader({
                     />
                   </svg>
                 )}
-              </button>
-            )}
-
-            {/* 콘텐츠 추가 버튼 (Gallery, Blog) */}
-            {isOwner && (pageType === "gallery" || pageType === "blog") && (
-              <button
-                className="text-gray-600 hover:text-black transition-colors p-1"
-                title={pageType === "gallery" ? "새 작품 등록" : "새 글 작성"}
-                onClick={handleAddContent}
-              >
-                <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
             )}
 

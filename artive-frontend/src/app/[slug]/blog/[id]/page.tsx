@@ -172,7 +172,7 @@ export default function BlogDetailPage() {
 
       if (response.ok) {
         alert("포스트가 삭제되었습니다.");
-        router.push(`/blog/${userSlug}`);
+        router.push(`/${userSlug}/blog`);
       } else {
         alert("삭제 실패");
       }
@@ -251,7 +251,7 @@ export default function BlogDetailPage() {
           {error || "포스트를 찾을 수 없습니다."}
         </p>
         <button
-          onClick={() => router.push(`/blog/${userSlug}`)}
+          onClick={() => router.push(`/${userSlug}/blog`)}
           className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
         >
           목록으로 돌아가기
@@ -268,7 +268,7 @@ export default function BlogDetailPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-4">
               <button
-                onClick={() => router.push(`/blog/${userSlug}`)}
+                onClick={() => router.push(`/${userSlug}/blog`)}
                 className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />

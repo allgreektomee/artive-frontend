@@ -220,7 +220,7 @@ const CompetitionsSection: React.FC<SectionProps> = ({
       award_type: award.award_type,
     });
 
-    router.push(`/blog/${userSlug}/new?${queryParams.toString()}`);
+    router.push(`/${userSlug}/blog/new?${queryParams.toString()}`);
   };
 
   // 유형별 배지 색상 결정 함수

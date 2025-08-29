@@ -172,12 +172,12 @@ export default function StudioPage() {
 
   const handleEdit = () => {
     if (studioPost) {
-      router.push(`/blog/${currentSlug}/${studioPost.id}/edit`);
+      router.push(`/${currentSlug}/blog/${studioPost.id}/edit`);
     }
   };
 
   const handleWriteStudio = () => {
-    router.push(`/blog/${currentSlug}/write`);
+    router.push(`/${currentSlug}/blog/write`);
   };
 
   if (loading) {

@@ -91,7 +91,7 @@ export default function StudioProcess({
                 <div className="mt-8 pt-8 border-t">
                   <button
                     onClick={() =>
-                      router.push(`/blog/${userSlug}/edit/${studioPost.id}`)
+                      router.push(`/${userSlug}/blog/edit/${studioPost.id}`)
                     }
                     className="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors"
                   >
@@ -106,7 +106,7 @@ export default function StudioProcess({
               <div className="max-w-2xl mx-auto">
                 <button
                   onClick={() =>
-                    router.push(`/blog/${userSlug}/new?category=STUDIO`)
+                    router.push(`/${userSlug}/blog/new?category=STUDIO`)
                   }
                   className="w-full group relative overflow-hidden rounded-2xl border-2 border-dashed border-gray-400 hover:border-gray-500 transition-all duration-300"
                 >

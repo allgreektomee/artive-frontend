@@ -364,7 +364,7 @@ export default function BlogWritePage() {
         if (userData.slug !== userSlug) {
           console.log(`❌ 권한 없음: ${userData.slug} !== ${userSlug}`);
           alert("권한이 없습니다.");
-          router.push(`/blog/${userSlug}`);
+          router.push(`/${userSlug}/blog`);
         } else {
           console.log("✅ 권한 확인 완료");
         }
@@ -425,7 +425,7 @@ export default function BlogWritePage() {
       if (response.ok) {
         const result = await response.json();
         alert("임시저장이 완료되었습니다.");
-        router.push(`/blog/${userSlug}/${result.id}`);
+        router.push(`/${userSlug}/blog/${result.id}`);
       } else {
         const error = await response.json();
         alert(`임시저장 실패: ${error.detail || "알 수 없는 오류"}`);
@@ -477,7 +477,7 @@ export default function BlogWritePage() {
       if (response.ok) {
         const result = await response.json();
         alert("발행이 완료되었습니다!");
-        router.push(`/blog/${userSlug}/${result.id}`);
+        router.push(`/${userSlug}/blog/${result.id}`);
       } else {
         const error = await response.json();
         alert(`발행 실패: ${error.detail || "알 수 없는 오류"}`);

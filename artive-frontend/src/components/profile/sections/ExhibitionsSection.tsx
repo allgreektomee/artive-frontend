@@ -220,7 +220,7 @@ const ExhibitionsSection: React.FC<SectionProps> = ({
       exhibition_end: exhibition.end_date,
     });
 
-    router.push(`/blog/${userSlug}/new?${queryParams.toString()}`);
+    router.push(`/${userSlug}/blog/new?${queryParams.toString()}`);
   };
 
   const getCurrentValue = (exhibitionId: number, field: keyof Exhibition) => {

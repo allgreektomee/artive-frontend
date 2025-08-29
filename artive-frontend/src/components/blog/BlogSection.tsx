@@ -73,7 +73,7 @@ export default function BlogSection({ userId, isOwner }: BlogSectionProps) {
   };
 
   const handlePostClick = (postId: string) => {
-    router.push(`/blog/${userId}/${postId}`);
+    router.push(`/${userId}/blog/${postId}`);
   };
 
   const stripHtml = (html: string) => {
@@ -163,7 +163,7 @@ export default function BlogSection({ userId, isOwner }: BlogSectionProps) {
           </div>
           {isOwner && (
             <button
-              onClick={() => router.push(`/blog/${userId}/write`)}
+              onClick={() => router.push(`/${userId}/blog/write`)}
               className="text-sm text-blue-600 hover:text-blue-700 font-medium"
             >
               + 새 글 작성
@@ -328,7 +328,7 @@ export default function BlogSection({ userId, isOwner }: BlogSectionProps) {
       {totalCount > 5 && (
         <div className="mt-4 text-center">
           <button
-            onClick={() => router.push(`/blog/${userId}`)}
+            onClick={() => router.push(`/${userId}/blog`)}
             className="text-sm text-blue-600 hover:text-blue-700 font-medium"
           >
             전체 글 보기 →

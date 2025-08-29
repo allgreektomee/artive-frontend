@@ -65,7 +65,7 @@ export default function UnifiedHeader({
     if (pageType === "gallery") {
       router.push("/artworks/new");
     } else if (pageType === "blog") {
-      router.push(`/blog/${currentSlug}/write`);
+      router.push(`/${currentSlug}/blog/write`);
     }
   };
 
@@ -158,7 +158,7 @@ export default function UnifiedHeader({
               <button
                 className="text-gray-600 hover:text-black transition-colors p-1"
                 title="Edit Studio"
-                onClick={() => router.push(`/blog/${currentSlug}/write`)}
+                onClick={() => router.push(`/${currentSlug}/blog/write`)}
               >
                 <Edit className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>

@@ -1,4 +1,5 @@
 // components/gallery/GalleryInfo.tsx
+
 import React from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -99,6 +100,22 @@ const GalleryInfo: React.FC<GalleryInfoProps> = ({
     }
   };
 
+  // 그리드 모드 변경 핸들러 - CustomEvent 발생
+  const handleGridToggle = () => {
+    const newMode = mobileGridMode === "single" ? "double" : "single";
+
+    // CustomEvent 발생 - GalleryPage에서 리스닝
+    const event = new CustomEvent("mobileGridModeChange", {
+      detail: newMode,
+    });
+    window.dispatchEvent(event);
+
+    // props로 전달된 핸들러도 호출 (있는 경우)
+    if (onMobileGridChange) {
+      onMobileGridChange(newMode);
+    }
+  };
+
   return (
     <div id="gallery-info" className="mb-2 -mt-10">
       <h1 className="text-2xl sm:text-3xl font-bold mb-1">{getTitle()}</h1>
@@ -119,13 +136,7 @@ const GalleryInfo: React.FC<GalleryInfoProps> = ({
           {/* 그리드 토글 버튼 - Gallery 페이지 모바일에서만 표시 */}
           {pageType === "gallery" && (
             <button
-              onClick={() => {
-                if (onMobileGridChange) {
-                  onMobileGridChange(
-                    mobileGridMode === "single" ? "double" : "single"
-                  );
-                }
-              }}
+              onClick={handleGridToggle}
               className="sm:hidden text-gray-600 hover:text-black transition-colors p-1"
               title={mobileGridMode === "single" ? "2열 보기" : "1열 보기"}
             >

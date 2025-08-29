@@ -117,12 +117,12 @@ export default function BlogEditPage() {
         setIsLoading(false);
       } else {
         alert("포스트를 불러올 수 없습니다.");
-        router.push(`/blog/${userSlug}`);
+        router.push(`/${userSlug}/blog`);
       }
     } catch (error) {
       console.error("포스트 불러오기 실패:", error);
       alert("네트워크 오류가 발생했습니다.");
-      router.push(`/blog/${userSlug}`);
+      router.push(`/${userSlug}/blog`);
     }
   };
 
@@ -149,7 +149,7 @@ export default function BlogEditPage() {
 
         if (userData.slug !== userSlug) {
           alert("권한이 없습니다.");
-          router.push(`/blog/${userSlug}/${postId}`);
+          router.push(`/${userSlug}/blog/${postId}`);
         }
       } else {
         if (response.status === 401) {
@@ -227,7 +227,7 @@ export default function BlogEditPage() {
 
       if (response.ok) {
         alert(publish ? "발행이 완료되었습니다!" : "저장되었습니다.");
-        router.push(`/blog/${userSlug}/${postId}`);
+        router.push(`/${userSlug}/blog/${postId}`);
       } else {
         const error = await response.json();
         alert(`저장 실패: ${error.detail || "알 수 없는 오류"}`);
