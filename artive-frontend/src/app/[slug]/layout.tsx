@@ -267,7 +267,8 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* GalleryHeader - 스크롤했고 초기 로딩이 끝났을 때만 표시 */}
-      {!isDetailPage && (
+      {/* GalleryHeader - 스크롤했을 때만 표시 */}
+      {!isDetailPage && showGalleryHeader && (
         <GalleryHeader
           showGalleryHeader={showGalleryHeader}
           galleryUser={galleryUser}
@@ -283,7 +284,7 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
       )}
 
       {/* GalleryInfo - 스크롤하지 않았을 때만 표시 */}
-      {!isDetailPage && (
+      {!isDetailPage && !showGalleryHeader && (
         <div className="bg-white">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <GalleryInfo
