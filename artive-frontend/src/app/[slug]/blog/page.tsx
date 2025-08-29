@@ -335,7 +335,7 @@ export default function BlogListPage() {
                 key={post.id}
                 className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow"
               >
-                <Link href={`/blog/${userSlug}/${post.id}`}>
+                <Link href={`/${userSlug}/blog/${post.id}`}>
                   <div className="p-4 sm:p-6">
                     <div className="flex items-start gap-3 sm:gap-4">
                       {post.featured_image && (
@@ -372,7 +372,7 @@ export default function BlogListPage() {
                                 e.preventDefault();
                                 e.stopPropagation();
                                 router.push(
-                                  `/blog/${userSlug}/${post.id}/edit`
+                                  `/${userSlug}/blog/${post.id}/edit`
                                 );
                               }}
                               className="p-1 sm:p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"

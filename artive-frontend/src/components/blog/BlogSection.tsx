@@ -72,9 +72,7 @@ export default function BlogSection({ userId, isOwner }: BlogSectionProps) {
     }
   };
 
-  const handlePostClick = (postId: string) => {
-    router.push(`/${userId}/blog/${postId}`);
-  };
+  const handlePostClick = (postId: string) => {};
 
   const stripHtml = (html: string) => {
     const tmp = document.createElement("DIV");

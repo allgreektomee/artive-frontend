@@ -268,26 +268,28 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
           studioPostId={studioPostId}
         />
       )}
-      ;{/* Gallery Info - 모든 페이지에서 표시 */}
-      <div className="bg-white">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <GalleryInfo
-            galleryUser={{
-              ...galleryUser,
-              total_artworks: totalArtworks,
-              total_views: totalViews,
-            }}
-            currentSlug={currentSlug}
-            artworks={artworks}
-            isOwner={isOwner}
-            onProfileClick={handleProfileClick}
-            mobileGridMode={mobileGridMode}
-            onMobileGridChange={setMobileGridMode}
-            postCount={postCount}
-            selectedBlogType={selectedBlogType} // 추가
-          />
+      {/* Gallery Info - 모든 페이지에서 표시 */}
+      {!isDetailPage && (
+        <div className="bg-white">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <GalleryInfo
+              galleryUser={{
+                ...galleryUser,
+                total_artworks: totalArtworks,
+                total_views: totalViews,
+              }}
+              currentSlug={currentSlug}
+              artworks={artworks}
+              isOwner={isOwner}
+              onProfileClick={handleProfileClick}
+              mobileGridMode={mobileGridMode}
+              onMobileGridChange={setMobileGridMode}
+              postCount={postCount}
+              selectedBlogType={selectedBlogType}
+            />
+          </div>
         </div>
-      </div>
+      )}
       {/* 메인 콘텐츠 영역 */}
       <main className="flex-1 bg-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-32">

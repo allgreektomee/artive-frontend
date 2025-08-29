@@ -298,7 +298,7 @@ export default function BlogDetailPage() {
               {isOwner && (
                 <>
                   <Link
-                    href={`/blog/${userSlug}/${postId}/edit`}
+                    href={`/${userSlug}/blog/${postId}/edit`}
                     className="p-2 sm:px-4 sm:py-2 text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors flex items-center"
                   >
                     <Edit className="w-4 h-4" />
