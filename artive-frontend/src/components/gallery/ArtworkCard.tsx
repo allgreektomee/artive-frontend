@@ -6,6 +6,8 @@ interface Artwork {
   id: number;
   title: string;
   thumbnail_url?: string;
+  display_url?: string; // 추가
+  file_url?: string; // 추가 (기존 데이터 호환)
   work_in_progress_url?: string;
   status: "work_in_progress" | "completed" | "archived";
   medium?: string;
@@ -22,32 +24,36 @@ interface ArtworkCardProps {
 const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork }) => {
   const [imageError, setImageError] = useState(false);
 
-  // 이미지 URL 결정 로직
+  // 이미지 URL 결정 로직 - 갤러리용 썸네일 우선
   const getDisplayImage = (artwork: Artwork) => {
     // work_in_progress 상태이고 work_in_progress_url이 있으면 그것을 사용
     if (artwork.status === "work_in_progress" && artwork.work_in_progress_url) {
       return artwork.work_in_progress_url;
     }
 
-    // 그 외의 경우 thumbnail_url 사용 또는 placeholder
-    return artwork.thumbnail_url || "";
+    // 썸네일 우선 사용 (새 업로드)
+    if (artwork.thumbnail_url) {
+      return artwork.thumbnail_url;
+    }
+
+    // 기존 데이터 호환 - display_url 또는 file_url 사용
+    return artwork.display_url || artwork.file_url || "";
   };
 
   const handleImageError = () => {
-    // 이미지 로드 실패 시 에러 상태만 설정
     setImageError(true);
   };
 
   return (
     <Link href={`/artworks/${artwork.id}`} className="block">
       <div className="relative bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 break-inside-avoid mb-4">
-        {/* 이미지 컨테이너 - 에러 시 숨김 처리 */}
+        {/* 이미지 컨테이너 */}
         {!imageError && getDisplayImage(artwork) && (
           <div className="relative w-full overflow-hidden bg-gray-100">
             <img
               src={getDisplayImage(artwork)}
               alt={artwork.title}
-              className="w-full h-auto object-cover transition-transform duration-300"
+              className="w-full h-auto object-cover transition-transform duration-300 hover:scale-105"
               onError={handleImageError}
               loading="lazy"
             />

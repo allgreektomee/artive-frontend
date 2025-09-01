@@ -1,9 +1,21 @@
-// app/blog/[slug]/page.tsx
+// app/[slug]/blog/page.tsx
 "use client";
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Pin, Calendar, Eye, Edit, Plus, FileText } from "lucide-react";
+import {
+  Pin,
+  Calendar,
+  Eye,
+  Edit,
+  Plus,
+  FileText,
+  Plane,
+  Frame,
+  Trophy,
+  Newspaper,
+  Palette,
+} from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 
@@ -46,13 +58,12 @@ export default function BlogListPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   const postsPerPage = 10;
 
-  const [showFilterModal, setShowFilterModal] = useState(false); // 추가
-
-  // 레이아웃에서 이벤트 수신
+  // Event listeners from layout - 중복 제거
   useEffect(() => {
     const handleTypeChange = (e: CustomEvent) => {
       setSelectedType(e.detail);
@@ -64,34 +75,6 @@ export default function BlogListPage() {
       setCurrentPage(1);
     };
 
-    window.addEventListener(
-      "blogTypeChange",
-      handleTypeChange as EventListener
-    );
-    window.addEventListener("blogSearch", handleSearch as EventListener);
-
-    return () => {
-      window.removeEventListener(
-        "blogTypeChange",
-        handleTypeChange as EventListener
-      );
-      window.removeEventListener("blogSearch", handleSearch as EventListener);
-    };
-  }, []);
-
-  // useEffect 수정
-  useEffect(() => {
-    const handleTypeChange = (e: CustomEvent) => {
-      setSelectedType(e.detail);
-      setCurrentPage(1);
-    };
-
-    const handleSearch = (e: CustomEvent) => {
-      setSearchTerm(e.detail);
-      setCurrentPage(1);
-    };
-
-    // 추가
     const handleOpenFilter = () => {
       setShowFilterModal(true);
     };
@@ -104,7 +87,7 @@ export default function BlogListPage() {
     window.addEventListener(
       "openBlogFilter",
       handleOpenFilter as EventListener
-    ); // 추가
+    );
 
     return () => {
       window.removeEventListener(
@@ -115,11 +98,11 @@ export default function BlogListPage() {
       window.removeEventListener(
         "openBlogFilter",
         handleOpenFilter as EventListener
-      ); // 추가
+      );
     };
   }, []);
 
-  // 선택된 타입 업데이트 이벤트 추가
+  // Update selected type event
   useEffect(() => {
     const event = new CustomEvent("blogTypeUpdate", {
       detail: { type: selectedType },
@@ -127,7 +110,7 @@ export default function BlogListPage() {
     window.dispatchEvent(event);
   }, [selectedType]);
 
-  // 초기 로딩 및 필터 변경 시
+  // Initial load and filter changes
   useEffect(() => {
     if (userSlug) {
       checkOwnership();
@@ -150,7 +133,7 @@ export default function BlogListPage() {
         setIsOwner(userData.slug === userSlug);
       }
     } catch (error) {
-      console.error("소유권 확인 실패:", error);
+      console.error("Failed to check ownership:", error);
     }
   };
 
@@ -191,7 +174,7 @@ export default function BlogListPage() {
         const data = await response.json();
         let filteredPosts = data.posts || [];
 
-        // 비소유자일 경우 스튜디오 포스트 제외
+        // Exclude studio posts for non-owners
         if (!isOwner) {
           filteredPosts = filteredPosts.filter(
             (post: BlogPost) => post.post_type !== "STUDIO"
@@ -208,17 +191,17 @@ export default function BlogListPage() {
 
         setTotalPages(data.pages || 1);
 
-        // 총 포스트 수를 레이아웃에 전달
+        // Send total posts count to layout
         const event = new CustomEvent("blogPostsUpdate", {
           detail: { total: data.total || 0 },
         });
         window.dispatchEvent(event);
       } else {
-        setError("블로그 목록을 불러올 수 없습니다.");
+        setError("Failed to load blog posts.");
       }
     } catch (error) {
-      console.error("블로그 목록 가져오기 실패:", error);
-      setError("블로그 목록을 불러올 수 없습니다.");
+      console.error("Failed to fetch blog posts:", error);
+      setError("Failed to load blog posts.");
     } finally {
       setIsLoading(false);
       setLoadingMore(false);
@@ -231,7 +214,6 @@ export default function BlogListPage() {
     }
   };
 
-  // getTypeColor 함수
   const getTypeColor = (type: string) => {
     switch (type) {
       case "ALL":
@@ -251,23 +233,41 @@ export default function BlogListPage() {
     }
   };
 
-  // getTypeLabel 함수
   const getTypeLabel = (type: string) => {
     switch (type) {
       case "ALL":
-        return "전체";
+        return "All";
       case "TRAVEL":
-        return "여행";
+        return "Travel";
       case "EXHIBITION":
-        return "전시";
+        return "Exhibition";
       case "AWARD":
-        return "수상";
+        return "Award";
       case "NEWS":
-        return "뉴스";
+        return "News";
       case "STUDIO":
-        return "공간";
+        return "Studio";
       default:
-        return "블로그";
+        return "Blog";
+    }
+  };
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case "ALL":
+        return <FileText className="w-4 h-4" />;
+      case "TRAVEL":
+        return <Plane className="w-4 h-4" />;
+      case "EXHIBITION":
+        return <Frame className="w-4 h-4" />;
+      case "AWARD":
+        return <Trophy className="w-4 h-4" />;
+      case "NEWS":
+        return <Newspaper className="w-4 h-4" />;
+      case "STUDIO":
+        return <Palette className="w-4 h-4" />;
+      default:
+        return <FileText className="w-4 h-4" />;
     }
   };
 
@@ -294,15 +294,24 @@ export default function BlogListPage() {
           onClick={() => router.push(`/${userSlug}`)}
           className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
         >
-          갤러리로 돌아가기
+          Back to Gallery
         </button>
       </div>
     );
   }
 
+  const categoryItems = [
+    { value: "ALL", label: "All" },
+    { value: "TRAVEL", label: "Travel" },
+    { value: "EXHIBITION", label: "Exhibition" },
+    { value: "AWARD", label: "Award" },
+    { value: "NEWS", label: "News" },
+    { value: "STUDIO", label: "Studio" },
+  ];
+
   return (
     <>
-      {/* 포스트 목록 */}
+      {/* Post List */}
       <div className="space-y-3 sm:space-y-4">
         {isLoading && posts.length === 0 ? (
           <div className="flex items-center justify-center min-h-[400px]">
@@ -313,8 +322,8 @@ export default function BlogListPage() {
             <FileText className="w-10 h-10 sm:w-12 sm:h-12 text-gray-300 mx-auto mb-4" />
             <p className="text-sm sm:text-base text-gray-500">
               {selectedType === "STUDIO" && !isOwner
-                ? "스튜디오 포스트는 작가 본인만 조회할 수 있습니다."
-                : "아직 작성된 글이 없습니다."}
+                ? "Studio posts are only visible to the artist."
+                : "No posts yet."}
             </p>
             {isOwner && (
               <Link
@@ -322,7 +331,7 @@ export default function BlogListPage() {
                 className="inline-flex items-center gap-2 mt-4 px-3 sm:px-4 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
               >
                 <Plus className="w-4 h-4" />
-                <span>첫 글 작성하기</span>
+                <span>Write First Post</span>
               </Link>
             )}
           </div>
@@ -341,7 +350,7 @@ export default function BlogListPage() {
                       {post.featured_image && (
                         <div className="flex-shrink-0">
                           <img
-                            src={post.featured_image}
+                            src={post.featured_thumbnail || post.featured_image}
                             alt={post.title}
                             className="w-16 h-16 sm:w-24 sm:h-24 object-cover rounded-lg"
                             loading="lazy"
@@ -415,7 +424,7 @@ export default function BlogListPage() {
         )}
       </div>
 
-      {/* Load More 버튼 */}
+      {/* Load More Button */}
       {currentPage < totalPages && (
         <div className="flex justify-center mt-8">
           <button
@@ -426,7 +435,7 @@ export default function BlogListPage() {
             {loadingMore ? (
               <div className="flex items-center gap-2">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                <span>로딩 중...</span>
+                <span>Loading...</span>
               </div>
             ) : (
               "Load More"
@@ -435,6 +444,7 @@ export default function BlogListPage() {
         </div>
       )}
 
+      {/* Filter Modal with Icons */}
       {showFilterModal && (
         <div
           className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
@@ -445,17 +455,10 @@ export default function BlogListPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-sm font-semibold text-gray-500 mb-3 px-2">
-              카테고리
+              Category
             </h3>
             <div className="grid grid-cols-2 gap-2">
-              {[
-                { value: "ALL", label: "전체", icon: "📝" },
-                { value: "TRAVEL", label: "여행", icon: "✈️" },
-                { value: "EXHIBITION", label: "전시", icon: "🖼️" },
-                { value: "AWARD", label: "수상", icon: "🏆" },
-                { value: "NEWS", label: "뉴스", icon: "📰" },
-                { value: "STUDIO", label: "공간", icon: "🎨" },
-              ].map((item) => (
+              {categoryItems.map((item) => (
                 <button
                   key={item.value}
                   onClick={() => {
@@ -468,7 +471,7 @@ export default function BlogListPage() {
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
                 >
-                  <span className="text-sm">{item.icon}</span>
+                  {getTypeIcon(item.value)}
                   <span className="text-sm font-medium">{item.label}</span>
                 </button>
               ))}

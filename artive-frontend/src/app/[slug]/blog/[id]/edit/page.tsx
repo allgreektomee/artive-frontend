@@ -1,3 +1,4 @@
+// app/[slug]/blog/[id]/edit/page.tsx
 "use client";
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -36,7 +37,8 @@ interface BlogPost {
   content: string;
   excerpt?: string;
   featured_image?: string;
-  post_type: "BLOG" | "NOTICE" | "EXHIBITION" | "AWARD" | "NEWS";
+  featured_thumbnail?: string;
+  post_type: "BLOG" | "NOTICE" | "EXHIBITION" | "AWARD" | "NEWS" | "STUDIO";
   tags?: string[] | string;
   is_published: boolean;
   is_public: boolean;
@@ -54,6 +56,7 @@ export default function BlogEditPage() {
   const [content, setContent] = useState("");
   const [postType, setPostType] = useState("BLOG");
   const [featuredImage, setFeaturedImage] = useState("");
+  const [featuredThumbnail, setFeaturedThumbnail] = useState(""); // 썸네일 추가
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [tagList, setTagList] = useState<string[]>([]);
 
@@ -96,6 +99,7 @@ export default function BlogEditPage() {
         setContent(data.content || "");
         setPostType(data.post_type || "BLOG");
         setFeaturedImage(data.featured_image || "");
+        setFeaturedThumbnail(data.featured_thumbnail || ""); // 썸네일 로드
         setIsPublic(data.is_public ?? true);
         setIsPinned(data.is_pinned ?? false);
         setIsPublished(data.is_published ?? false);
@@ -107,7 +111,13 @@ export default function BlogEditPage() {
               const parsedTags = JSON.parse(data.tags);
               setTagList(Array.isArray(parsedTags) ? parsedTags : []);
             } catch {
-              setTagList([]);
+              // JSON 파싱 실패시 쉼표로 분리
+              setTagList(
+                data.tags
+                  .split(",")
+                  .map((t: string) => t.trim())
+                  .filter((t: string) => t)
+              );
             }
           } else if (Array.isArray(data.tags)) {
             setTagList(data.tags);
@@ -210,6 +220,7 @@ export default function BlogEditPage() {
         post_type: postType,
         tags: tagList,
         featured_image: featuredImage || "",
+        featured_thumbnail: featuredThumbnail || featuredImage || "", // 썸네일 없으면 원본 사용
         is_published: publish ? true : isPublished,
         is_public: isPublic,
         is_pinned: isPinned && postType === "NOTICE",
@@ -250,7 +261,7 @@ export default function BlogEditPage() {
       NEWS: "bg-green-100 text-green-800",
       EXHIBITION: "bg-purple-100 text-purple-800",
       AWARD: "bg-yellow-100 text-yellow-800",
-      STUDIO: "bg-indigo-100 text-indigo-800", // 스튜디오 추가
+      STUDIO: "bg-indigo-100 text-indigo-800",
     };
     return colors[type as keyof typeof colors] || "bg-gray-100 text-gray-800";
   };
@@ -397,7 +408,14 @@ export default function BlogEditPage() {
                   {uploadedImages.map((img, index) => (
                     <div
                       key={index}
-                      onClick={() => setFeaturedImage(img)}
+                      onClick={() => {
+                        setFeaturedImage(img);
+                        // 썸네일 URL 자동 생성
+                        const thumbUrl = img
+                          .replace("/display/", "/thumb/")
+                          .replace("/blog/", "/blog/thumb/");
+                        setFeaturedThumbnail(thumbUrl);
+                      }}
                       className={`relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
                         featuredImage === img
                           ? "border-blue-500"
@@ -419,7 +437,10 @@ export default function BlogEditPage() {
                 </div>
                 {featuredImage && (
                   <button
-                    onClick={() => setFeaturedImage("")}
+                    onClick={() => {
+                      setFeaturedImage("");
+                      setFeaturedThumbnail("");
+                    }}
                     className="mt-2 text-sm text-gray-500 hover:text-red-600"
                   >
                     대표 이미지 선택 취소
@@ -440,7 +461,7 @@ export default function BlogEditPage() {
                   { value: "NEWS", label: "뉴스", icon: "📰" },
                   { value: "EXHIBITION", label: "전시", icon: "🎨" },
                   { value: "AWARD", label: "수상", icon: "🏆" },
-                  { value: "STUDIO", label: "스튜디오", icon: "🎬" }, // 스튜디오 추가
+                  { value: "STUDIO", label: "스튜디오", icon: "🎬" },
                 ].map((type) => (
                   <button
                     key={type.value}

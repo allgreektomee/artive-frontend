@@ -1,3 +1,4 @@
+// app/[slug]/blog/write/page.tsx
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -40,8 +41,9 @@ export default function BlogWritePage() {
   const [content, setContent] = useState("");
   const [postType, setPostType] = useState("BLOG");
   const [featuredImage, setFeaturedImage] = useState("");
+  const [featuredThumbnail, setFeaturedThumbnail] = useState(""); // 썸네일 추가
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
-  const [tagList, setTagList] = useState<string[]>([]); // tags 제거, tagList만 사용
+  const [tagList, setTagList] = useState<string[]>([]);
 
   // 발행 설정
   const [isPublic, setIsPublic] = useState(true);
@@ -51,8 +53,8 @@ export default function BlogWritePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // ✅ 초기 로딩 상태 추가
-  const [autoSaveStatus, setAutoSaveStatus] = useState(""); // ✅ 자동저장 상태 추가
+  const [isLoading, setIsLoading] = useState(true);
+  const [autoSaveStatus, setAutoSaveStatus] = useState("");
 
   const backendUrl =
     process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
@@ -103,8 +105,9 @@ export default function BlogWritePage() {
         title,
         content,
         postType,
-        tags: tagList.join(", "), // tagList를 문자열로 변환
+        tags: tagList.join(", "),
         featuredImage,
+        featuredThumbnail, // 썸네일도 저장
         savedAt: new Date().toISOString(),
       };
       localStorage.setItem(`draft_${userSlug}`, JSON.stringify(draftData));
@@ -132,7 +135,9 @@ export default function BlogWritePage() {
         if (confirmLoad) {
           setTitle(draft.title || "");
           setContent(draft.content || "");
-          // 스튜디오 타입이 이미 작성되어 있으면 BLOG로 변경
+          setFeaturedImage(draft.featuredImage || "");
+          setFeaturedThumbnail(draft.featuredThumbnail || ""); // 썸네일 복원
+
           if (draft.postType === "STUDIO" && hasStudioPost) {
             setPostType("BLOG");
             alert(
@@ -141,6 +146,7 @@ export default function BlogWritePage() {
           } else {
             setPostType(draft.postType || "BLOG");
           }
+
           if (draft.tags) {
             setTagList(
               draft.tags
@@ -149,7 +155,6 @@ export default function BlogWritePage() {
                 .filter((t: string) => t)
             );
           }
-          setFeaturedImage(draft.featuredImage || "");
         } else {
           localStorage.removeItem(`draft_${userSlug}`);
         }
@@ -191,7 +196,7 @@ export default function BlogWritePage() {
           alert("권한이 없습니다.");
           router.push(`/${userSlug}/blog`);
         } else {
-          setIsLoading(false); // ✅ 권한 확인 완료
+          setIsLoading(false);
         }
       } else {
         if (response.status === 401) {
@@ -232,7 +237,6 @@ export default function BlogWritePage() {
       return;
     }
 
-    // 스튜디오 타입 체크
     if (postType === "STUDIO" && hasStudioPost) {
       alert("스튜디오 포스트는 1개만 작성할 수 있습니다.");
       return;
@@ -251,14 +255,15 @@ export default function BlogWritePage() {
         content: content.trim(),
         excerpt: autoExcerpt,
         post_type: postType,
-        tags: tagList, // 항상 배열로 (빈 배열 포함)
-        featured_image: featuredImage || "", // null 대신 빈 문자열
+        tags: tagList,
+        featured_image: featuredImage || "",
+        featured_thumbnail: featuredThumbnail || featuredImage || "", // 썸네일 없으면 원본 사용
         is_published: false,
         is_public: false,
         is_pinned: false,
       };
 
-      console.log("임시저장 데이터:", postData); // 디버깅용
+      console.log("임시저장 데이터:", postData);
 
       const response = await fetch(`${backendUrl}/api/blog/posts`, {
         method: "POST",
@@ -267,12 +272,11 @@ export default function BlogWritePage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(postData),
-        credentials: "include", // 쿠키 포함
+        credentials: "include",
       });
 
       if (response.ok) {
         const result = await response.json();
-        // ✅ 임시저장 성공 시 로컬 draft 삭제
         localStorage.removeItem(`draft_${userSlug}`);
         alert("임시저장이 완료되었습니다.");
         router.push(`/${userSlug}/blog/${result.id}`);
@@ -295,7 +299,6 @@ export default function BlogWritePage() {
       return;
     }
 
-    // 스튜디오 타입 체크
     if (postType === "STUDIO" && hasStudioPost) {
       alert("스튜디오 포스트는 1개만 작성할 수 있습니다.");
       return;
@@ -314,22 +317,15 @@ export default function BlogWritePage() {
         content: content.trim(),
         excerpt: autoExcerpt,
         post_type: postType,
-        tags: tagList, // 항상 배열로 (빈 배열 포함)
-        featured_image: featuredImage || "", // null 대신 빈 문자열
+        tags: tagList,
+        featured_image: featuredImage || "",
+        featured_thumbnail: featuredThumbnail || featuredImage || "", // 썸네일 없으면 원본 사용
         is_published: true,
         is_public: isPublic,
         is_pinned: isPinned && postType === "NOTICE",
       };
 
-      console.log("발행 데이터:", postData); // 디버깅용
-      console.log(
-        "태그:",
-        postData.tags,
-        "타입:",
-        typeof postData.tags,
-        "길이:",
-        postData.tags.length
-      ); // 태그 확인
+      console.log("발행 데이터:", postData);
 
       const response = await fetch(`${backendUrl}/api/blog/posts`, {
         method: "POST",
@@ -338,17 +334,17 @@ export default function BlogWritePage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(postData),
-        credentials: "include", // 쿠키 포함
+        credentials: "include",
       });
 
       if (response.ok) {
         const result = await response.json();
-        // ✅ 발행 성공 시 로컬 draft 삭제
         localStorage.removeItem(`draft_${userSlug}`);
-        // 스튜디오 포스트 작성 시 상태 업데이트
+
         if (postType === "STUDIO") {
           setHasStudioPost(true);
         }
+
         alert("발행이 완료되었습니다!");
         router.push(`/${userSlug}/blog/${result.id}`);
       } else {
@@ -382,7 +378,6 @@ export default function BlogWritePage() {
 
   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.nativeEvent.isComposing) {
-      // 한글 입력 중복 방지
       e.preventDefault();
       const newTag = tagInput.trim();
       if (newTag && !tagList.includes(newTag)) {
@@ -396,7 +391,7 @@ export default function BlogWritePage() {
     setTagList(tagList.filter((tag) => tag !== tagToRemove));
   };
 
-  // ✅ 초기 로딩 중일 때
+  // 초기 로딩 중일 때
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -428,7 +423,6 @@ export default function BlogWritePage() {
             </div>
 
             <div className="flex items-center gap-1 sm:gap-2">
-              {/* 자동저장 상태 표시 - 모바일에서 숨김 */}
               {autoSaveStatus && (
                 <span className="hidden sm:inline text-sm text-gray-500 mr-2">
                   {autoSaveStatus}
@@ -525,7 +519,14 @@ export default function BlogWritePage() {
                   {uploadedImages.map((img, index) => (
                     <div
                       key={index}
-                      onClick={() => setFeaturedImage(img)}
+                      onClick={() => {
+                        setFeaturedImage(img);
+                        // 썸네일 URL 자동 생성
+                        const thumbUrl = img
+                          .replace("/display/", "/thumb/")
+                          .replace("/blog/", "/blog/thumb/");
+                        setFeaturedThumbnail(thumbUrl);
+                      }}
                       className={`relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
                         featuredImage === img
                           ? "border-blue-500"
@@ -547,7 +548,10 @@ export default function BlogWritePage() {
                 </div>
                 {featuredImage && (
                   <button
-                    onClick={() => setFeaturedImage("")}
+                    onClick={() => {
+                      setFeaturedImage("");
+                      setFeaturedThumbnail("");
+                    }}
                     className="mt-2 text-sm text-gray-500 hover:text-red-600"
                   >
                     대표 이미지 선택 취소
@@ -634,7 +638,7 @@ export default function BlogWritePage() {
                 placeholder="태그 입력 후 Enter..."
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={handleAddTag} // 다시 onKeyDown으로
+                onKeyDown={handleAddTag}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <p className="text-xs text-gray-500 mt-1">
@@ -651,7 +655,6 @@ export default function BlogWritePage() {
           <div className="bg-white rounded-xl max-w-md w-full p-6">
             <h3 className="text-lg font-bold mb-4">발행 설정</h3>
 
-            {/* 스튜디오 타입 경고 */}
             {postType === "STUDIO" && hasStudioPost && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-sm text-red-600">
@@ -660,7 +663,6 @@ export default function BlogWritePage() {
               </div>
             )}
 
-            {/* 공개 설정 */}
             <div className="mb-4 p-3 bg-gray-50 rounded-lg">
               <label className="flex items-center gap-3 cursor-pointer">
                 <p className="text-sm text-gray-600 ml-7 mt-1">
@@ -669,7 +671,6 @@ export default function BlogWritePage() {
               </label>
             </div>
 
-            {/* 버튼 */}
             <div className="flex gap-3">
               <button
                 onClick={() => setIsPublishModalOpen(false)}

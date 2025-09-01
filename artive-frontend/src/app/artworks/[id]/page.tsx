@@ -1,272 +1,186 @@
+// app/artworks/[id]/page.tsx
 "use client";
-import React, { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
 
-// 컴포넌트 import
-import ArtworkDetailHeader from "@/components/artwork-detail/ArtworkDetailHeader";
-import ArtworkMainInfo from "@/components/artwork-detail/ArtworkMainInfo";
-import ArtworkHistoryTimeline from "@/components/artwork-detail/ArtworkHistoryTimeline";
-import ImageModal from "@/components/artwork-detail/ImageModal";
-import AddHistoryModal from "@/components/artwork-detail/AddHistoryModal";
-import EditDescriptionModal from "@/components/artwork-detail/EditDescriptionModal";
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
+import {
+  ArrowLeft,
+  Heart,
+  Share2,
+  Edit2,
+  Trash2,
+  Calendar,
+  Ruler,
+  Palette,
+  MapPin,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Plus,
+  Clock,
+  Image as ImageIcon,
+  Video,
+  FileText,
+  ExternalLink,
+  User,
+} from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
+import { ko } from "date-fns/locale";
+
+interface Artist {
+  id: number;
+  username: string;
+  name: string;
+  slug: string;
+  profile_image?: string;
+  bio?: string;
+}
+
+interface Artwork {
+  id: number;
+  title: string;
+  title_en?: string;
+  description?: string;
+  description_en?: string;
+  medium?: string;
+  size?: string;
+  year?: number;
+  location?: string;
+  price?: number;
+  currency?: string;
+  is_for_sale: boolean;
+  status: "work_in_progress" | "completed" | "archived";
+  thumbnail_url?: string;
+  work_in_progress_url?: string;
+  view_count: number;
+  like_count: number;
+  created_at: string;
+  updated_at: string;
+  artist: Artist;
+  images: ArtworkImage[];
+  histories: ArtworkHistory[];
+  tags?: string[];
+}
+
+interface ArtworkImage {
+  id: number;
+  image_url: string;
+  order: number;
+  caption?: string;
+}
+
+interface ArtworkHistory {
+  id: number;
+  title: string;
+  description?: string;
+  media_url?: string;
+  media_type: "image" | "video" | "document";
+  recorded_at: string;
+  created_at: string;
+}
 
 export default function ArtworkDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const artworkId = params.id;
-  const backEndUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const artworkId = params?.id as string;
 
-  // 상태 관리
-  const [artwork, setArtwork] = useState(null);
-  const [histories, setHistories] = useState([]);
+  const [artwork, setArtwork] = useState<Artwork | null>(null);
+  const [isOwner, setIsOwner] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showTitleInHeader, setShowTitleInHeader] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [editingHistory, setEditingHistory] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Modal states
-  const [showImageModal, setShowImageModal] = useState(false);
-  const [showAddHistoryModal, setShowAddHistoryModal] = useState(false);
-  const [showEditDescriptionModal, setShowEditDescriptionModal] =
-    useState(false);
-  const [selectedImage, setSelectedImage] = useState({
-    url: "",
+  // Image gallery states
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showFullscreen, setShowFullscreen] = useState(false);
+
+  // History modal states
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showAddHistory, setShowAddHistory] = useState(false);
+  const [newHistory, setNewHistory] = useState({
     title: "",
-    subtitle: "",
+    description: "",
+    media_url: "",
+    media_type: "image" as "image" | "video" | "document",
+    recorded_at: new Date().toISOString().split("T")[0],
   });
 
-  // 현재 사용자 정보 가져오기
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
   useEffect(() => {
-    const fetchCurrentUser = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          console.log("❌ 토큰이 없습니다");
-          return;
-        }
+    if (artworkId) {
+      fetchArtwork();
+      checkOwnership();
+      incrementViewCount();
+    }
+  }, [artworkId]);
 
-        const response = await fetch(`${backEndUrl}/api/auth/me`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (response.ok) {
-          const userData = await response.json();
-          console.log("✅ 현재 사용자 정보:", userData);
-          setCurrentUser(userData);
-        } else {
-          console.error("❌ 사용자 정보 응답 실패:", response.status);
-          // localStorage에서 사용자 정보 시도
-          const storedUser = localStorage.getItem("user");
-          if (storedUser) {
-            const parsedUser = JSON.parse(storedUser);
-            console.log("📦 localStorage 사용자 정보:", parsedUser);
-            setCurrentUser(parsedUser);
-          }
-        }
-      } catch (err) {
-        console.error("사용자 정보 가져오기 실패:", err);
-        // localStorage에서 사용자 정보 시도
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-          const parsedUser = JSON.parse(storedUser);
-          console.log("📦 localStorage 사용자 정보 (fallback):", parsedUser);
-          setCurrentUser(parsedUser);
-        }
-      }
-    };
-
-    fetchCurrentUser();
-  }, [backEndUrl]);
-
-  // 히스토리 수정 함수
-  const handleEditHistory = (history) => {
-    setEditingHistory(history);
-    setShowAddHistoryModal(true); // 같은 모달을 수정용으로 재사용
-  };
-
-  // 작품 상세 정보 가져오기
-  useEffect(() => {
-    const fetchArtworkDetail = async () => {
-      if (!artworkId) return;
-
-      try {
-        setLoading(true);
-
-        // 디버깅 정보 출력
-        console.log("🔍 백엔드 URL:", backEndUrl);
-        console.log("🔍 요청 URL:", `${backEndUrl}/api/artworks/${artworkId}`);
-
-        const token = localStorage.getItem("token");
-        const headers = { Accept: "application/json" };
-
-        if (token) {
-          headers.Authorization = `Bearer ${token}`;
-        }
-
-        console.log("🔍 요청 헤더:", headers);
-
-        // 작품 상세 정보 API 호출
-        const artworkRes = await fetch(
-          `${backEndUrl}/api/artworks/${artworkId}`,
-          {
-            method: "GET",
-            headers,
-          }
-        );
-
-        console.log("🎯 응답 상태:", artworkRes.status);
-        console.log("🎯 응답 OK:", artworkRes.ok);
-
-        if (!artworkRes.ok) {
-          throw new Error(`작품을 불러올 수 없습니다: ${artworkRes.status}`);
-        }
-
-        const artworkData = await artworkRes.json();
-        console.log("🎯 받은 작품 데이터:", artworkData);
-        setArtwork(artworkData);
-
-        // 히스토리 데이터 가져오기
-        const historiesRes = await fetch(
-          `${backEndUrl}/api/artworks/${artworkId}/histories`,
-          {
-            method: "GET",
-            headers,
-          }
-        );
-
-        if (historiesRes.ok) {
-          const historiesData = await historiesRes.json();
-          setHistories(historiesData);
-        }
-      } catch (err) {
-        console.error("🚨 상세 에러:", err);
-        console.error("🚨 에러 타입:", typeof err);
-        console.error("🚨 에러 메시지:", err.message);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchArtworkDetail();
-  }, [artworkId, backEndUrl]);
-
-  // 히스토리 추가 함수
-  const handleAddHistory = async (historyData) => {
+  const fetchArtwork = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem("token");
+      const headers: HeadersInit = { Accept: "application/json" };
 
-      // work_date를 datetime 형식으로 변환
-      let formattedWorkDate = null;
-      if (historyData.work_date) {
-        // "2025-08-19" -> "2025-08-19T00:00:00"
-        formattedWorkDate = `${historyData.work_date}T00:00:00`;
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
       }
 
-      // 빈 값 처리 - 빈 문자열을 null로 변환
-      const requestData = {
-        title: historyData.title,
-        content: historyData.content,
-        media_type: historyData.media_type || "text",
-        media_url: historyData.media_url || null,
-        work_date: formattedWorkDate,
-        history_type: "manual",
-      };
-
-      // 빈 문자열 체크
-      if (requestData.media_url === "") requestData.media_url = null;
-      if (requestData.work_date === "") requestData.work_date = null;
-
-      console.log("📤 전송 데이터:", requestData);
-
-      const response = await fetch(
-        `${backEndUrl}/api/artworks/${artworkId}/histories`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(requestData),
-        }
-      );
-
-      console.log("📥 응답 상태:", response.status);
+      const response = await fetch(`${backendUrl}/api/artworks/${artworkId}`, {
+        headers,
+      });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("❌ 에러 응답:", errorText);
-
-        // JSON 파싱 시도
-        try {
-          const errorData = JSON.parse(errorText);
-          console.error("❌ 에러 상세:", errorData);
-          throw new Error(errorData.detail || "히스토리 추가 실패");
-        } catch (e) {
-          throw new Error(`히스토리 추가 실패: ${response.status}`);
-        }
+        throw new Error("Failed to fetch artwork");
       }
 
-      const newHistory = await response.json();
-      console.log("✅ 히스토리 추가 성공:", newHistory);
+      const data = await response.json();
+      setArtwork(data);
 
-      setHistories((prev) => [...prev, newHistory]);
-      setShowAddHistoryModal(false);
+      // Check if user has liked this artwork
+      if (token) {
+        checkLikeStatus();
+      }
     } catch (err) {
-      console.error("히스토리 추가 오류:", err);
-      alert(err.message || "히스토리 추가에 실패했습니다.");
+      console.error("Error fetching artwork:", err);
+      setError("Failed to load artwork");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // 스크롤 감지
-  useEffect(() => {
-    const handleScroll = () => {
-      const titleElement = document.getElementById("artwork-title");
-      if (titleElement) {
-        const rect = titleElement.getBoundingClientRect();
-        setShowTitleInHeader(rect.bottom < 100);
-      }
-    };
+  const checkOwnership = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // 이벤트 핸들러들
-  const handleBack = () => {
-    window.history.back();
-  };
-
-  const handleImageClick = (imageUrl, title, subtitle) => {
-    setSelectedImage({
-      url: imageUrl,
-      title: title || artwork?.title || "",
-      subtitle: subtitle || `${artwork?.size} • ${artwork?.medium}`,
-    });
-    setShowImageModal(true);
-  };
-
-  const handleMainImageClick = () => {
-    handleImageClick(
-      artwork?.thumbnail_url,
-      artwork?.title,
-      `${artwork?.size} • ${artwork?.medium}`
-    );
-  };
-
-  // 히스토리 삭제 함수
-  const handleDeleteHistory = async (historyId) => {
     try {
-      const token = localStorage.getItem("token");
+      const response = await fetch(`${backendUrl}/api/auth/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
+      if (response.ok) {
+        const userData = await response.json();
+        if (artwork) {
+          setIsOwner(userData.id === artwork.artist.id);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to check ownership:", error);
+    }
+  };
+
+  const checkLikeStatus = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
       const response = await fetch(
-        `${backEndUrl}/api/artworks/${artworkId}/histories/${historyId}`,
+        `${backendUrl}/api/artworks/${artworkId}/like/status`,
         {
-          method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -274,69 +188,168 @@ export default function ArtworkDetailPage() {
       );
 
       if (response.ok) {
-        setHistories((prev) => prev.filter((h) => h.id !== historyId));
-        console.log("히스토리 삭제 성공");
-      } else {
-        throw new Error("히스토리 삭제 실패");
+        const data = await response.json();
+        setIsLiked(data.is_liked);
       }
-    } catch (err) {
-      console.error("히스토리 삭제 오류:", err);
-      alert("히스토리 삭제에 실패했습니다.");
+    } catch (error) {
+      console.error("Failed to check like status:", error);
     }
   };
 
-  // 작품 설명 수정 함수
-  const handleUpdateDescription = async (data) => {
+  const incrementViewCount = async () => {
     try {
-      const token = localStorage.getItem("token");
+      await fetch(`${backendUrl}/api/artworks/${artworkId}/view`, {
+        method: "POST",
+      });
+    } catch (error) {
+      console.error("Failed to increment view count:", error);
+    }
+  };
 
-      const response = await fetch(`${backEndUrl}/api/artworks/${artworkId}`, {
-        method: "PUT", // PATCH → PUT으로 변경
+  const handleLike = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${backendUrl}/api/artworks/${artworkId}/like`,
+        {
+          method: isLiked ? "DELETE" : "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        setIsLiked(!isLiked);
+        if (artwork) {
+          setArtwork({
+            ...artwork,
+            like_count: isLiked
+              ? artwork.like_count - 1
+              : artwork.like_count + 1,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to toggle like:", error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this artwork?")) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const response = await fetch(`${backendUrl}/api/artworks/${artworkId}`, {
+        method: "DELETE",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          title: data.title, // 이 줄 추가
-          description: data.description,
-          links: data.links,
-          youtube_urls: data.youtube_urls,
-        }),
       });
 
-      if (!response.ok) {
-        throw new Error("수정에 실패했습니다.");
+      if (response.ok) {
+        router.push(`/${artwork?.artist.slug}`);
       }
-
-      const updatedArtwork = await response.json();
-      setArtwork(updatedArtwork);
-      alert("작품 정보가 수정되었습니다.");
-    } catch (err) {
-      console.error("수정 오류:", err);
-      throw err;
+    } catch (error) {
+      console.error("Failed to delete artwork:", error);
     }
   };
 
-  // Artwork 삭제 핸들러
-  const handleDeleteArtwork = () => {
-    // 삭제 성공 후 사용자의 갤러리로 이동
-    // 현재 사용자의 slug나 username을 사용
-    if (currentUser?.username) {
-      router.push(`/${currentUser.username}`);
-    } else if (currentUser?.slug) {
-      router.push(`/${currentUser.slug}`);
-    } else if (artwork?.user?.username) {
-      router.push(`/${artwork.user.username}`);
-    } else if (artwork?.user?.slug) {
-      router.push(`/${artwork.user.slug}`);
+  const handleShare = async () => {
+    const url = window.location.href;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: artwork?.title,
+          text: artwork?.description,
+          url: url,
+        });
+      } catch (err) {
+        console.error("Error sharing:", err);
+      }
     } else {
-      // fallback - 홈으로 이동
-      router.push("/");
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(url);
+      alert("Link copied to clipboard!");
     }
-    alert("작품이 성공적으로 삭제되었습니다");
   };
 
-  // 로딩 상태
+  const handleAddHistory = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const response = await fetch(
+        `${backendUrl}/api/artworks/${artworkId}/history`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newHistory),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (artwork) {
+          setArtwork({
+            ...artwork,
+            histories: [...artwork.histories, data],
+          });
+        }
+        setShowAddHistory(false);
+        setNewHistory({
+          title: "",
+          description: "",
+          media_url: "",
+          media_type: "image",
+          recorded_at: new Date().toISOString().split("T")[0],
+        });
+      }
+    } catch (error) {
+      console.error("Failed to add history:", error);
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      work_in_progress: {
+        label: "In Progress",
+        color: "bg-yellow-100 text-yellow-800",
+      },
+      completed: { label: "Completed", color: "bg-green-100 text-green-800" },
+      archived: { label: "Archived", color: "bg-gray-100 text-gray-800" },
+    };
+
+    const config = statusConfig[status as keyof typeof statusConfig];
+    return (
+      <span
+        className={`px-2 py-1 rounded-full text-xs font-medium ${config.color}`}
+      >
+        {config.label}
+      </span>
+    );
+  };
+
+  const allImages = artwork
+    ? [
+        ...(artwork.thumbnail_url
+          ? [{ id: 0, image_url: artwork.thumbnail_url, order: 0 }]
+          : []),
+        ...artwork.images,
+      ]
+    : [];
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -345,101 +358,553 @@ export default function ArtworkDetailPage() {
     );
   }
 
-  // 에러 상태
   if (error || !artwork) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
-        <p className="text-red-600 text-lg mb-4">
-          {error || "작품을 찾을 수 없습니다."}
-        </p>
-        <button onClick={handleBack} className="text-blue-600 hover:underline">
-          돌아가기
+        <p className="text-red-600 mb-4">{error || "Artwork not found"}</p>
+        <button
+          onClick={() => router.back()}
+          className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+        >
+          Go Back
         </button>
       </div>
     );
   }
 
-  // 소유자 확인 - 다양한 필드 체크
-  const isOwner =
-    currentUser &&
-    artwork &&
-    (currentUser.id === artwork.user_id ||
-      currentUser.id === artwork.user?.id ||
-      currentUser.email === artwork.user?.email);
-
-  // 디버깅 로그
-  console.log("🔍 소유자 체크:", {
-    currentUser: currentUser,
-    currentUserId: currentUser?.id,
-    artworkUserId: artwork?.user_id,
-    artworkUser: artwork?.user,
-    isOwner: isOwner,
-  });
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <ArtworkDetailHeader
-        onBack={handleBack}
-        artworkTitle={artwork.title}
-        showTitle={showTitleInHeader}
-        isOwner={isOwner}
-        artworkId={artwork.id}
-        userId={currentUser?.id}
-        artistId={artwork?.user_id || artwork?.user?.id}
-        onDelete={handleDeleteArtwork}
-        onEdit={() => setShowEditDescriptionModal(true)}
-      />
+      <header className="sticky top-0 z-40 bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <button
+              onClick={() => router.back()}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="hidden sm:inline">Back</span>
+            </button>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Main Artwork Info */}
-        <div id="artwork-title">
-          <ArtworkMainInfo
-            artwork={artwork}
-            onImageClick={handleMainImageClick}
-          />
+            <div className="flex items-center gap-4">
+              {isOwner && (
+                <>
+                  <Link
+                    href={`/artworks/${artworkId}/edit`}
+                    className="p-2 text-gray-600 hover:text-gray-900"
+                  >
+                    <Edit2 className="w-5 h-5" />
+                  </Link>
+                  <button
+                    onClick={handleDelete}
+                    className="p-2 text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </>
+              )}
+              <button
+                onClick={handleShare}
+                className="p-2 text-gray-600 hover:text-gray-900"
+              >
+                <Share2 className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
         </div>
+      </header>
 
-        {/* History Timeline */}
-        <ArtworkHistoryTimeline
-          histories={histories}
-          onImageClick={handleImageClick}
-          onAddHistory={() => setShowAddHistoryModal(true)}
-          onDeleteHistory={handleDeleteHistory}
-          isOwner={isOwner}
-        />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Image Gallery */}
+          <div className="space-y-4">
+            {allImages.length > 0 && (
+              <>
+                <div
+                  className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer"
+                  onClick={() => setShowFullscreen(true)}
+                >
+                  <Image
+                    src={allImages[currentImageIndex].image_url}
+                    alt={artwork.title}
+                    fill
+                    className="object-contain"
+                    priority
+                  />
+                  {allImages.length > 1 && (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrentImageIndex((prev) =>
+                            prev === 0 ? allImages.length - 1 : prev - 1
+                          );
+                        }}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-white/80 rounded-full hover:bg-white"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrentImageIndex((prev) =>
+                            prev === allImages.length - 1 ? 0 : prev + 1
+                          );
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-white/80 rounded-full hover:bg-white"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* Thumbnail Strip */}
+                {allImages.length > 1 && (
+                  <div className="flex gap-2 overflow-x-auto">
+                    {allImages.map((img, index) => (
+                      <button
+                        key={img.id}
+                        onClick={() => setCurrentImageIndex(index)}
+                        className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 ${
+                          index === currentImageIndex
+                            ? "border-gray-900"
+                            : "border-transparent"
+                        }`}
+                      >
+                        <Image
+                          src={img.image_url}
+                          alt={`${artwork.title} ${index + 1}`}
+                          width={80}
+                          height={80}
+                          className="object-cover w-full h-full"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Artwork Info */}
+          <div className="space-y-6">
+            {/* Title and Status */}
+            <div>
+              <div className="flex items-start justify-between gap-4 mb-2">
+                <h1 className="text-3xl font-bold text-gray-900">
+                  {artwork.title}
+                </h1>
+                {getStatusBadge(artwork.status)}
+              </div>
+              {artwork.title_en && (
+                <p className="text-lg text-gray-600">{artwork.title_en}</p>
+              )}
+            </div>
+
+            {/* Artist Info */}
+            <Link
+              href={`/${artwork.artist.slug}`}
+              className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              {artwork.artist.profile_image ? (
+                <Image
+                  src={artwork.artist.profile_image}
+                  alt={artwork.artist.name}
+                  width={48}
+                  height={48}
+                  className="rounded-full"
+                />
+              ) : (
+                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                  <User className="w-6 h-6 text-gray-500" />
+                </div>
+              )}
+              <div>
+                <p className="font-semibold text-gray-900">
+                  {artwork.artist.name}
+                </p>
+                <p className="text-sm text-gray-600">
+                  @{artwork.artist.username}
+                </p>
+              </div>
+            </Link>
+
+            {/* Details */}
+            <div className="space-y-3">
+              {artwork.year && (
+                <div className="flex items-center gap-2 text-gray-700">
+                  <Calendar className="w-4 h-4" />
+                  <span>{artwork.year}</span>
+                </div>
+              )}
+              {artwork.medium && (
+                <div className="flex items-center gap-2 text-gray-700">
+                  <Palette className="w-4 h-4" />
+                  <span>{artwork.medium}</span>
+                </div>
+              )}
+              {artwork.size && (
+                <div className="flex items-center gap-2 text-gray-700">
+                  <Ruler className="w-4 h-4" />
+                  <span>{artwork.size}</span>
+                </div>
+              )}
+              {artwork.location && (
+                <div className="flex items-center gap-2 text-gray-700">
+                  <MapPin className="w-4 h-4" />
+                  <span>{artwork.location}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Description */}
+            {artwork.description && (
+              <div className="space-y-2">
+                <h3 className="font-semibold text-gray-900">Description</h3>
+                <p className="text-gray-700 whitespace-pre-wrap">
+                  {artwork.description}
+                </p>
+                {artwork.description_en && (
+                  <p className="text-gray-600 whitespace-pre-wrap mt-2">
+                    {artwork.description_en}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Price */}
+            {artwork.is_for_sale && artwork.price && (
+              <div className="p-4 bg-green-50 rounded-lg">
+                <p className="text-sm text-green-600 mb-1">For Sale</p>
+                <p className="text-2xl font-bold text-green-800">
+                  {artwork.currency} {artwork.price.toLocaleString()}
+                </p>
+              </div>
+            )}
+
+            {/* Tags */}
+            {artwork.tags && artwork.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {artwork.tags.map((tag, index) => (
+                  <span
+                    key={index}
+                    className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex items-center justify-between pt-4 border-t">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={handleLike}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                    isLiked
+                      ? "bg-red-500 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  <Heart
+                    className={`w-5 h-5 ${isLiked ? "fill-current" : ""}`}
+                  />
+                  <span>{artwork.like_count}</span>
+                </button>
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Eye className="w-5 h-5" />
+                  <span>{artwork.view_count} views</span>
+                </div>
+              </div>
+              <p className="text-sm text-gray-500">
+                {formatDistanceToNow(new Date(artwork.created_at), {
+                  addSuffix: true,
+                  locale: ko,
+                })}
+              </p>
+            </div>
+
+            {/* History Timeline */}
+            {artwork.histories && artwork.histories.length > 0 && (
+              <div className="pt-6 border-t">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-gray-900">Work History</h3>
+                  {isOwner && (
+                    <button
+                      onClick={() => setShowHistoryModal(true)}
+                      className="text-sm text-blue-600 hover:text-blue-700"
+                    >
+                      View All
+                    </button>
+                  )}
+                </div>
+                <div className="space-y-3">
+                  {artwork.histories.slice(0, 3).map((history) => (
+                    <div key={history.id} className="flex gap-3">
+                      <div className="flex-shrink-0 w-2 h-2 mt-2 bg-gray-400 rounded-full"></div>
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">
+                          {history.title}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {format(new Date(history.recorded_at), "yyyy.MM.dd")}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Image Modal */}
-      <ImageModal
-        isOpen={showImageModal}
-        imageUrl={selectedImage.url}
-        imageTitle={selectedImage.title}
-        imageSubtitle={selectedImage.subtitle}
-        onClose={() => setShowImageModal(false)}
-      />
+      {/* Fullscreen Image Modal */}
+      {showFullscreen && (
+        <div className="fixed inset-0 z-50 bg-black">
+          <button
+            onClick={() => setShowFullscreen(false)}
+            className="absolute top-4 right-4 p-2 bg-white/10 backdrop-blur rounded-full text-white hover:bg-white/20"
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          <div className="w-full h-full flex items-center justify-center p-4">
+            <Image
+              src={allImages[currentImageIndex].image_url}
+              alt={artwork.title}
+              width={1920}
+              height={1080}
+              className="max-w-full max-h-full object-contain"
+            />
+          </div>
+
+          {allImages.length > 1 && (
+            <>
+              <button
+                onClick={() =>
+                  setCurrentImageIndex((prev) =>
+                    prev === 0 ? allImages.length - 1 : prev - 1
+                  )
+                }
+                className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 backdrop-blur rounded-full text-white hover:bg-white/20"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <button
+                onClick={() =>
+                  setCurrentImageIndex((prev) =>
+                    prev === allImages.length - 1 ? 0 : prev + 1
+                  )
+                }
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 backdrop-blur rounded-full text-white hover:bg-white/20"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* History Modal */}
+      {showHistoryModal && isOwner && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h2 className="text-xl font-bold">Work History</h2>
+              <button
+                onClick={() => setShowHistoryModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[calc(80vh-200px)]">
+              <button
+                onClick={() => setShowAddHistory(true)}
+                className="w-full mb-6 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 flex items-center justify-center gap-2 text-gray-600"
+              >
+                <Plus className="w-5 h-5" />
+                Add History
+              </button>
+
+              <div className="space-y-4">
+                {artwork.histories.map((history) => (
+                  <div key={history.id} className="p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="font-semibold text-gray-900">
+                        {history.title}
+                      </h4>
+                      <span className="text-sm text-gray-500">
+                        {format(new Date(history.recorded_at), "yyyy.MM.dd")}
+                      </span>
+                    </div>
+                    {history.description && (
+                      <p className="text-gray-700 mb-3">
+                        {history.description}
+                      </p>
+                    )}
+                    {history.media_url && (
+                      <div className="mt-3">
+                        {history.media_type === "image" ? (
+                          <img
+                            src={history.media_url}
+                            alt={history.title}
+                            className="w-full rounded-lg"
+                          />
+                        ) : history.media_type === "video" ? (
+                          <video
+                            src={history.media_url}
+                            controls
+                            className="w-full rounded-lg"
+                          />
+                        ) : (
+                          <a
+                            href={history.media_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
+                          >
+                            <FileText className="w-4 h-4" />
+                            View Document
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add History Modal */}
-      <AddHistoryModal
-        isOpen={showAddHistoryModal}
-        onClose={() => setShowAddHistoryModal(false)}
-        onSubmit={handleAddHistory}
-        loading={false}
-      />
+      {showAddHistory && isOwner && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h2 className="text-xl font-bold">Add History</h2>
+              <button
+                onClick={() => setShowAddHistory(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-      {/* Edit Description Modal */}
-      <EditDescriptionModal
-        isOpen={showEditDescriptionModal}
-        onClose={() => setShowEditDescriptionModal(false)}
-        onSubmit={handleUpdateDescription}
-        currentData={{
-          title: artwork?.title || "", // 이 줄 추가
-          description: artwork?.description || "",
-          links: artwork?.links || [],
-          youtube_urls: artwork?.youtube_urls || [],
-        }}
-        artworkTitle={artwork?.title || ""}
-      />
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Title *
+                </label>
+                <input
+                  type="text"
+                  value={newHistory.title}
+                  onChange={(e) =>
+                    setNewHistory({ ...newHistory, title: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g., Started sketching"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={newHistory.description}
+                  onChange={(e) =>
+                    setNewHistory({
+                      ...newHistory,
+                      description: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  rows={3}
+                  placeholder="Add details about this milestone..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Date
+                </label>
+                <input
+                  type="date"
+                  value={newHistory.recorded_at}
+                  onChange={(e) =>
+                    setNewHistory({
+                      ...newHistory,
+                      recorded_at: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Media Type
+                </label>
+                <select
+                  value={newHistory.media_type}
+                  onChange={(e) =>
+                    setNewHistory({
+                      ...newHistory,
+                      media_type: e.target.value as
+                        | "image"
+                        | "video"
+                        | "document",
+                    })
+                  }
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="image">Image</option>
+                  <option value="video">Video</option>
+                  <option value="document">Document</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Media URL
+                </label>
+                <input
+                  type="url"
+                  value={newHistory.media_url}
+                  onChange={(e) =>
+                    setNewHistory({ ...newHistory, media_url: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="https://..."
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setShowAddHistory(false)}
+                  className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddHistory}
+                  disabled={!newHistory.title}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Add History
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -24,7 +24,9 @@ export interface Artwork {
   id: number;
   title: string;
   description?: string;
-  thumbnail_url?: string;
+  thumbnail_url?: string; // 갤러리용 썸네일
+  display_url?: string; // 상세페이지용
+  file_url?: string; // 기존 데이터 호환
   work_in_progress_url?: string;
   status: ArtworkStatus;
   medium?: string;
