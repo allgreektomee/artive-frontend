@@ -23,7 +23,7 @@ interface GalleryInfoProps {
   mobileGridMode?: "single" | "double";
   onMobileGridChange?: (mode: "single" | "double") => void;
   postCount?: number;
-  selectedBlogType?: string; // 추가
+  selectedBlogType?: string;
 }
 
 const GalleryInfo: React.FC<GalleryInfoProps> = ({
@@ -35,7 +35,7 @@ const GalleryInfo: React.FC<GalleryInfoProps> = ({
   mobileGridMode = "double",
   onMobileGridChange,
   postCount = 0,
-  selectedBlogType = "ALL", // 추가
+  selectedBlogType = "ALL",
 }) => {
   const pathname = usePathname();
 
@@ -138,19 +138,17 @@ const GalleryInfo: React.FC<GalleryInfoProps> = ({
   // Simple UI (Artist, Studio 페이지)
   if (uiType === "simple") {
     return (
-      <div id="gallery-info" className="py-4">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-1">{getTitle()}</h1>
-
+      <div id="gallery-info" className="py-3">
+        <h1 className="text-xl sm:text-2xl font-bold mb-1">{getTitle()}</h1>
         <div className="flex justify-between items-start pb-2 border-b border-gray-200">
-          <p className="text-gray-600 text-sm sm:text-base">
+          <p className="text-gray-600 text-xs sm:text-sm line-clamp-2">
             {getDescription() || ""}
           </p>
-
           {isOwner && (
             <button
               onClick={onProfileClick}
               title="Edit Profile"
-              className="text-gray-600 hover:text-black transition-colors flex-shrink-0 -mt-0.5"
+              className="text-gray-600 hover:text-black transition-colors flex-shrink-0"
             >
               <FaUser className="text-lg sm:text-xl md:text-2xl" />
             </button>
@@ -162,17 +160,19 @@ const GalleryInfo: React.FC<GalleryInfoProps> = ({
 
   // With Stats UI (Gallery, Blog 페이지)
   return (
-    <div id="gallery-info" className="mb-2 -mt-10">
-      <h1 className="text-2xl sm:text-3xl font-bold mb-1">{getTitle()}</h1>
+    <div id="gallery-info" className="py-3">
+      <h1 className="text-xl sm:text-2xl font-bold mb-1 line-clamp-1">
+        {getTitle()}
+      </h1>
 
       {getDescription() && (
-        <p className="text-gray-600 text-sm sm:text-base mb-3 whitespace-pre-wrap">
+        <p className="text-gray-600 text-xs sm:text-sm mb-2 line-clamp-2">
           {getDescription()}
         </p>
       )}
 
-      <div className="flex justify-between items-center gap-4 py-2 border-b border-gray-200">
-        <div className="flex items-center gap-3 sm:gap-6 text-sm text-gray-500">
+      <div className="flex justify-between items-center gap-4 py-1.5 border-b border-gray-200">
+        <div className="flex items-center gap-3 sm:gap-6 text-xs sm:text-sm text-gray-500">
           {getStats() && <span className="font-medium">{getStats()}</span>}
         </div>
 
