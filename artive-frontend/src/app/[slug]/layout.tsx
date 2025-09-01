@@ -274,6 +274,22 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
+      {/* GalleryHeader - 스크롤했고 초기 로딩이 끝났을 때만 표시 */}
+      {!isDetailPage && (
+        <GalleryHeader
+          showGalleryHeader={true}
+          galleryUser={galleryUser}
+          currentSlug={currentSlug}
+          artworks={artworks}
+          isOwner={isOwner}
+          onProfileClick={handleProfileClick}
+          mobileGridMode={mobileGridMode}
+          onMobileGridChange={setMobileGridMode}
+          postCount={postCount}
+          studioPostId={studioPostId}
+        />
+      )}
+
       {/* GalleryInfo - 스크롤하지 않았을 때만 표시 */}
       {!isDetailPage && (
         <div className="bg-white">
@@ -295,22 +311,6 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
             />
           </div>
         </div>
-      )}
-
-      {/* GalleryHeader - 스크롤했고 초기 로딩이 끝났을 때만 표시 */}
-      {!isDetailPage && (
-        <GalleryHeader
-          showGalleryHeader={showGalleryHeader}
-          galleryUser={galleryUser}
-          currentSlug={currentSlug}
-          artworks={artworks}
-          isOwner={isOwner}
-          onProfileClick={handleProfileClick}
-          mobileGridMode={mobileGridMode}
-          onMobileGridChange={setMobileGridMode}
-          postCount={postCount}
-          studioPostId={studioPostId}
-        />
       )}
 
       {/* 메인 콘텐츠 영역 */}
