@@ -57,7 +57,7 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
       // Gallery 페이지는 GalleryInfo 하단 기준
       if (isGalleryPage) {
         const galleryElement = document.getElementById("gallery-info");
-        console.log("Gallery element:", galleryElement); // 디버깅
+
         if (galleryElement) {
           const rect = galleryElement.getBoundingClientRect();
           console.log(
@@ -275,9 +275,9 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* GalleryHeader - 스크롤했고 초기 로딩이 끝났을 때만 표시 */}
-      {!isDetailPage && (
+      {!isDetailPage && galleryUser && !isInitialLoad && showGalleryHeader && (
         <GalleryHeader
-          showGalleryHeader={true}
+          showGalleryHeader={showGalleryHeader}
           galleryUser={galleryUser}
           currentSlug={currentSlug}
           artworks={artworks}
@@ -290,7 +290,6 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
         />
       )}
 
-      {/* GalleryInfo - 스크롤하지 않았을 때만 표시 */}
       {!isDetailPage && (
         <div className="bg-white">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
