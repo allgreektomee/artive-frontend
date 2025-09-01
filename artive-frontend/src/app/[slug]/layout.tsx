@@ -274,24 +274,11 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* GalleryHeader - 스크롤했고 초기 로딩이 끝났을 때만 표시 */}
-      {!isDetailPage && galleryUser && !isInitialLoad && showGalleryHeader && (
-        <GalleryHeader
-          showGalleryHeader={showGalleryHeader}
-          galleryUser={galleryUser}
-          currentSlug={currentSlug}
-          artworks={artworks}
-          isOwner={isOwner}
-          onProfileClick={handleProfileClick}
-          mobileGridMode={mobileGridMode}
-          onMobileGridChange={setMobileGridMode}
-          postCount={postCount}
-          studioPostId={studioPostId}
-        />
-      )}
+      {/* GalleryHeader 부분 완전 삭제 */}
 
+      {/* GalleryInfo - sticky로 고정 */}
       {!isDetailPage && (
-        <div className="bg-white">
+        <div className="sticky top-0 z-50 bg-white border-b border-gray-200">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <GalleryInfo
               galleryUser={{

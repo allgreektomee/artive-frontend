@@ -138,7 +138,7 @@ const GalleryInfo: React.FC<GalleryInfoProps> = ({
   // Simple UI (Artist, Studio 페이지)
   if (uiType === "simple") {
     return (
-      <div id="gallery-info" className="mb-2 -mt-10">
+      <div id="gallery-info" className="py-4">
         <h1 className="text-2xl sm:text-3xl font-bold mb-1">{getTitle()}</h1>
 
         <div className="flex justify-between items-start pb-2 border-b border-gray-200">
