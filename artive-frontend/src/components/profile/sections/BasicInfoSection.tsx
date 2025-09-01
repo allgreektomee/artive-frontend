@@ -110,19 +110,20 @@ const BasicInfoSection: React.FC<SectionProps> = ({
 
       {/* 한 줄 소개 */}
       <div>
-        <label className="block text-sm font-medium mb-2">한 줄 소개</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          아티스트 한줄소개
+          <span className="text-xs text-gray-500 ml-2">
+            (아티스트 헤더 메시지)
+          </span>
+        </label>
         <input
           type="text"
-          value={localData.bio}
-          onChange={(e) => handleLocalChange("bio", e.target.value)}
-          onBlur={() => handleBlur("bio")}
-          placeholder="짧은 소개 문구 (예: 자연을 그리는 화가)"
+          value={data.bio || ""}
+          onChange={(e) => onChange("bio", e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="예: 자연과 인간의 관계를 탐구하는 작가"
           maxLength={100}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
-        <p className="mt-1 text-xs text-gray-500">
-          {localData.bio.length}/100자
-        </p>
       </div>
 
       {/* 갤러리 주소 */}
@@ -153,16 +154,19 @@ const BasicInfoSection: React.FC<SectionProps> = ({
 
       {/* 갤러리 소개 */}
       <div>
-        <label className="block text-sm font-medium mb-2">갤러리 소개</label>
-        <textarea
-          value={localData.gallery_description}
-          onChange={(e) =>
-            handleLocalChange("gallery_description", e.target.value)
-          }
-          onBlur={() => handleBlur("gallery_description")}
-          placeholder="갤러리를 소개하는 글을 작성해주세요"
-          rows={4}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          갤러리 한줄소개
+          <span className="text-xs text-gray-500 ml-2">
+            (갤러리 헤더 메시지)
+          </span>
+        </label>
+        <input
+          type="text"
+          value={data.gallery_description || ""}
+          onChange={(e) => onChange("gallery_description", e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="예: 현대미술과 전통의 조화를 추구하는 갤러리"
+          maxLength={150}
         />
       </div>
 
