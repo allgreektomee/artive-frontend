@@ -390,7 +390,7 @@ export default function ArtworkDetailPage() {
               {isOwner && (
                 <>
                   <Link
-                    href={`/artworks/${artworkId}/edit`}
+                    href={`/${artwork.artist.slug}/artworks/${artworkId}/edit`}
                     className="p-2 text-gray-600 hover:text-gray-900"
                   >
                     <Edit2 className="w-5 h-5" />
