@@ -158,7 +158,7 @@ export default function ArtworkDetailPage() {
       if (response.ok) {
         const userData = await response.json();
         if (artwork) {
-          setIsOwner(userData.id === artwork.artist.id);
+          setIsOwner(userData.id === artwork.artist?.id);
         }
       }
     } catch (error) {
@@ -181,7 +181,7 @@ export default function ArtworkDetailPage() {
       });
 
       if (response.ok) {
-        router.push(`/${artwork?.artist.slug}`);
+        router.push(`/${artwork?.artist?.slug || ""}`);
       }
     } catch (error) {
       console.error("Failed to delete artwork:", error);
@@ -430,13 +430,13 @@ export default function ArtworkDetailPage() {
 
             {/* Artist Info */}
             <Link
-              href={`/${artwork.artist.slug}`}
+              href={`/${artwork.artist?.slug || ""}`}
               className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
             >
-              {artwork.artist.profile_image ? (
+              {artwork.artist?.profile_image ? (
                 <Image
                   src={artwork.artist.profile_image}
-                  alt={artwork.artist.name}
+                  alt={artwork.artist?.name || ""}
                   width={48}
                   height={48}
                   className="rounded-full"
@@ -448,10 +448,10 @@ export default function ArtworkDetailPage() {
               )}
               <div>
                 <p className="font-semibold text-gray-900">
-                  {artwork.artist.name}
+                  {artwork.artist?.name || "Unknown Artist"}
                 </p>
                 <p className="text-sm text-gray-600">
-                  @{artwork.artist.username}
+                  @{artwork.artist?.username || "unknown"}
                 </p>
               </div>
             </Link>
@@ -557,10 +557,15 @@ export default function ArtworkDetailPage() {
                       <div className="flex-shrink-0 w-2 h-2 mt-2 bg-gray-400 rounded-full"></div>
                       <div className="flex-1">
                         <p className="font-medium text-gray-900">
-                          {history.title}
+                          {history?.title || ""}
                         </p>
                         <p className="text-sm text-gray-600">
-                          {format(new Date(history.recorded_at), "yyyy.MM.dd")}
+                          {history?.recorded_at
+                            ? format(
+                                new Date(history.recorded_at),
+                                "yyyy.MM.dd"
+                              )
+                            : ""}
                         </p>
                       </div>
                     </div>
@@ -643,27 +648,29 @@ export default function ArtworkDetailPage() {
               </button>
 
               <div className="space-y-4">
-                {artwork.histories.map((history) => (
-                  <div key={history.id} className="p-4 bg-gray-50 rounded-lg">
+                {artwork?.histories?.map((history) => (
+                  <div key={history?.id} className="p-4 bg-gray-50 rounded-lg">
                     <div className="flex items-start justify-between mb-2">
                       <h4 className="font-semibold text-gray-900">
-                        {history.title}
+                        {history?.title || ""}
                       </h4>
                       <span className="text-sm text-gray-500">
-                        {format(new Date(history.recorded_at), "yyyy.MM.dd")}
+                        {history?.recorded_at
+                          ? format(new Date(history.recorded_at), "yyyy.MM.dd")
+                          : ""}
                       </span>
                     </div>
-                    {history.description && (
+                    {history?.description && (
                       <p className="text-gray-700 mb-3">
                         {history.description}
                       </p>
                     )}
-                    {history.media_url && (
+                    {history?.media_url && (
                       <div className="mt-3">
                         {history.media_type === "image" ? (
                           <img
                             src={history.media_url}
-                            alt={history.title}
+                            alt={history?.title || ""}
                             className="w-full rounded-lg"
                           />
                         ) : history.media_type === "video" ? (
