@@ -278,7 +278,7 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
 
       {/* GalleryInfo - sticky로 고정 */}
       {!isDetailPage && (
-        <div className="sticky top-0 z-50">
+        <div className="sticky top-0 z-50 bg-white ">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <GalleryInfo
               galleryUser={{
