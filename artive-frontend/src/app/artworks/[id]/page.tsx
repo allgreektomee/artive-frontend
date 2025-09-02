@@ -272,7 +272,7 @@ export default function ArtworkDetailPage() {
         ...(artwork.thumbnail_url
           ? [{ id: 0, image_url: artwork.thumbnail_url, order: 0 }]
           : []),
-        ...artwork.images,
+        ...(artwork.images || []),
       ]
     : [];
 
