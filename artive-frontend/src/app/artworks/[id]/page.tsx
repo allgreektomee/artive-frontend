@@ -54,6 +54,8 @@ interface Artwork {
   is_for_sale: boolean;
   status: "work_in_progress" | "completed" | "archived";
   thumbnail_url?: string;
+  display_url?: string;
+  file_url?: string;
   work_in_progress_url?: string;
   view_count: number;
   like_count: number;
@@ -113,6 +115,7 @@ export default function ArtworkDetailPage() {
   useEffect(() => {
     if (artworkId) {
       fetchArtwork();
+      checkOwnership();
     }
   }, [artworkId]);
 
@@ -135,21 +138,7 @@ export default function ArtworkDetailPage() {
       }
 
       const data = await response.json();
-
-      // API 응답 구조 확인을 위한 로그
-      console.log("API Response:", data);
-
-      // 데이터 유효성 검사 - artist 필드 체크 제거
-      if (!data) {
-        throw new Error("Invalid artwork data");
-      }
-
       setArtwork(data);
-
-      // Check ownership after artwork is loaded
-      if (token && data.artist) {
-        checkOwnership(data);
-      }
     } catch (err) {
       console.error("Error fetching artwork:", err);
       setError("Failed to load artwork");
@@ -158,9 +147,9 @@ export default function ArtworkDetailPage() {
     }
   };
 
-  const checkOwnership = async (artworkData: Artwork) => {
+  const checkOwnership = async () => {
     const token = localStorage.getItem("token");
-    if (!token || !artworkData || !artworkData.artist) return;
+    if (!token) return;
 
     try {
       const response = await fetch(`${backendUrl}/api/auth/me`, {
@@ -171,8 +160,8 @@ export default function ArtworkDetailPage() {
 
       if (response.ok) {
         const userData = await response.json();
-        if (userData && userData.id && artworkData.artist.id) {
-          setIsOwner(userData.id === artworkData.artist.id);
+        if (artwork) {
+          setIsOwner(userData.id === artwork.artist.id);
         }
       }
     } catch (error) {
@@ -192,9 +181,7 @@ export default function ArtworkDetailPage() {
     if (artwork) {
       setArtwork({
         ...artwork,
-        like_count: isLiked
-          ? Math.max(0, artwork.like_count - 1)
-          : artwork.like_count + 1,
+        like_count: isLiked ? artwork.like_count - 1 : artwork.like_count + 1,
       });
     }
   };
@@ -214,7 +201,7 @@ export default function ArtworkDetailPage() {
       });
 
       if (response.ok) {
-        router.push(`/${artwork?.artist?.slug || ""}`);
+        router.push(`/${artwork?.artist.slug}`);
       }
     } catch (error) {
       console.error("Failed to delete artwork:", error);
@@ -300,12 +287,17 @@ export default function ArtworkDetailPage() {
     );
   };
 
+  // 상세 페이지에서는 display_url 우선 사용
+  const mainImageUrl =
+    artwork?.display_url ||
+    artwork?.file_url ||
+    artwork?.thumbnail_url ||
+    artwork?.work_in_progress_url;
+
   const allImages = artwork
     ? [
-        ...(artwork.thumbnail_url
-          ? [{ id: 0, image_url: artwork.thumbnail_url, order: 0 }]
-          : []),
-        ...(artwork.images || []),
+        ...(mainImageUrl ? [{ id: 0, image_url: mainImageUrl, order: 0 }] : []),
+        ...artwork.images,
       ]
     : [];
 
@@ -349,7 +341,7 @@ export default function ArtworkDetailPage() {
               {isOwner && (
                 <>
                   <Link
-                    href={`/${artwork.artist?.slug}/artworks/${artworkId}/edit`}
+                    href={`/${artwork.artist.slug}/artworks/${artworkId}/edit`}
                     className="p-2 text-gray-600 hover:text-gray-900"
                   >
                     <Edit2 className="w-5 h-5" />
@@ -377,7 +369,7 @@ export default function ArtworkDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Image Gallery */}
           <div className="space-y-4">
-            {allImages.length > 0 ? (
+            {allImages.length > 0 && (
               <>
                 <div
                   className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer"
@@ -443,10 +435,6 @@ export default function ArtworkDetailPage() {
                   </div>
                 )}
               </>
-            ) : (
-              <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center">
-                <ImageIcon className="w-24 h-24 text-gray-300" />
-              </div>
             )}
           </div>
 
@@ -466,34 +454,32 @@ export default function ArtworkDetailPage() {
             </div>
 
             {/* Artist Info */}
-            {artwork.artist && (
-              <Link
-                href={`/${artwork.artist.slug}`}
-                className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                {artwork.artist.profile_image ? (
-                  <Image
-                    src={artwork.artist.profile_image}
-                    alt={artwork.artist.name || artwork.artist.username}
-                    width={48}
-                    height={48}
-                    className="rounded-full"
-                  />
-                ) : (
-                  <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                    <User className="w-6 h-6 text-gray-500" />
-                  </div>
-                )}
-                <div>
-                  <p className="font-semibold text-gray-900">
-                    {artwork.artist.name || artwork.artist.username}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    @{artwork.artist.username}
-                  </p>
+            <Link
+              href={`/${artwork.artist.slug}`}
+              className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              {artwork.artist.profile_image ? (
+                <Image
+                  src={artwork.artist.profile_image}
+                  alt={artwork.artist.name}
+                  width={48}
+                  height={48}
+                  className="rounded-full"
+                />
+              ) : (
+                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                  <User className="w-6 h-6 text-gray-500" />
                 </div>
-              </Link>
-            )}
+              )}
+              <div>
+                <p className="font-semibold text-gray-900">
+                  {artwork.artist.name}
+                </p>
+                <p className="text-sm text-gray-600">
+                  @{artwork.artist.username}
+                </p>
+              </div>
+            </Link>
 
             {/* Details */}
             <div className="space-y-3">
