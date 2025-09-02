@@ -89,7 +89,6 @@ export default function ArtworkDetailPage() {
 
   const [artwork, setArtwork] = useState<Artwork | null>(null);
   const [isOwner, setIsOwner] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -114,7 +113,6 @@ export default function ArtworkDetailPage() {
     if (artworkId) {
       fetchArtwork();
       checkOwnership();
-      incrementViewCount();
     }
   }, [artworkId]);
 
@@ -138,11 +136,6 @@ export default function ArtworkDetailPage() {
 
       const data = await response.json();
       setArtwork(data);
-
-      // Check if user has liked this artwork
-      if (token) {
-        checkLikeStatus();
-      }
     } catch (err) {
       console.error("Error fetching artwork:", err);
       setError("Failed to load artwork");
@@ -170,73 +163,6 @@ export default function ArtworkDetailPage() {
       }
     } catch (error) {
       console.error("Failed to check ownership:", error);
-    }
-  };
-
-  const checkLikeStatus = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
-    try {
-      const response = await fetch(
-        `${backendUrl}/api/artworks/${artworkId}/like/status`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setIsLiked(data.is_liked);
-      }
-    } catch (error) {
-      console.error("Failed to check like status:", error);
-    }
-  };
-
-  const incrementViewCount = async () => {
-    try {
-      await fetch(`${backendUrl}/api/artworks/${artworkId}/view`, {
-        method: "POST",
-      });
-    } catch (error) {
-      console.error("Failed to increment view count:", error);
-    }
-  };
-
-  const handleLike = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `${backendUrl}/api/artworks/${artworkId}/like`,
-        {
-          method: isLiked ? "DELETE" : "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        setIsLiked(!isLiked);
-        if (artwork) {
-          setArtwork({
-            ...artwork,
-            like_count: isLiked
-              ? artwork.like_count - 1
-              : artwork.like_count + 1,
-          });
-        }
-      }
-    } catch (error) {
-      console.error("Failed to toggle like:", error);
     }
   };
 
@@ -599,24 +525,9 @@ export default function ArtworkDetailPage() {
 
             {/* Actions */}
             <div className="flex items-center justify-between pt-4 border-t">
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={handleLike}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                    isLiked
-                      ? "bg-red-500 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  <Heart
-                    className={`w-5 h-5 ${isLiked ? "fill-current" : ""}`}
-                  />
-                  <span>{artwork.like_count}</span>
-                </button>
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Eye className="w-5 h-5" />
-                  <span>{artwork.view_count} views</span>
-                </div>
+              <div className="flex items-center gap-2 text-gray-600">
+                <Eye className="w-5 h-5" />
+                <span>{artwork.view_count} views</span>
               </div>
               <p className="text-sm text-gray-500">
                 {formatDistanceToNow(new Date(artwork.created_at), {
