@@ -9,7 +9,7 @@ import { FaArrowLeft } from "react-icons/fa";
 import ArtworkBasicInfo from "@/components/artworks/new/ArtworkBasicInfo";
 import ArtworkImageUpload from "@/components/artworks/new/ArtworkImageUpload";
 import ArtworkSchedule from "@/components/artworks/new/ArtworkSchedule";
-
+import { authUtils } from "@/utils/auth";
 export default function NewArtworkPage() {
   const router = useRouter();
   const backEndUrl =
@@ -38,7 +38,7 @@ export default function NewArtworkPage() {
     setMounted(true);
 
     // 로그인 상태 확인
-    const token = localStorage.getItem("access_token");
+    const token = authUtils.getToken();
     if (!token) {
       router.push("/auth/login");
       return;
@@ -110,7 +110,7 @@ export default function NewArtworkPage() {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem("access_token");
+      const token = authUtils.getToken();
       if (!token) {
         router.push("/auth/login");
         return;

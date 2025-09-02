@@ -7,7 +7,7 @@ import BottomNavigation from "@/components/gallery/BottomNavigation";
 import { FaUser } from "react-icons/fa";
 import { User } from "@/components/gallery/types";
 import { Edit } from "lucide-react";
-
+import { authUtils } from "@/utils/auth";
 interface StudioPost {
   id: number;
   title: string;
@@ -46,7 +46,7 @@ export default function StudioPage() {
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const token = localStorage.getItem("access_token");
+        const token = authUtils.getToken();
         if (!token) return;
 
         const res = await fetch(`${backEndUrl}/api/auth/me`, {

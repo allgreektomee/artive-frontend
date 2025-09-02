@@ -13,7 +13,7 @@ import InterviewSection from "@/components/profile/sections/InterviewSection";
 import ExhibitionsSection from "@/components/profile/sections/ExhibitionsSection";
 import CompetitionsSection from "@/components/profile/sections/CompetitionsSection";
 import AccountSettingsSection from "@/components/profile/sections/AccountSettingsSection";
-
+import { authUtils } from "@/utils/auth";
 // 타입 정의 - GalleryPage와 일치하도록 수정
 interface ProfileData {
   // 기본 정보
@@ -94,7 +94,7 @@ const ProfileManagement: React.FC = () => {
   const loadMainProfile = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("access_token");
+      const token = authUtils.getToken();
       const response = await fetch(`${backEndUrl}/api/profile/main`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -152,7 +152,7 @@ const ProfileManagement: React.FC = () => {
   const loadExhibitions = async () => {
     setExhibitionsLoading(true);
     try {
-      const token = localStorage.getItem("access_token");
+      const token = authUtils.getToken();
       const response = await fetch(`${backEndUrl}/api/profile/exhibitions`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -187,7 +187,7 @@ const ProfileManagement: React.FC = () => {
   const loadAwards = async () => {
     setAwardsLoading(true);
     try {
-      const token = localStorage.getItem("access_token");
+      const token = authUtils.getToken();
       const response = await fetch(`${backEndUrl}/api/profile/awards`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -317,7 +317,7 @@ const ProfileManagement: React.FC = () => {
   const handleSectionSave = async (sectionId: string) => {
     setSaving(true);
     try {
-      const token = localStorage.getItem("access_token");
+      const token = authUtils.getToken();
       let endpoint = "";
       let sectionData = {};
 

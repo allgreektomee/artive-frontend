@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { ko } from "date-fns/locale";
+import { authUtils } from "@/utils/auth";
 
 interface BlogPost {
   id: string;
@@ -150,7 +151,7 @@ export default function BlogDetailPage() {
   };
 
   const checkOwnership = async () => {
-    const token = localStorage.getItem("access_token");
+    const token = authUtils.getToken();
     if (!token) return;
 
     try {
@@ -173,7 +174,7 @@ export default function BlogDetailPage() {
     if (!confirm("정말로 이 포스트를 삭제하시겠습니까?")) return;
 
     setIsDeleting(true);
-    const token = localStorage.getItem("access_token");
+    const token = authUtils.getToken();
 
     try {
       const response = await fetch(`${backendUrl}/api/blog/posts/${postId}`, {

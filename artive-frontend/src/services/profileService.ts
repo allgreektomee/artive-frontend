@@ -9,10 +9,10 @@ import {
   ArtistVideo,
   ArtistStatement,
 } from "../utils/types";
-
+import { authUtils } from "@/utils/auth";
 // 토큰 가져오기
 const getAuthToken = () => {
-  return localStorage.getItem("access_token");
+  return authUtils.getToken();
 };
 
 // API 요청 헤더

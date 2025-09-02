@@ -9,7 +9,7 @@ import { FaArrowLeft } from "react-icons/fa";
 import ArtworkBasicInfo from "@/components/new/ArtworkBasicInfo";
 import ArtworkImageUpload from "@/components/new/ArtworkImageUpload";
 import ArtworkSchedule from "@/components/new/ArtworkSchedule";
-
+import { authUtils } from "@/utils/auth";
 export default function EditArtworkPage() {
   const router = useRouter();
   const params = useParams();
@@ -46,7 +46,7 @@ export default function EditArtworkPage() {
 
   useEffect(() => {
     setMounted(true);
-    const token = localStorage.getItem("access_token");
+    const token = authUtils.getToken();
     if (!token) {
       router.push("/auth/login");
       return;
@@ -57,7 +57,7 @@ export default function EditArtworkPage() {
   // 기존 작품 데이터 불러오기
   const fetchArtworkData = async () => {
     try {
-      const token = localStorage.getItem("access_token");
+      const token = authUtils.getToken();
       const response = await fetch(`${backEndUrl}/api/artworks/${artworkId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -111,7 +111,7 @@ export default function EditArtworkPage() {
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
       if (shouldCleanupRef.current && form.thumbnail_url && isTemp) {
-        const token = localStorage.getItem("access_token");
+        const token = authUtils.getToken();
         if (token) {
           fetch(
             `${backEndUrl}/api/upload/delete-file?file_url=${encodeURIComponent(
@@ -151,7 +151,7 @@ export default function EditArtworkPage() {
   ) => {
     if (form.thumbnail_url && isTemp) {
       try {
-        const token = localStorage.getItem("access_token");
+        const token = authUtils.getToken();
         await fetch(
           `${backEndUrl}/api/upload/delete-file?file_url=${encodeURIComponent(
             form.thumbnail_url
@@ -219,7 +219,7 @@ export default function EditArtworkPage() {
     shouldCleanupRef.current = false;
 
     try {
-      const token = localStorage.getItem("access_token");
+      const token = authUtils.getToken();
       if (!token) {
         router.push("/auth/login");
         return;
@@ -309,7 +309,7 @@ export default function EditArtworkPage() {
       );
       if (confirmDelete) {
         try {
-          const token = localStorage.getItem("access_token");
+          const token = authUtils.getToken();
           await fetch(
             `${backEndUrl}/api/upload/delete-file?file_url=${encodeURIComponent(
               form.thumbnail_url

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-
+import { authUtils } from "@/utils/auth";
 // ✅ dynamic import로 SSR 비활성화
 const BlogEditor = dynamic(() => import("@/components/blog/BlogEditor"), {
   ssr: false,
@@ -97,7 +97,7 @@ export default function BlogWritePage() {
 
   const handleAutoSave = async () => {
     setAutoSaveStatus("저장중...");
-    const token = localStorage.getItem("access_token");
+    const token = authUtils.getToken();
 
     try {
       // localStorage에 임시 저장
@@ -172,7 +172,7 @@ export default function BlogWritePage() {
   }, [userSlug]);
 
   const checkPermission = async () => {
-    const token = localStorage.getItem("access_token");
+    const token = authUtils.getToken();
 
     if (!token) {
       alert("로그인이 필요합니다.");
@@ -243,7 +243,7 @@ export default function BlogWritePage() {
     }
 
     setIsSaving(true);
-    const token = localStorage.getItem("access_token");
+    const token = authUtils.getToken();
 
     try {
       const plainText = content.replace(/<[^>]*>/g, "").trim();
@@ -305,7 +305,7 @@ export default function BlogWritePage() {
     }
 
     setIsPublishing(true);
-    const token = localStorage.getItem("access_token");
+    const token = authUtils.getToken();
 
     try {
       const plainText = content.replace(/<[^>]*>/g, "").trim();

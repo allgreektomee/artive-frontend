@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import AddArtworkButton from "@/components/gallery/AddArtworkButton";
 import ArtworkGrid from "@/components/gallery/ArtworkGrid";
 import { Artwork } from "@/components/gallery/types";
+import { authUtils } from "@/utils/auth";
 
 export default function GalleryPage() {
   const backEndUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -58,7 +59,7 @@ export default function GalleryPage() {
 
   const checkOwnership = async () => {
     try {
-      const token = localStorage.getItem("access_token");
+      const token = authUtils.getToken();
       if (!token) return;
 
       const res = await fetch(`${backEndUrl}/api/auth/me`, {
@@ -89,7 +90,7 @@ export default function GalleryPage() {
       }
       setError(null);
 
-      const token = localStorage.getItem("access_token");
+      const token = authUtils.getToken();
       const headers: HeadersInit = { Accept: "application/json" };
 
       if (token) {

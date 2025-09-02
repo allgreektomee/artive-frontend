@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-
+import { authUtils } from "@/utils/auth";
 interface AddHistoryModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -161,7 +161,7 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
       const formData = new FormData();
       formData.append("file", file);
 
-      const token = localStorage.getItem("access_token");
+      const token = authUtils.getToken();
       const response = await fetch(`${backEndUrl}/api/upload/history`, {
         method: "POST",
         headers: {

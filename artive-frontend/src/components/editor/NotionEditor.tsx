@@ -25,7 +25,7 @@ import {
   Link,
   Image,
 } from "lucide-react";
-
+import { authUtils } from "@/utils/auth";
 // 블록 타입 정의
 interface Block {
   id: string;
@@ -335,7 +335,7 @@ export default function BlogWritePage() {
   const checkPermission = async () => {
     console.log("🔍 권한 체크 시작");
 
-    const token = localStorage.getItem("access_token");
+    const token = authUtils.getToken();
     console.log("🔑 토큰 확인:", token ? "있음" : "없음");
 
     if (!token) {
@@ -395,7 +395,7 @@ export default function BlogWritePage() {
     }
 
     setIsSaving(true);
-    const token = localStorage.getItem("access_token");
+    const token = authUtils.getToken();
 
     try {
       const postData = {
@@ -446,7 +446,7 @@ export default function BlogWritePage() {
     }
 
     setIsPublishing(true);
-    const token = localStorage.getItem("access_token");
+    const token = authUtils.getToken();
 
     try {
       const postData = {

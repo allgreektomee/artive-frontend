@@ -7,7 +7,7 @@ import GalleryHeader from "@/components/gallery/GalleryHeader";
 import GalleryInfo from "@/components/gallery/GalleryInfo";
 import BottomNavigation from "@/components/gallery/BottomNavigation";
 import { User } from "@/components/gallery/types";
-
+import { authUtils } from "@/utils/auth";
 interface GalleryLayoutProps {
   children: ReactNode;
 }
@@ -122,7 +122,7 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
 
   const fetchGalleryUser = async () => {
     try {
-      const token = localStorage.getItem("access_token");
+      const token = authUtils.getToken();
       const headers: HeadersInit = { Accept: "application/json" };
 
       if (token) {
@@ -168,7 +168,7 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
   };
 
   const checkOwnership = async () => {
-    const token = localStorage.getItem("access_token");
+    const token = authUtils.getToken();
     if (!token) return;
 
     try {

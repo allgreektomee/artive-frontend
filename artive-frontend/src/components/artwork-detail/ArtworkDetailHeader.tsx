@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-
+import { authUtils } from "@/utils/auth";
 interface ArtworkDetailHeaderProps {
   onBack: () => void;
   artworkTitle: string;
@@ -64,7 +64,7 @@ const ArtworkDetailHeader: React.FC<ArtworkDetailHeaderProps> = ({
 
   const handleDeleteConfirm = async () => {
     try {
-      const token = localStorage.getItem("access_token");
+      const token = authUtils.getToken();
       const response = await fetch(`${backEndUrl}/api/artworks/${artworkId}`, {
         method: "DELETE",
         headers: {

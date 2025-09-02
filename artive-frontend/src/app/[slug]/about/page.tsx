@@ -13,6 +13,7 @@ import BottomNavigation from "@/components/gallery/BottomNavigation";
 import { FaUser } from "react-icons/fa";
 // 타입 import
 import { User } from "@/components/gallery/types";
+import { authUtils } from "@/utils/auth";
 
 export default function AboutArtistPage() {
   const backEndUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -32,7 +33,7 @@ export default function AboutArtistPage() {
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const token = localStorage.getItem("access_token");
+        const token = authUtils.getToken();
         if (!token) return;
 
         const res = await fetch(`${backEndUrl}/api/auth/me`, {
@@ -65,7 +66,7 @@ export default function AboutArtistPage() {
       setError(null);
 
       try {
-        const token = localStorage.getItem("access_token");
+        const token = authUtils.getToken();
         const headers: HeadersInit = { Accept: "application/json" };
 
         if (token) {

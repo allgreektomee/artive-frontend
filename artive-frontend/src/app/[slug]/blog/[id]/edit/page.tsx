@@ -30,6 +30,7 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
+import { authUtils } from "@/utils/auth";
 
 interface BlogPost {
   id: string;
@@ -137,7 +138,7 @@ export default function BlogEditPage() {
   };
 
   const checkPermission = async () => {
-    const token = localStorage.getItem("access_token");
+    const token = authUtils.getToken();
 
     if (!token) {
       alert("로그인이 필요합니다.");
@@ -206,7 +207,7 @@ export default function BlogEditPage() {
       setIsSaving(true);
     }
 
-    const token = localStorage.getItem("access_token");
+    const token = authUtils.getToken();
 
     try {
       const plainText = content.replace(/<[^>]*>/g, "").trim();

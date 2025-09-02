@@ -1,7 +1,7 @@
 // components/new/ArtworkImageUpload.tsx
 import React, { useState, useRef } from "react";
 import { FaImage, FaTimes, FaUpload } from "react-icons/fa";
-
+import { authUtils } from "@/utils/auth";
 interface ArtworkImageUploadProps {
   imageUrl: string;
   imagePreview: string | null;
@@ -51,7 +51,7 @@ const ArtworkImageUpload: React.FC<ArtworkImageUploadProps> = ({
       reader.readAsDataURL(file);
 
       // 2. 토큰 확인 (token으로 통일)
-      const token = localStorage.getItem("access_token");
+      const token = authUtils.getToken();
       if (!token) {
         onError("로그인이 필요합니다.");
         onImageChange("", null);

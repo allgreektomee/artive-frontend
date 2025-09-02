@@ -1,7 +1,7 @@
 // components/profile/sections/AboutArtistSection.tsx
 import React, { useState, useEffect } from "react";
 import { SectionProps } from "../../../utils/types";
-
+import { authUtils } from "@/utils/auth";
 const AboutArtistSection: React.FC<SectionProps> = ({
   data,
   onChange,
@@ -72,7 +72,7 @@ const AboutArtistSection: React.FC<SectionProps> = ({
       const formData = new FormData();
       formData.append("file", file);
 
-      const token = localStorage.getItem("access_token");
+      const token = authUtils.getToken();
       const response = await fetch(`${backEndUrl}/api/upload/image`, {
         method: "POST",
         headers: {

@@ -9,7 +9,7 @@ import { FaArrowLeft } from "react-icons/fa";
 import ArtworkBasicInfo from "@/components/new/ArtworkBasicInfo";
 import ArtworkImageUpload from "@/components/new/ArtworkImageUpload";
 import ArtworkSchedule from "@/components/new/ArtworkSchedule";
-
+import { authUtils } from "@/utils/auth";
 export default function NewArtworkPage() {
   const router = useRouter();
   const backEndUrl =
@@ -47,7 +47,7 @@ export default function NewArtworkPage() {
     setMounted(true);
 
     // 로그인 상태 확인
-    const token = localStorage.getItem("access_token");
+    const token = authUtils.getToken();
     if (!token) {
       router.push("/auth/login");
       return;
@@ -71,7 +71,7 @@ export default function NewArtworkPage() {
 
       // 임시 이미지 삭제 (제출하지 않은 경우)
       if (shouldCleanupRef.current && form.thumbnail_url && isTemp) {
-        const token = localStorage.getItem("access_token");
+        const token = authUtils.getToken();
         if (token) {
           // 비동기로 삭제 요청
           fetch(
@@ -111,7 +111,7 @@ export default function NewArtworkPage() {
     // 기존 임시 이미지가 있으면 삭제
     if (form.thumbnail_url && isTemp) {
       try {
-        const token = localStorage.getItem("access_token");
+        const token = authUtils.getToken();
         await fetch(
           `${backEndUrl}/api/upload/delete-file?file_url=${encodeURIComponent(
             form.thumbnail_url
@@ -183,7 +183,7 @@ export default function NewArtworkPage() {
     shouldCleanupRef.current = false; // 제출 시 cleanup 방지
 
     try {
-      const token = localStorage.getItem("access_token");
+      const token = authUtils.getToken();
       const userStr = localStorage.getItem("user");
 
       if (!token) {
@@ -302,7 +302,7 @@ export default function NewArtworkPage() {
       );
       if (confirmDelete) {
         try {
-          const token = localStorage.getItem("access_token");
+          const token = authUtils.getToken();
           await fetch(
             `${backEndUrl}/api/upload/delete-file?file_url=${encodeURIComponent(
               form.thumbnail_url

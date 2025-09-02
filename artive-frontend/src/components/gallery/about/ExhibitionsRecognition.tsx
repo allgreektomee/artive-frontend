@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-
+import { authUtils } from "@/utils/auth";
 interface User {
   exhibitions?: any[];
   awards?: any[];
@@ -58,7 +58,7 @@ export default function ExhibitionsRecognition({
 
       try {
         setLoading(true);
-        const token = localStorage.getItem("access_token");
+        const token = authUtils.getToken();
         const headers: HeadersInit = {
           Accept: "application/json",
           "Content-Type": "application/json",

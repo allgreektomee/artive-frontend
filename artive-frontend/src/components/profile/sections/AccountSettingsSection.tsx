@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { SectionProps } from "../../../utils/types";
-
+import { authUtils } from "@/utils/auth";
 const AccountSettingsSection: React.FC<SectionProps> = ({
   data,
   onChange,
@@ -62,7 +62,7 @@ const AccountSettingsSection: React.FC<SectionProps> = ({
 
     setIsChangingPassword(true);
     try {
-      const token = localStorage.getItem("access_token");
+      const token = authUtils.getToken();
       const response = await fetch(`${backEndUrl}/api/auth/password`, {
         method: "PUT",
         headers: {
@@ -104,7 +104,7 @@ const AccountSettingsSection: React.FC<SectionProps> = ({
     }
 
     try {
-      const token = localStorage.getItem("access_token");
+      const token = authUtils.getToken();
       const response = await fetch(`${backEndUrl}/api/auth/account`, {
         method: "DELETE",
         headers: {

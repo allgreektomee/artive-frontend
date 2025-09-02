@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-
+import { authUtils } from "@/utils/auth";
 interface User {
   artist_interview?: string;
   qa_list?: InterviewQA[];
@@ -102,7 +102,7 @@ export default function ArtistInterview({
 
   const handleSave = async () => {
     try {
-      const token = localStorage.getItem("access_token");
+      const token = authUtils.getToken();
       const response = await fetch("/api/profile/qa", {
         method: "POST",
         headers: {

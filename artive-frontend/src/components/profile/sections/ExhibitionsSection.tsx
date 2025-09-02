@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { SectionProps } from "../../../utils/types";
-
+import { authUtils } from "@/utils/auth";
 interface Exhibition {
   id: number;
   title_ko: string;
@@ -87,7 +87,7 @@ const ExhibitionsSection: React.FC<SectionProps> = ({
   const deleteExhibition = async (id: number) => {
     if (confirm("정말 삭제하시겠습니까?")) {
       try {
-        const token = localStorage.getItem("access_token");
+        const token = authUtils.getToken();
 
         if (id < Date.now() - 1000000000) {
           const response = await fetch(
@@ -122,7 +122,7 @@ const ExhibitionsSection: React.FC<SectionProps> = ({
   const finishEditing = async () => {
     if (editingId && tempEditData[editingId]) {
       try {
-        const token = localStorage.getItem("access_token");
+        const token = authUtils.getToken();
         const exhibitionData = tempEditData[editingId];
 
         // 날짜 검증

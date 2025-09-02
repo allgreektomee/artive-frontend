@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
+import { authUtils } from "@/utils/auth";
 
 interface BlogPost {
   id: number;
@@ -119,7 +120,7 @@ export default function BlogListPage() {
   }, [userSlug, selectedType, searchTerm]);
 
   const checkOwnership = async () => {
-    const token = localStorage.getItem("access_token");
+    const token = authUtils.getToken();
     if (!token) return;
 
     try {
