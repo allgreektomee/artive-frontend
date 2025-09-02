@@ -83,12 +83,14 @@ const ProfileManagement: React.FC = () => {
 
   // 탭 변경시 필요한 데이터 로드
   useEffect(() => {
-    if (activeTab === "exhibitions") {
+    const currentSection = isMobile ? currentView : activeTab;
+
+    if (currentSection === "exhibitions") {
       loadExhibitions();
-    } else if (activeTab === "competitions") {
+    } else if (currentSection === "competitions") {
       loadAwards();
     }
-  }, [activeTab]);
+  }, [currentView, activeTab, isMobile]);
 
   // 메인 프로필 데이터 로딩 (텍스트 위주)
   const loadMainProfile = async () => {
