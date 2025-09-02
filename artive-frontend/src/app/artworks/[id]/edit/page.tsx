@@ -301,6 +301,8 @@ export default function EditArtworkPage() {
   };
 
   const handleCancel = async () => {
+    let finalImageUrl = form.thumbnail_url;
+
     if (form.thumbnail_url && isTemp) {
       const confirmDelete = window.confirm(
         "업로드한 이미지가 삭제됩니다. 계속하시겠습니까?"

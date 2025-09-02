@@ -191,8 +191,9 @@ export default function ArtworkDetailPage() {
         const data = await response.json();
         setIsLiked(data.is_liked);
       }
+      // 404는 무시
     } catch (error) {
-      console.error("Failed to check like status:", error);
+      // 에러 무시
     }
   };
 
@@ -202,7 +203,7 @@ export default function ArtworkDetailPage() {
         method: "POST",
       });
     } catch (error) {
-      console.error("Failed to increment view count:", error);
+      // 에러 무시
     }
   };
 
@@ -346,7 +347,7 @@ export default function ArtworkDetailPage() {
         ...(artwork.thumbnail_url
           ? [{ id: 0, image_url: artwork.thumbnail_url, order: 0 }]
           : []),
-        ...artwork.images,
+        ...(artwork.images || []), // 빈 배열 기본값 추가
       ]
     : [];
 
