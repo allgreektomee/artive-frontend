@@ -120,9 +120,6 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
     }
   };
 
-  const [selectedEmoji, setSelectedEmoji] = useState("🎨");
-  const quickEmojis = ["🎨", "🎬", "✨", "😊", "🔥", "💡", "🖼️"];
-
   const handleMediaTypeChange = (type: "text" | "image" | "youtube") => {
     if (editingHistory) return;
 
@@ -265,38 +262,85 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
 
   if (!isOpen) return null;
 
-  // 👇 여기서부터 풀스크린 레이아웃
   return (
-    <div className="fixed inset-0 bg-white z-50 flex flex-col h-screen w-screen overflow-hidden">
-      {/* Header - 고정 */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
+    <div className="fixed inset-0 bg-white z-50 flex flex-col h-screen">
+      {/* Header with action buttons */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <h2 className="text-xl  font-bold text-gray-900">
-            {editingHistory ? "Edit Process" : "Add New Process"}
-          </h2>
-          <button
-            onClick={onClose}
-            disabled={loading}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={onClose}
+              disabled={loading}
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+              title="닫기 (ESC)"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+            <h2 className="text-xl font-bold text-gray-900">
+              {editingHistory ? "프로세스 수정" : "새 프로세스 추가"}
+            </h2>
+          </div>
+
+          <div className="flex items-center space-x-3">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading || uploadingImage}
+              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 font-medium"
+            >
+              취소
+            </button>
+            <button
+              onClick={() => handleSubmit()}
+              disabled={
+                loading ||
+                !form.title.trim() ||
+                !form.content.trim() ||
+                uploadingImage
+              }
+              className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center space-x-2"
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>저장 중...</span>
+                </>
+              ) : (
+                <>
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  <span>{editingHistory ? "수정 완료" : "저장"}</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Form - 스크롤 가능 영역 */}
+      {/* Form Content - Scrollable */}
       <div className="flex-1 overflow-y-auto bg-gray-50">
         <div className="max-w-4xl mx-auto p-6">
           <div className="space-y-6">
@@ -311,12 +355,14 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
               </div>
             )}
 
-            {/* Media Type Selection - 컴팩트한 높이 */}
+            {/* Media Type Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                Type{" "}
+                미디어 타입
                 {editingHistory && (
-                  <span className="text-xs text-gray-500">(수정 불가)</span>
+                  <span className="text-xs text-gray-500 ml-2">
+                    (수정 불가)
+                  </span>
                 )}
               </label>
               <div className="grid grid-cols-3 gap-3">
@@ -328,7 +374,7 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
                       !editingHistory && handleMediaTypeChange(type)
                     }
                     disabled={editingHistory}
-                    className={`p-3 rounded-xl border-2 transition-all ${
+                    className={`p-4 rounded-xl border-2 transition-all ${
                       form.media_type === type
                         ? "border-blue-500 bg-blue-50 text-blue-700"
                         : "border-gray-200 hover:border-gray-300 text-gray-600"
@@ -338,30 +384,10 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
                         : "cursor-pointer"
                     }`}
                   >
-                    <div className="text-sm mb-1">
-                      {getMediaTypeIcon(type)} {type}
+                    <div className="text-2xl mb-1">
+                      {getMediaTypeIcon(type)}
                     </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Icon */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Icon</label>
-              <div className="flex flex-wrap gap-2">
-                {quickEmojis.map((emoji) => (
-                  <button
-                    key={emoji}
-                    type="button"
-                    onClick={() => setSelectedEmoji(emoji)}
-                    className={`w-10 h-10 text-xl rounded-lg transition-colors ${
-                      selectedEmoji === emoji
-                        ? "bg-blue-100 ring-2 ring-blue-500"
-                        : "hover:bg-gray-100"
-                    }`}
-                  >
-                    {emoji}
+                    <div className="text-sm capitalize font-medium">{type}</div>
                   </button>
                 ))}
               </div>
@@ -370,7 +396,7 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
             {/* Title */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Title *
+                제목 *
               </label>
               <input
                 type="text"
@@ -386,7 +412,7 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
             {/* Content */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description *
+                설명 *
               </label>
               <textarea
                 name="content"
@@ -403,21 +429,16 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
             {form.media_type === "image" && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Image
+                  이미지
                 </label>
                 {imagePreview ? (
                   <div className="relative">
                     <div className="relative w-full bg-gray-100 rounded-lg overflow-hidden">
-                      <div
-                        className="relative w-full"
-                        style={{ paddingBottom: "66.67%" }}
-                      >
-                        <img
-                          src={imagePreview}
-                          alt="Preview"
-                          className="absolute inset-0 w-full h-full object-contain bg-gray-50"
-                        />
-                      </div>
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-auto object-contain"
+                      />
                     </div>
                     <button
                       type="button"
@@ -442,9 +463,19 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
                         />
                       </svg>
                     </button>
+                    {uploadingImage && (
+                      <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                        <div className="flex flex-col items-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                          <span className="mt-2 text-sm text-gray-600">
+                            업로드 중...
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400">
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors">
                     <label className="cursor-pointer block p-8">
                       <svg
                         className="mx-auto h-12 w-12 text-gray-400"
@@ -459,8 +490,11 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
                           strokeLinejoin="round"
                         />
                       </svg>
-                      <p className="mt-2 text-sm text-gray-600">
+                      <p className="mt-2 text-sm text-gray-600 text-center">
                         클릭하여 이미지 업로드
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500 text-center">
+                        PNG, JPG, GIF (최대 10MB)
                       </p>
                       <input
                         type="file"
@@ -490,7 +524,7 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
                   className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:border-blue-500"
                 />
                 {youtubePreview && (
-                  <div className="mt-4 rounded-lg overflow-hidden">
+                  <div className="mt-4 rounded-lg overflow-hidden bg-black">
                     <div
                       className="relative w-full"
                       style={{ paddingBottom: "56.25%" }}
@@ -509,7 +543,7 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
             {/* Work Date */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Work Date
+                작업 날짜
               </label>
               <input
                 type="date"
@@ -522,41 +556,6 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
               />
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Footer - 하단 고정 */}
-      <div className="bg-white border-t border-gray-200 px-6 py-4">
-        <div className="max-w-4xl mx-auto flex justify-end space-x-3">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={loading || uploadingImage}
-            className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => handleSubmit()}
-            disabled={
-              loading ||
-              !form.title.trim() ||
-              !form.content.trim() ||
-              uploadingImage
-            }
-            className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <div className="flex items-center space-x-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                <span>Adding...</span>
-              </div>
-            ) : editingHistory ? (
-              "Update Process"
-            ) : (
-              "Add Process"
-            )}
-          </button>
         </div>
       </div>
     </div>
