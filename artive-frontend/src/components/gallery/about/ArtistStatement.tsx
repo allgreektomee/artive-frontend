@@ -112,9 +112,9 @@ export default function ArtistStatement({
 
                   {/* 태블릿/데스크탑 레이아웃 */}
                   <div className="hidden sm:grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-                    {/* 이미지 */}
+                    {/* 이미지 - 2/5 (40%) */}
                     {hasImage && (
-                      <div className="relative group overflow-hidden rounded-2xl shadow-2xl">
+                      <div className="lg:col-span-2 relative group overflow-hidden rounded-2xl shadow-2xl">
                         <div className="bg-gray-100">
                           {imageLoading && (
                             <div className="absolute inset-0 bg-gray-200 animate-pulse" />
@@ -131,11 +131,13 @@ export default function ArtistStatement({
                       </div>
                     )}
 
-                    {/* 텍스트 */}
+                    {/* 텍스트 - 3/5 (60%) */}
                     {hasText && (
                       <div
                         className={`${
-                          hasImage ? "lg:pl-8" : "max-w-4xl mx-auto"
+                          hasImage
+                            ? "lg:col-span-3 lg:pl-8"
+                            : "lg:col-span-5 max-w-4xl mx-auto"
                         }`}
                       >
                         <div className="space-y-6">
