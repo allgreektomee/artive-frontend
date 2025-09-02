@@ -102,7 +102,13 @@ export default function ArtistStatement({
                     {!hasImage && hasText && (
                       <div className="px-4">
                         <div className="bg-gray-50 rounded-2xl p-6">
-                          <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-base">
+                          <p
+                            className="text-gray-700 leading-relaxed whitespace-pre-wrap text-base sm:text-lg"
+                            style={{
+                              wordBreak: "keep-all",
+                              overflowWrap: "break-word",
+                            }}
+                          >
                             {statementText}
                           </p>
                         </div>

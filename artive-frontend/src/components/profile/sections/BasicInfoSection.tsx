@@ -109,22 +109,15 @@ const BasicInfoSection: React.FC<SectionProps> = ({
       </div>
 
       {/* 한 줄 소개 */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          아티스트 한줄소개
-          <span className="text-xs text-gray-500 ml-2">
-            (아티스트 헤더 메시지)
-          </span>
-        </label>
-        <input
-          type="text"
-          value={data.bio || ""}
-          onChange={(e) => onChange("bio", e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="예: 자연과 인간의 관계를 탐구하는 작가"
-          maxLength={100}
-        />
-      </div>
+      <input
+        type="text"
+        value={localData.bio} // data.bio → localData.bio
+        onChange={(e) => handleLocalChange("bio", e.target.value)}
+        onBlur={() => handleBlur("bio")}
+        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        placeholder="예: 자연과 인간의 관계를 탐구하는 작가"
+        maxLength={100}
+      />
 
       {/* 갤러리 주소 */}
       <div>
@@ -135,16 +128,14 @@ const BasicInfoSection: React.FC<SectionProps> = ({
           </span>
           <input
             type="text"
-            value={localData.slug}
+            value={localData.gallery_description} // data.gallery_description → localData.gallery_description
             onChange={(e) =>
-              handleLocalChange(
-                "slug",
-                e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "")
-              )
+              handleLocalChange("gallery_description", e.target.value)
             }
-            onBlur={() => handleBlur("slug")}
-            placeholder="gallery-name"
-            className="flex-1 border border-gray-300 px-4 py-3 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            onBlur={() => handleBlur("gallery_description")}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="예: 현대미술과 전통의 조화를 추구하는 갤러리"
+            maxLength={150}
           />
         </div>
         <p className="mt-1 text-xs text-gray-500">

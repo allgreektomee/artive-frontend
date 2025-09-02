@@ -167,7 +167,7 @@ const AboutArtistSection: React.FC<SectionProps> = ({
                 alt="대표 이미지"
                 className="w-full h-auto rounded-lg border border-gray-200"
               />
-              <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute top-2 right-2 flex space-x-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={handleImageRemove}
                   className="p-2 bg-white rounded-lg shadow-lg hover:bg-gray-100 transition-colors"
