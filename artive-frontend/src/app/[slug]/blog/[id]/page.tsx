@@ -327,8 +327,8 @@ export default function BlogDetailPage() {
       </div>
 
       {/* 본문 */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-xl shadow-sm border p-8">
+      <div className="max-w-4xl mx-auto px-0 sm:px-4 py-4 sm:py-8">
+        <div className="bg-white sm:rounded-xl sm:shadow-sm sm:border p-4 sm:p-8">
           {/* 메타 정보 */}
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-4">
@@ -382,6 +382,45 @@ export default function BlogDetailPage() {
               line-height: 1.8;
               color: #374151;
             }
+            /* 모바일에서 폰트 크기 20% 감소 */
+            @media (max-width: 640px) {
+              .blog-content {
+                font-size: 0.88rem; /* 1.1rem * 0.8 = 0.88rem */
+                line-height: 1.7;
+              }
+
+              .blog-content h1 {
+                font-size: 1.6rem; /* 2rem * 0.8 */
+              }
+
+              .blog-content h2 {
+                font-size: 1.2rem; /* 1.5rem * 0.8 */
+              }
+
+              .blog-content h3 {
+                font-size: 1rem; /* 1.25rem * 0.8 */
+              }
+
+              .blog-content p {
+                margin-bottom: 0.8rem;
+              }
+
+              .blog-content ul,
+              .blog-content ol {
+                padding-left: 1.5rem; /* 2rem * 0.75 */
+              }
+
+              /* 이미지는 모바일에서 전체 너비 */
+              .blog-content img {
+                margin-left: -1rem;
+                margin-right: -1rem;
+                width: calc(100% + 2rem);
+                max-width: none;
+                border-radius: 0;
+              }
+            }
+
+            /* 데스크탑 스타일은 그대로 유지 */
 
             .blog-content h1 {
               font-size: 2rem;
