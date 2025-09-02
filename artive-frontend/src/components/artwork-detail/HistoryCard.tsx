@@ -212,28 +212,31 @@ const MetadataCard: React.FC<MetadataCardProps> = ({
       className={`
       ${
         isSmallCard
-          ? "w-[80px] sm:w-[100px] md:w-[120px]" // 고정 너비로 변경
-          : "flex-1 min-w-[120px] sm:min-w-[150px]"
+          ? "flex-shrink-0 flex-grow-0" // 내용에 맞게 자동 조정
+          : "flex-1"
       } 
       bg-white rounded-xl shadow-sm border border-gray-100 p-2.5 sm:p-3 md:p-4
     `}
     >
-      <div className="flex items-center space-x-2 sm:space-x-3">
+      <div className="flex items-center space-x-2">
         <div
           className={`
-          ${isSmallCard ? "w-7 h-7 sm:w-8 sm:h-8" : "w-8 h-8 sm:w-10 sm:h-10"}
+          ${isSmallCard ? "w-7 h-7" : "w-8 h-8 sm:w-9 sm:h-9"}
           rounded-lg ${color} 
           flex items-center justify-center flex-shrink-0
         `}
         >
           {icon}
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] sm:text-xs text-gray-500">{label}</p>
+        <div className={`${isSmallCard ? "" : "min-w-0 flex-1"}`}>
+          <p className="text-[10px] sm:text-xs text-gray-500 whitespace-nowrap">
+            {label}
+          </p>
           <p
             className={`
             ${isSmallCard ? "text-[11px] sm:text-xs" : "text-xs sm:text-sm"} 
-            font-semibold text-gray-900 truncate
+            font-semibold text-gray-900 
+            ${isSmallCard ? "whitespace-nowrap" : "truncate"}
           `}
           >
             {value}
@@ -247,13 +250,14 @@ const MetadataCard: React.FC<MetadataCardProps> = ({
 // 사용 예시 (ArtworkDetail 페이지에서)
 const ArtworkMetadata = () => {
   return (
-    <div className="flex flex-wrap gap-2 sm:gap-3">
-      <div className="flex gap-2">
+    <div className="flex gap-2 sm:gap-3">
+      {/* 작은 카드 그룹 - 내용에 맞게 자동 조정 */}
+      <div className="flex gap-2 flex-shrink-0">
         {/* Medium - 작은 카드 */}
         <MetadataCard
           icon={
             <svg
-              className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-600"
+              className="w-3.5 h-3.5 text-purple-600"
               fill="currentColor"
               viewBox="0 0 20 20"
             >
@@ -269,7 +273,7 @@ const ArtworkMetadata = () => {
         <MetadataCard
           icon={
             <svg
-              className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600"
+              className="w-3.5 h-3.5 text-indigo-600"
               fill="currentColor"
               viewBox="0 0 20 20"
             >
@@ -286,12 +290,13 @@ const ArtworkMetadata = () => {
         />
       </div>
 
-      <div className="flex gap-2 flex-1">
+      {/* 큰 카드 그룹 - 남은 공간 활용 */}
+      <div className="flex gap-2 flex-1 min-w-0">
         {/* Size - 큰 카드 */}
         <MetadataCard
           icon={
             <svg
-              className="w-4 h-4 sm:w-5 sm:h-5 text-green-600"
+              className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-green-600"
               fill="currentColor"
               viewBox="0 0 20 20"
             >
@@ -307,7 +312,7 @@ const ArtworkMetadata = () => {
         <MetadataCard
           icon={
             <svg
-              className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600"
+              className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-orange-600"
               fill="currentColor"
               viewBox="0 0 20 20"
             >
