@@ -54,8 +54,6 @@ interface Artwork {
   is_for_sale: boolean;
   status: "work_in_progress" | "completed" | "archived";
   thumbnail_url?: string;
-  display_url?: string;
-  file_url?: string;
   work_in_progress_url?: string;
   view_count: number;
   like_count: number;
@@ -116,6 +114,7 @@ export default function ArtworkDetailPage() {
     if (artworkId) {
       fetchArtwork();
       checkOwnership();
+      incrementViewCount();
     }
   }, [artworkId]);
 
@@ -139,6 +138,11 @@ export default function ArtworkDetailPage() {
 
       const data = await response.json();
       setArtwork(data);
+
+      // Check if user has liked this artwork
+      if (token) {
+        checkLikeStatus();
+      }
     } catch (err) {
       console.error("Error fetching artwork:", err);
       setError("Failed to load artwork");
@@ -169,6 +173,39 @@ export default function ArtworkDetailPage() {
     }
   };
 
+  const checkLikeStatus = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const response = await fetch(
+        `${backendUrl}/api/artworks/${artworkId}/like/status`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setIsLiked(data.is_liked);
+      }
+    } catch (error) {
+      console.error("Failed to check like status:", error);
+    }
+  };
+
+  const incrementViewCount = async () => {
+    try {
+      await fetch(`${backendUrl}/api/artworks/${artworkId}/view`, {
+        method: "POST",
+      });
+    } catch (error) {
+      console.error("Failed to increment view count:", error);
+    }
+  };
+
   const handleLike = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -176,13 +213,30 @@ export default function ArtworkDetailPage() {
       return;
     }
 
-    // 좋아요 기능은 백엔드에 구현되지 않았으므로 로컬 상태만 업데이트
-    setIsLiked(!isLiked);
-    if (artwork) {
-      setArtwork({
-        ...artwork,
-        like_count: isLiked ? artwork.like_count - 1 : artwork.like_count + 1,
-      });
+    try {
+      const response = await fetch(
+        `${backendUrl}/api/artworks/${artworkId}/like`,
+        {
+          method: isLiked ? "DELETE" : "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        setIsLiked(!isLiked);
+        if (artwork) {
+          setArtwork({
+            ...artwork,
+            like_count: isLiked
+              ? artwork.like_count - 1
+              : artwork.like_count + 1,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to toggle like:", error);
     }
   };
 
@@ -287,16 +341,11 @@ export default function ArtworkDetailPage() {
     );
   };
 
-  // 상세 페이지에서는 display_url 우선 사용
-  const mainImageUrl =
-    artwork?.display_url ||
-    artwork?.file_url ||
-    artwork?.thumbnail_url ||
-    artwork?.work_in_progress_url;
-
   const allImages = artwork
     ? [
-        ...(mainImageUrl ? [{ id: 0, image_url: mainImageUrl, order: 0 }] : []),
+        ...(artwork.thumbnail_url
+          ? [{ id: 0, image_url: artwork.thumbnail_url, order: 0 }]
+          : []),
         ...artwork.images,
       ]
     : [];
@@ -341,7 +390,7 @@ export default function ArtworkDetailPage() {
               {isOwner && (
                 <>
                   <Link
-                    href={`/${artwork.artist.slug}/artworks/${artworkId}/edit`}
+                    href={`/artworks/${artworkId}/edit`}
                     className="p-2 text-gray-600 hover:text-gray-900"
                   >
                     <Edit2 className="w-5 h-5" />
