@@ -135,6 +135,12 @@ export default function ArtworkDetailPage() {
       }
 
       const data = await response.json();
+
+      // 데이터 유효성 검사
+      if (!data || !data.artist) {
+        throw new Error("Invalid artwork data");
+      }
+
       setArtwork(data);
 
       // Check ownership after artwork is loaded
@@ -151,7 +157,7 @@ export default function ArtworkDetailPage() {
 
   const checkOwnership = async (artworkData: Artwork) => {
     const token = localStorage.getItem("token");
-    if (!token) return;
+    if (!token || !artworkData || !artworkData.artist) return;
 
     try {
       const response = await fetch(`${backendUrl}/api/auth/me`, {
@@ -162,7 +168,9 @@ export default function ArtworkDetailPage() {
 
       if (response.ok) {
         const userData = await response.json();
-        setIsOwner(userData.id === artworkData.artist.id);
+        if (userData && userData.id && artworkData.artist.id) {
+          setIsOwner(userData.id === artworkData.artist.id);
+        }
       }
     } catch (error) {
       console.error("Failed to check ownership:", error);
@@ -366,7 +374,7 @@ export default function ArtworkDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Image Gallery */}
           <div className="space-y-4">
-            {allImages.length > 0 && (
+            {allImages.length > 0 ? (
               <>
                 <div
                   className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer"
@@ -432,6 +440,10 @@ export default function ArtworkDetailPage() {
                   </div>
                 )}
               </>
+            ) : (
+              <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center">
+                <ImageIcon className="w-24 h-24 text-gray-300" />
+              </div>
             )}
           </div>
 
@@ -458,7 +470,7 @@ export default function ArtworkDetailPage() {
               {artwork.artist.profile_image ? (
                 <Image
                   src={artwork.artist.profile_image}
-                  alt={artwork.artist.name}
+                  alt={artwork.artist.name || artwork.artist.username}
                   width={48}
                   height={48}
                   className="rounded-full"
@@ -470,7 +482,7 @@ export default function ArtworkDetailPage() {
               )}
               <div>
                 <p className="font-semibold text-gray-900">
-                  {artwork.artist.name}
+                  {artwork.artist.name || artwork.artist.username}
                 </p>
                 <p className="text-sm text-gray-600">
                   @{artwork.artist.username}
