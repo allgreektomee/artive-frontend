@@ -459,7 +459,10 @@ export default function ArtworkDetailPage() {
         userId={currentUser?.id}
         artistId={artwork?.user_id || artwork?.user?.id || artwork?.artist?.id}
         onDelete={handleDeleteArtwork}
-        onEdit={() => setShowEditDescriptionModal(true)}
+        onEdit={() => {
+          // 모달 대신 수정 페이지로 이동
+          router.push(`/${currentUser?.username}/artworks/${artworkId}/edit`);
+        }}
       />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
