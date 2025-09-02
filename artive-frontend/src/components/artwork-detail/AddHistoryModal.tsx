@@ -265,17 +265,53 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
   return (
     <div className="fixed inset-0 bg-white z-50 flex flex-col h-screen">
       {/* Header with action buttons */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex-shrink-0">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+            {editingHistory ? "프로세스 수정" : "새 프로세스 추가"}
+          </h2>
+
+          <div className="flex items-center space-x-2">
+            {/* Save Button */}
+            <button
+              onClick={() => handleSubmit()}
+              disabled={
+                loading ||
+                !form.title.trim() ||
+                !form.content.trim() ||
+                uploadingImage
+              }
+              className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title={editingHistory ? "수정 완료" : "저장"}
+            >
+              {loading ? (
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-gray-600"></div>
+              ) : (
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              )}
+            </button>
+
+            {/* Close Button */}
             <button
               onClick={onClose}
               disabled={loading}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors disabled:opacity-50"
               title="닫기 (ESC)"
             >
               <svg
-                className="w-6 h-6"
+                className="w-5 h-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -287,54 +323,6 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({
                   d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
-            </button>
-            <h2 className="text-xl font-bold text-gray-900">
-              {editingHistory ? "프로세스 수정" : "새 프로세스 추가"}
-            </h2>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading || uploadingImage}
-              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 font-medium"
-            >
-              취소
-            </button>
-            <button
-              onClick={() => handleSubmit()}
-              disabled={
-                loading ||
-                !form.title.trim() ||
-                !form.content.trim() ||
-                uploadingImage
-              }
-              className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center space-x-2"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span>저장 중...</span>
-                </>
-              ) : (
-                <>
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>{editingHistory ? "수정 완료" : "저장"}</span>
-                </>
-              )}
             </button>
           </div>
         </div>
