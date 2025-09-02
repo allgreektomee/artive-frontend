@@ -81,7 +81,7 @@ const GalleryInfo: React.FC<GalleryInfoProps> = ({
       case "gallery":
         return galleryUser?.gallery_title;
       case "blog":
-        return `${currentSlug?.toUpperCase()} 블로그`;
+        return `${currentSlug?.toUpperCase()} Blog`;
       case "studio":
         return "Art Studio";
       case "artist":
@@ -179,28 +179,52 @@ const GalleryInfo: React.FC<GalleryInfoProps> = ({
         <div className="flex items-center space-x-2 sm:space-x-3">
           {/* Blog 페이지 필터 버튼 */}
           {pageType === "blog" && (
-            <button
-              className="inline-flex items-center gap-1 px-2 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-600"
-              onClick={() => {
-                const event = new CustomEvent("openBlogFilter");
-                window.dispatchEvent(event);
-              }}
-            >
-              <span>{getTypeLabel(selectedBlogType)}</span>
-              <svg
-                className="w-3 h-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            <>
+              <button
+                className="inline-flex items-center gap-1 px-2 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700"
+                onClick={() => {
+                  const event = new CustomEvent("openBlogFilter");
+                  window.dispatchEvent(event);
+                }}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </button>
+                <span>{getTypeLabel(selectedBlogType)}</span>
+                <svg
+                  className="w-3 h-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+
+              {isOwner && (
+                <Link
+                  href={`/${currentSlug}/blog/write`}
+                  className="p-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded transition-colors"
+                  title="Add new post"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 4.5v15m7.5-7.5h-15"
+                    />
+                  </svg>
+                </Link>
+              )}
+            </>
           )}
 
           {/* Gallery 그리드 토글 버튼 */}
