@@ -1,5 +1,6 @@
 // components/profile/sections/AboutArtistSection.tsx
 import React, { useState, useEffect } from "react";
+
 import { SectionProps } from "../../../utils/types";
 import { authUtils } from "@/utils/auth";
 const AboutArtistSection: React.FC<SectionProps> = ({
@@ -32,12 +33,7 @@ const AboutArtistSection: React.FC<SectionProps> = ({
       });
       setImagePreview(data.about_image || "");
     }
-  }, [
-    data?.artist_statement,
-    data?.about_text,
-    data?.about_image,
-    data?.about_video,
-  ]);
+  }, [data]);
 
   // 로컬 변경 처리
   const handleLocalChange = (field: string, value: string) => {
@@ -146,6 +142,7 @@ const AboutArtistSection: React.FC<SectionProps> = ({
           소개 글
         </label>
         <textarea
+          key="artist-statement-textarea" // key 추가
           value={localData.artist_statement}
           onChange={(e) =>
             handleLocalChange("artist_statement", e.target.value)
@@ -155,9 +152,6 @@ const AboutArtistSection: React.FC<SectionProps> = ({
           rows={isMobile ? 8 : 10}
           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
         />
-        <p className="text-xs text-gray-500 mt-1">
-          갤러리 방문자들에게 보여질 소개 글입니다
-        </p>
       </div>
 
       {/* 대표 이미지 */}
@@ -308,4 +302,4 @@ const AboutArtistSection: React.FC<SectionProps> = ({
   );
 };
 
-export default React.memo(AboutArtistSection);
+export default AboutArtistSection;
