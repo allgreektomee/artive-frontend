@@ -328,7 +328,7 @@ export default function BlogListPage() {
             </p>
             {isOwner && (
               <Link
-                href={`/blog/${userSlug}/write`}
+                href={`/${userSlug}/blog/write`}
                 className="inline-flex items-center gap-2 mt-4 px-3 sm:px-4 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
               >
                 <Plus className="w-4 h-4" />
