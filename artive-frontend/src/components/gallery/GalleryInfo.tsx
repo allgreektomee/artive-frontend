@@ -210,7 +210,7 @@ const GalleryInfo: React.FC<GalleryInfoProps> = ({
                   title="Add new post"
                 >
                   <svg
-                    className="w-4 h-4"
+                    className="w-3 h-3"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth={2.5}
