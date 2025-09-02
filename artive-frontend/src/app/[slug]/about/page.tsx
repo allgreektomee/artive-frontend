@@ -98,7 +98,9 @@ export default function AboutArtistPage() {
           name: profileData?.name || currentSlug.toUpperCase(),
           slug: currentSlug,
           bio: profileData?.bio || "",
-
+          // SNS 링크 필드 추가
+          instagram_username: profileData?.instagram_username || "",
+          youtube_channel_id: profileData?.youtube_channel_id || "",
           // About the Artist 관련
           artist_statement:
             profileData?.artist_statement || profileData?.about_text || "",

@@ -57,7 +57,7 @@ export default function ArtistStatement({
       {/* border-t 제거 */}
       {/* 섹션 헤더 */}
       <div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
           {hasContent ? (
             <div className="space-y-16">
               {/* 이미지 + 텍스트 섹션 */}
@@ -89,7 +89,7 @@ export default function ArtistStatement({
                         {hasText && (
                           <div className="relative -mt-20 mx-4">
                             <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-gray-100">
-                              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-sm">
+                              <p className="text-gray-700 leading-relaxed text-base sm:text-lg">
                                 {statementText}
                               </p>
                             </div>
