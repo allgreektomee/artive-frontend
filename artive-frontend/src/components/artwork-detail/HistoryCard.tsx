@@ -7,6 +7,7 @@ interface HistoryCardProps {
     title: string;
     content: string;
     media_url?: string | null;
+    thumbnail_url?: string | null;
     media_type: string;
     work_date: string;
     created_at: string;
@@ -100,7 +101,7 @@ const HistoryCard: React.FC<HistoryCardProps> = ({
       >
         <div className="relative overflow-hidden rounded-lg">
           <img
-            src={history.media_url}
+            src={history.thumbnail_url}
             alt={history.title}
             className="w-full h-auto object-contain transition-transform duration-700"
           />
