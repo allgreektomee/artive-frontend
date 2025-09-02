@@ -58,7 +58,7 @@ export default function ExhibitionsRecognition({
 
       try {
         setLoading(true);
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("access_token");
         const headers: HeadersInit = {
           Accept: "application/json",
           "Content-Type": "application/json",

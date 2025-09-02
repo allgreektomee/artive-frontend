@@ -122,7 +122,7 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
 
   const fetchGalleryUser = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("access_token");
       const headers: HeadersInit = { Accept: "application/json" };
 
       if (token) {
@@ -168,7 +168,7 @@ export default function GalleryLayout({ children }: GalleryLayoutProps) {
   };
 
   const checkOwnership = async () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("access_token");
     if (!token) return;
 
     try {

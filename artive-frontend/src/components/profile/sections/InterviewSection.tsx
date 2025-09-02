@@ -29,7 +29,7 @@ const InterviewSection: React.FC<SectionProps> = ({
 
   // 직접 저장하는 함수
   const saveQAList = async (listToSave: QAItem[]) => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("access_token");
 
     try {
       console.log("Q&A 저장 시작:", listToSave);

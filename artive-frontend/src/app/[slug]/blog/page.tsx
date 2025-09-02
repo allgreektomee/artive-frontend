@@ -119,7 +119,7 @@ export default function BlogListPage() {
   }, [userSlug, selectedType, searchTerm]);
 
   const checkOwnership = async () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("access_token");
     if (!token) return;
 
     try {

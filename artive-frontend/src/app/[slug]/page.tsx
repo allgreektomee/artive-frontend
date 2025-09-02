@@ -58,7 +58,7 @@ export default function GalleryPage() {
 
   const checkOwnership = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("access_token");
       if (!token) return;
 
       const res = await fetch(`${backEndUrl}/api/auth/me`, {
@@ -89,7 +89,7 @@ export default function GalleryPage() {
       }
       setError(null);
 
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("access_token");
       const headers: HeadersInit = { Accept: "application/json" };
 
       if (token) {

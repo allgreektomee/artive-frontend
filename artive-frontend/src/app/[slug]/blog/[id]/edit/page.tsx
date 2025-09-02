@@ -137,7 +137,7 @@ export default function BlogEditPage() {
   };
 
   const checkPermission = async () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("access_token");
 
     if (!token) {
       alert("로그인이 필요합니다.");
@@ -206,7 +206,7 @@ export default function BlogEditPage() {
       setIsSaving(true);
     }
 
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("access_token");
 
     try {
       const plainText = content.replace(/<[^>]*>/g, "").trim();

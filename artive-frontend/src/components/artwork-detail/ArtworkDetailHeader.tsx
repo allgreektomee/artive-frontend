@@ -64,7 +64,7 @@ const ArtworkDetailHeader: React.FC<ArtworkDetailHeaderProps> = ({
 
   const handleDeleteConfirm = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("access_token");
       const response = await fetch(`${backEndUrl}/api/artworks/${artworkId}`, {
         method: "DELETE",
         headers: {

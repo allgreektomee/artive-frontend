@@ -150,7 +150,7 @@ export default function BlogDetailPage() {
   };
 
   const checkOwnership = async () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("access_token");
     if (!token) return;
 
     try {
@@ -173,7 +173,7 @@ export default function BlogDetailPage() {
     if (!confirm("정말로 이 포스트를 삭제하시겠습니까?")) return;
 
     setIsDeleting(true);
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("access_token");
 
     try {
       const response = await fetch(`${backendUrl}/api/blog/posts/${postId}`, {

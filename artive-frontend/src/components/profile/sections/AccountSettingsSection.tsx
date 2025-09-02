@@ -62,7 +62,7 @@ const AccountSettingsSection: React.FC<SectionProps> = ({
 
     setIsChangingPassword(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("access_token");
       const response = await fetch(`${backEndUrl}/api/auth/password`, {
         method: "PUT",
         headers: {
@@ -104,7 +104,7 @@ const AccountSettingsSection: React.FC<SectionProps> = ({
     }
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("access_token");
       const response = await fetch(`${backEndUrl}/api/auth/account`, {
         method: "DELETE",
         headers: {

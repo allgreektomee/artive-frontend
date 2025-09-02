@@ -1,7 +1,7 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export const apiRequest = async (endpoint, options = {}) => {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("access_token");
 
   // endpoint가 /로 시작하지 않으면 추가
   const url = endpoint.startsWith("/")

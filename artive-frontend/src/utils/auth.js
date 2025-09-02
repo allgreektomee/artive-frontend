@@ -65,7 +65,7 @@ export const authUtils = {
       // 여러 소스에서 토큰 찾기
       const token =
         localStorage.getItem("access_token") ||
-        localStorage.getItem("token") || // 레거시 호환
+        localStorage.getItem("access_token") || // 레거시 호환
         sessionStorage.getItem("access_token") ||
         authUtils.getCookieValue("access_token") ||
         authUtils.getCookieValue("token");

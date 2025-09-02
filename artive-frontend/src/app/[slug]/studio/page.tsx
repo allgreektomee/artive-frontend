@@ -46,7 +46,7 @@ export default function StudioPage() {
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("access_token");
         if (!token) return;
 
         const res = await fetch(`${backEndUrl}/api/auth/me`, {

@@ -94,7 +94,7 @@ const ProfileManagement: React.FC = () => {
   const loadMainProfile = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("access_token");
       const response = await fetch(`${backEndUrl}/api/profile/main`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -152,7 +152,7 @@ const ProfileManagement: React.FC = () => {
   const loadExhibitions = async () => {
     setExhibitionsLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("access_token");
       const response = await fetch(`${backEndUrl}/api/profile/exhibitions`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -187,7 +187,7 @@ const ProfileManagement: React.FC = () => {
   const loadAwards = async () => {
     setAwardsLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("access_token");
       const response = await fetch(`${backEndUrl}/api/profile/awards`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -317,7 +317,7 @@ const ProfileManagement: React.FC = () => {
   const handleSectionSave = async (sectionId: string) => {
     setSaving(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("access_token");
       let endpoint = "";
       let sectionData = {};
 

@@ -165,7 +165,7 @@ export default function ArtworkDetailPage() {
         console.log("🔍 백엔드 URL:", backEndUrl);
         console.log("🔍 요청 URL:", `${backEndUrl}/api/artworks/${artworkId}`);
 
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("access_token");
         const headers: HeadersInit = { Accept: "application/json" };
 
         if (token) {
@@ -223,7 +223,7 @@ export default function ArtworkDetailPage() {
   // 히스토리 추가 함수
   const handleAddHistory = async (historyData: any) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("access_token");
 
       // work_date를 datetime 형식으로 변환
       let formattedWorkDate = null;
@@ -330,7 +330,7 @@ export default function ArtworkDetailPage() {
   // 히스토리 삭제 함수
   const handleDeleteHistory = async (historyId: number) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("access_token");
 
       const response = await fetch(
         `${backEndUrl}/api/artworks/${artworkId}/histories/${historyId}`,
@@ -357,7 +357,7 @@ export default function ArtworkDetailPage() {
   // 작품 설명 수정 함수
   const handleUpdateDescription = async (data: any) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("access_token");
 
       const response = await fetch(`${backEndUrl}/api/artworks/${artworkId}`, {
         method: "PUT", // PATCH → PUT으로 변경
