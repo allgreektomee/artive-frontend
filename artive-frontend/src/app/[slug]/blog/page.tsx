@@ -138,6 +138,76 @@ export default function BlogListPage() {
     }
   };
 
+  // const fetchPosts = async (isLoadMore = false) => {
+  //   try {
+  //     if (!isLoadMore) {
+  //       setIsLoading(true);
+  //     } else {
+  //       setLoadingMore(true);
+  //     }
+
+  //     setError(null);
+
+  //     const pageToFetch = isLoadMore ? currentPage + 1 : 1;
+  //     const params = new URLSearchParams({
+  //       user: userSlug,
+  //       page: pageToFetch.toString(),
+  //       limit: postsPerPage.toString(),
+  //       is_published: "true",
+  //     });
+
+  //     if (selectedType !== "ALL") {
+  //       params.append("post_type", selectedType);
+  //     }
+
+  //     if (searchTerm) {
+  //       params.append("search", searchTerm);
+  //     }
+
+  //     const response = await fetch(`${backendUrl}/api/blog/posts?${params}`, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //     });
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       let filteredPosts = data.posts || [];
+
+  //       // Exclude studio posts for non-owners
+  //       if (!isOwner) {
+  //         filteredPosts = filteredPosts.filter(
+  //           (post: BlogPost) => post.post_type !== "STUDIO"
+  //         );
+  //       }
+
+  //       if (isLoadMore) {
+  //         setPosts((prev) => [...prev, ...filteredPosts]);
+  //         setCurrentPage(pageToFetch);
+  //       } else {
+  //         setPosts(filteredPosts);
+  //         setCurrentPage(1);
+  //       }
+
+  //       setTotalPages(data.pages || 1);
+
+  //       // Send total posts count to layout
+  //       const event = new CustomEvent("blogPostsUpdate", {
+  //         detail: { total: data.total || 0 },
+  //       });
+  //       window.dispatchEvent(event);
+  //     } else {
+  //       setError("Failed to load blog posts.");
+  //     }
+  //   } catch (error) {
+  //     console.error("Failed to fetch blog posts:", error);
+  //     setError("Failed to load blog posts.");
+  //   } finally {
+  //     setIsLoading(false);
+  //     setLoadingMore(false);
+  //   }
+  // };
   const fetchPosts = async (isLoadMore = false) => {
     console.log("=== 블로그 로딩 시작 ===");
     console.time("전체 로딩 시간");

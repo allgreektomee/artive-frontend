@@ -85,35 +85,30 @@ export default function BlogEditor({ value, onChange }: BlogEditorProps) {
       const formData = new FormData();
       formData.append("file", file);
 
-      // 토큰 가져오기
       const token = localStorage.getItem("token");
-
-      // 백엔드 URL 설정
       const backendUrl =
         process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
       const response = await fetch(`${backendUrl}/api/upload/image`, {
-        // 수정된 경로
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`, // 인증 헤더 추가
+          Authorization: `Bearer ${token}`,
         },
         body: formData,
       });
 
       if (response.ok) {
         const data = await response.json();
-        const imageUrl = data.url || data.file_url || data.display_url; // 여러 필드 체크
-
-        // 에디터에 이미지 삽입
+        const imageUrl = data.url || data.file_url || data.display_url;
         editor?.chain().focus().setImage({ src: imageUrl }).run();
       } else {
+        // ❌ base64 사용하지 말고 에러 처리
+        alert("이미지 업로드에 실패했습니다. 다시 시도해주세요.");
         console.error("업로드 실패:", await response.text());
-        alert("이미지 업로드 실패");
       }
     } catch (error) {
       console.error("이미지 업로드 오류:", error);
-      alert("이미지 업로드 중 오류 발생");
+      alert("이미지 업로드 중 오류가 발생했습니다.");
     } finally {
       setIsUploading(false);
     }
