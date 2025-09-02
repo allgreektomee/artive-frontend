@@ -2,30 +2,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  Heart,
-  Share2,
-  Edit2,
-  Trash2,
-  Calendar,
-  Ruler,
-  Palette,
-  MapPin,
-  Eye,
-  ChevronLeft,
-  ChevronRight,
-  X,
-  Plus,
-  Clock,
-  Image as ImageIcon,
-  Video,
-  FileText,
-  ExternalLink,
-  User,
-} from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
-import { ko } from "date-fns/locale";
 
 // 컴포넌트 import
 import ArtworkDetailHeader from "@/components/artwork-detail/ArtworkDetailHeader";
@@ -103,7 +79,7 @@ export default function ArtworkDetailPage() {
   // 상태 관리
   const [artwork, setArtwork] = useState<Artwork | null>(null);
   const [histories, setHistories] = useState<ArtworkHistory[]>([]);
-  const [isOwner, setIsOwner] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showTitleInHeader, setShowTitleInHeader] = useState(false);
