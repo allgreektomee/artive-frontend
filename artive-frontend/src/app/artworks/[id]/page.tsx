@@ -113,8 +113,6 @@ export default function ArtworkDetailPage() {
   useEffect(() => {
     if (artworkId) {
       fetchArtwork();
-      checkOwnership();
-      incrementViewCount();
     }
   }, [artworkId]);
 
@@ -139,9 +137,9 @@ export default function ArtworkDetailPage() {
       const data = await response.json();
       setArtwork(data);
 
-      // Check if user has liked this artwork
+      // Check ownership after artwork is loaded
       if (token) {
-        checkLikeStatus();
+        checkOwnership(data);
       }
     } catch (err) {
       console.error("Error fetching artwork:", err);
@@ -151,7 +149,7 @@ export default function ArtworkDetailPage() {
     }
   };
 
-  const checkOwnership = async () => {
+  const checkOwnership = async (artworkData: Artwork) => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
@@ -164,46 +162,10 @@ export default function ArtworkDetailPage() {
 
       if (response.ok) {
         const userData = await response.json();
-        if (artwork) {
-          setIsOwner(userData.id === artwork.artist.id);
-        }
+        setIsOwner(userData.id === artworkData.artist.id);
       }
     } catch (error) {
       console.error("Failed to check ownership:", error);
-    }
-  };
-
-  const checkLikeStatus = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
-    try {
-      const response = await fetch(
-        `${backendUrl}/api/artworks/${artworkId}/like/status`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setIsLiked(data.is_liked);
-      }
-      // 404는 무시
-    } catch (error) {
-      // 에러 무시
-    }
-  };
-
-  const incrementViewCount = async () => {
-    try {
-      await fetch(`${backendUrl}/api/artworks/${artworkId}/view`, {
-        method: "POST",
-      });
-    } catch (error) {
-      // 에러 무시
     }
   };
 
@@ -214,30 +176,15 @@ export default function ArtworkDetailPage() {
       return;
     }
 
-    try {
-      const response = await fetch(
-        `${backendUrl}/api/artworks/${artworkId}/like`,
-        {
-          method: isLiked ? "DELETE" : "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        setIsLiked(!isLiked);
-        if (artwork) {
-          setArtwork({
-            ...artwork,
-            like_count: isLiked
-              ? artwork.like_count - 1
-              : artwork.like_count + 1,
-          });
-        }
-      }
-    } catch (error) {
-      console.error("Failed to toggle like:", error);
+    // 좋아요 기능은 백엔드에 구현되지 않았으므로 로컬 상태만 업데이트
+    setIsLiked(!isLiked);
+    if (artwork) {
+      setArtwork({
+        ...artwork,
+        like_count: isLiked
+          ? Math.max(0, artwork.like_count - 1)
+          : artwork.like_count + 1,
+      });
     }
   };
 
@@ -347,7 +294,7 @@ export default function ArtworkDetailPage() {
         ...(artwork.thumbnail_url
           ? [{ id: 0, image_url: artwork.thumbnail_url, order: 0 }]
           : []),
-        ...(artwork.images || []), // 빈 배열 기본값 추가
+        ...(artwork.images || []),
       ]
     : [];
 
