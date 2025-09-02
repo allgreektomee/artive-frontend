@@ -461,7 +461,7 @@ export default function ArtworkDetailPage() {
         onDelete={handleDeleteArtwork}
         onEdit={() => {
           // 모달 대신 수정 페이지로 이동
-          router.push(`/${currentUser?.username}/artworks/${artworkId}/edit`);
+          router.push(`/artworks/${artworkId}/edit`);
         }}
       />
 

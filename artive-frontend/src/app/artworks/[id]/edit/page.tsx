@@ -330,7 +330,7 @@ export default function EditArtworkPage() {
     }
 
     shouldCleanupRef.current = false;
-    router.push(`/${slug}/artworks/${artworkId}`);
+    router.push(`/artworks/${artworkId}`);
   };
 
   const canSubmit = () => {
