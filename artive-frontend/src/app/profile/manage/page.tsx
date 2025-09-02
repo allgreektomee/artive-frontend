@@ -150,6 +150,8 @@ const ProfileManagement: React.FC = () => {
 
   // 전시회 데이터 로딩
   const loadExhibitions = async () => {
+    console.log("loadExhibitions 함수 호출됨");
+    console.log("백엔드 URL:", backEndUrl);
     setExhibitionsLoading(true);
     try {
       const token = authUtils.getToken();
@@ -191,6 +193,8 @@ const ProfileManagement: React.FC = () => {
 
   // 수상 데이터 로딩
   const loadAwards = async () => {
+    console.log("loadExhibitions 함수 호출됨");
+    console.log("백엔드 URL:", backEndUrl);
     setAwardsLoading(true);
     try {
       const token = authUtils.getToken();
