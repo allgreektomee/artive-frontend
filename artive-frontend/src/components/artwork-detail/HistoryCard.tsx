@@ -212,31 +212,32 @@ const MetadataCard: React.FC<MetadataCardProps> = ({
       className={`
       ${
         isSmallCard
-          ? "flex-shrink-0 flex-grow-0" // 내용에 맞게 자동 조정
+          ? "w-[72px] sm:w-auto sm:flex-shrink-0" // 모바일 72px 고정, 태블릿부터 auto
           : "flex-1"
       } 
-      bg-white rounded-xl shadow-sm border border-gray-100 p-2.5 sm:p-3 md:p-4
+      bg-white rounded-xl shadow-sm border border-gray-100 p-2 sm:p-3
     `}
     >
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-1.5 sm:space-x-2">
         <div
           className={`
-          ${isSmallCard ? "w-7 h-7" : "w-8 h-8 sm:w-9 sm:h-9"}
+          w-6 h-6 sm:w-8 sm:h-8
           rounded-lg ${color} 
           flex items-center justify-center flex-shrink-0
         `}
         >
           {icon}
         </div>
-        <div className={`${isSmallCard ? "" : "min-w-0 flex-1"}`}>
-          <p className="text-[10px] sm:text-xs text-gray-500 whitespace-nowrap">
-            {label}
-          </p>
+        <div className={isSmallCard ? "" : "min-w-0 flex-1"}>
+          <p className="text-[10px] sm:text-xs text-gray-500">{label}</p>
           <p
             className={`
-            ${isSmallCard ? "text-[11px] sm:text-xs" : "text-xs sm:text-sm"} 
-            font-semibold text-gray-900 
-            ${isSmallCard ? "whitespace-nowrap" : "truncate"}
+            text-[11px] sm:text-sm font-semibold text-gray-900
+            ${
+              isSmallCard
+                ? "whitespace-nowrap sm:whitespace-normal"
+                : "truncate"
+            }
           `}
           >
             {value}
