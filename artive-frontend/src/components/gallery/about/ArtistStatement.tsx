@@ -89,7 +89,14 @@ export default function ArtistStatement({
                         {hasText && (
                           <div className="relative -mt-20 mx-4">
                             <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-gray-100">
-                              <p className="text-gray-700 leading-relaxed text-base sm:text-lg">
+                              <p
+                                className="text-gray-700 leading-relaxed text-base sm:text-lg"
+                                style={{
+                                  whiteSpace: "pre-line", // pre-wrap 대신 pre-line 사용
+                                  wordBreak: "keep-all", // 한글 단어 단위로 줄바꿈
+                                  overflowWrap: "break-word", // 긴 단어도 줄바꿈
+                                }}
+                              >
                                 {statementText}
                               </p>
                             </div>
@@ -103,10 +110,11 @@ export default function ArtistStatement({
                       <div className="px-4">
                         <div className="bg-gray-50 rounded-2xl p-6">
                           <p
-                            className="text-gray-700 leading-relaxed whitespace-pre-wrap text-base sm:text-lg"
+                            className="text-gray-700 leading-relaxed text-base sm:text-lg"
                             style={{
-                              wordBreak: "keep-all",
-                              overflowWrap: "break-word",
+                              whiteSpace: "pre-line", // pre-wrap 대신 pre-line 사용
+                              wordBreak: "keep-all", // 한글 단어 단위로 줄바꿈
+                              overflowWrap: "break-word", // 긴 단어도 줄바꿈
                             }}
                           >
                             {statementText}
@@ -148,7 +156,14 @@ export default function ArtistStatement({
                       >
                         <div className="space-y-6">
                           <div className="prose prose-lg max-w-none">
-                            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-base sm:text-lg">
+                            <p
+                              className="text-gray-700 leading-relaxed text-base sm:text-lg"
+                              style={{
+                                whiteSpace: "pre-line", // pre-wrap 대신 pre-line 사용
+                                wordBreak: "keep-all", // 한글 단어 단위로 줄바꿈
+                                overflowWrap: "break-word", // 긴 단어도 줄바꿈
+                              }}
+                            >
                               {statementText}
                             </p>
                           </div>
