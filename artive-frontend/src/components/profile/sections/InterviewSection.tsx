@@ -1,7 +1,7 @@
 // components/profile/sections/InterviewSection.tsx
 import React, { useState, useEffect } from "react";
 import { SectionProps } from "../../../utils/types";
-
+import { authUtils } from "@/utils/auth";
 interface QAItem {
   id?: number;
   question: string;
