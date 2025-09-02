@@ -81,7 +81,7 @@ export default function BlogEditor({ value, onChange }: BlogEditorProps) {
       formData.append("file", file);
 
       // 백엔드 업로드 엔드포인트 호출
-      const response = await fetch("/api/upload", {
+      const response = await fetch("/api/upload/image", {
         method: "POST",
         body: formData,
       });
