@@ -180,7 +180,7 @@ export default function AboutArtistPage() {
             {/* SNS 링크 섹션 추가 */}
             {(galleryUser?.instagram_username ||
               galleryUser?.youtube_channel_id) && (
-              <div className="flex justify-center space-x-4 mt-6 pt-6 border-t border-gray-200">
+              <div className="flex justify-center space-x-4 mt-6 pt-6   mb-12  border-t border-gray-200">
                 {galleryUser.instagram_username && (
                   <a // <- 여기 <a 태그 추가
                     href={`https://instagram.com/${galleryUser.instagram_username}`}
