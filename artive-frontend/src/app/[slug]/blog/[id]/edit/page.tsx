@@ -187,6 +187,8 @@ export default function BlogEditPage() {
       while ((match = imgRegex.exec(content)) !== null) {
         images.push(match[1]);
       }
+      console.log("추출된 이미지들:", images); // 디버깅용
+      console.log("현재 content:", content); // 디버깅용
 
       setUploadedImages(images);
     };
@@ -381,7 +383,11 @@ export default function BlogEditPage() {
 
             {/* 본문 - TipTap 에디터 사용 */}
             <div className="mb-6 sm:mb-8">
-              <BlogEditor value={content} onChange={setContent} />
+              <BlogEditor
+                key={content ? "loaded" : "loading"} // 추가
+                value={content}
+                onChange={setContent}
+              />
               <div className="flex justify-between items-center mt-2">
                 <div className="text-xs sm:text-sm text-gray-400">
                   글자 수: {content.replace(/<[^>]*>/g, "").length}

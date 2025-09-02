@@ -4,7 +4,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   Bold,
   Italic,
@@ -60,7 +60,7 @@ export default function BlogEditor({ value, onChange }: BlogEditorProps) {
         showOnlyCurrent: false,
       }),
     ],
-    content: value || "", // 수정: 빈 문자열 기본값
+    content: value || "",
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
@@ -72,6 +72,11 @@ export default function BlogEditor({ value, onChange }: BlogEditorProps) {
     },
   });
 
+  useEffect(() => {
+    if (editor && value !== undefined && value !== editor.getHTML()) {
+      editor.commands.setContent(value);
+    }
+  }, [value, editor]);
   // 이미지 업로드 처리
   const handleImageUpload = async (file: File) => {
     setIsUploading(true);
@@ -80,36 +85,35 @@ export default function BlogEditor({ value, onChange }: BlogEditorProps) {
       const formData = new FormData();
       formData.append("file", file);
 
-      // 백엔드 업로드 엔드포인트 호출
-      const response = await fetch("/api/upload/image", {
+      // 토큰 가져오기
+      const token = localStorage.getItem("token");
+
+      // 백엔드 URL 설정
+      const backendUrl =
+        process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+
+      const response = await fetch(`${backendUrl}/api/upload/image`, {
+        // 수정된 경로
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`, // 인증 헤더 추가
+        },
         body: formData,
       });
 
       if (response.ok) {
         const data = await response.json();
-        const imageUrl = data.url;
+        const imageUrl = data.url || data.file_url || data.display_url; // 여러 필드 체크
 
         // 에디터에 이미지 삽입
         editor?.chain().focus().setImage({ src: imageUrl }).run();
       } else {
-        // 실패시 로컬 프리뷰 (개발용)
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const url = e.target?.result as string;
-          editor?.chain().focus().setImage({ src: url }).run();
-        };
-        reader.readAsDataURL(file);
+        console.error("업로드 실패:", await response.text());
+        alert("이미지 업로드 실패");
       }
     } catch (error) {
-      console.error("이미지 업로드 실패:", error);
-      // 개발 환경에서는 로컬 프리뷰 사용
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const url = e.target?.result as string;
-        editor?.chain().focus().setImage({ src: url }).run();
-      };
-      reader.readAsDataURL(file);
+      console.error("이미지 업로드 오류:", error);
+      alert("이미지 업로드 중 오류 발생");
     } finally {
       setIsUploading(false);
     }
