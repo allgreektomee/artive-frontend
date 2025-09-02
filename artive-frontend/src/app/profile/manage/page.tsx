@@ -163,9 +163,15 @@ const ProfileManagement: React.FC = () => {
         const exhibitions = await response.json();
         // 전시 목록을 cv_exhibitions 텍스트로도 변환
         const cvExhibitions = exhibitions
-          .map((ex: any) => `${ex.year} ${ex.title} - ${ex.venue}`)
+          .map((ex: any) => {
+            // year 필드가 없으면 start_date에서 추출
+            const year =
+              ex.year || (ex.start_date ? ex.start_date.substring(0, 4) : "");
+            return `${year} ${ex.title_ko || ex.title} - ${
+              ex.venue_ko || ex.venue
+            }`;
+          })
           .join("\n");
-
         setProfileData((prev) => ({
           ...prev,
           exhibitions,
@@ -200,7 +206,9 @@ const ProfileManagement: React.FC = () => {
         const cvAwards = awards
           .map(
             (award: any) =>
-              `${award.year} ${award.title} - ${award.organization}`
+              `${award.year} ${award.title_ko || award.title} - ${
+                award.organization_ko || award.organization
+              }`
           )
           .join("\n");
 
