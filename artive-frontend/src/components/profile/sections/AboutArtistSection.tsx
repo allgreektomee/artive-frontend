@@ -72,7 +72,7 @@ const AboutArtistSection: React.FC<SectionProps> = ({
       const formData = new FormData();
       formData.append("file", file);
 
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("access_token");
       const response = await fetch(`${backEndUrl}/api/upload/image`, {
         method: "POST",
         headers: {

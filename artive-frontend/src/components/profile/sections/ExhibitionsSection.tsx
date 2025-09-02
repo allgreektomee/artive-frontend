@@ -87,7 +87,7 @@ const ExhibitionsSection: React.FC<SectionProps> = ({
   const deleteExhibition = async (id: number) => {
     if (confirm("정말 삭제하시겠습니까?")) {
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("access_token");
 
         if (id < Date.now() - 1000000000) {
           const response = await fetch(
@@ -122,7 +122,7 @@ const ExhibitionsSection: React.FC<SectionProps> = ({
   const finishEditing = async () => {
     if (editingId && tempEditData[editingId]) {
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("access_token");
         const exhibitionData = tempEditData[editingId];
 
         // 날짜 검증

@@ -34,7 +34,6 @@ export const authUtils = {
       try {
         // 1. localStorage (메인)
         localStorage.setItem("access_token", token);
-        localStorage.setItem("token", token); // 레거시 호환
 
         // 2. sessionStorage (백업)
         sessionStorage.setItem("access_token", token);
