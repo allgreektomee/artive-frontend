@@ -45,7 +45,7 @@ export default function LoginPage() {
 
     // 로그인 성공
     if (res.ok && responseData) {
-      localStorage.setItem("token", responseData.access_token);
+      localStorage.setItem("access_token", responseData.access_token);
       localStorage.setItem("user", JSON.stringify(responseData.user));
       router.push(`/${responseData.user.slug}`);
       return;
