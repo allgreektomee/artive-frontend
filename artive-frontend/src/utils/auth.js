@@ -3,6 +3,156 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
 export const authUtils = {
+  // 모든 인증 데이터 초기화
+  clearAllAuth: () => {
+    if (typeof window !== "undefined") {
+      // localStorage 정리
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("token"); // 레거시 호환
+      localStorage.removeItem("user");
+
+      // sessionStorage 정리
+      sessionStorage.removeItem("access_token");
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
+
+      // 쿠키 정리
+      document.cookie =
+        "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+
+      console.log("🧹 모든 인증 데이터 초기화 완료");
+    }
+  },
+
+  // 토큰 저장 (다중 백업)
+  setToken: (token) => {
+    if (typeof window !== "undefined") {
+      // 기존 데이터 먼저 정리
+      authUtils.clearAllAuth();
+
+      try {
+        // 1. localStorage (메인)
+        localStorage.setItem("access_token", token);
+        localStorage.setItem("token", token); // 레거시 호환
+
+        // 2. sessionStorage (백업)
+        sessionStorage.setItem("access_token", token);
+
+        // 3. 쿠키 (Safari 대응)
+        const maxAge = 7 * 24 * 60 * 60; // 7일
+        document.cookie = `access_token=${token}; path=/; max-age=${maxAge}; SameSite=Lax`;
+
+        // Safari 감지
+        const isSafari = /^((?!chrome|android).)*safari/i.test(
+          navigator.userAgent
+        );
+        if (isSafari) {
+          // Safari는 쿠키를 우선 사용
+          document.cookie = `token=${token}; path=/; max-age=${maxAge}; SameSite=None; Secure`;
+        }
+
+        console.log("✅ 토큰 저장 완료 (다중 백업)");
+      } catch (error) {
+        console.error("❌ 토큰 저장 실패:", error);
+      }
+    }
+  },
+
+  // 토큰 가져오기 (우선순위)
+  getToken: () => {
+    if (typeof window !== "undefined") {
+      // 여러 소스에서 토큰 찾기
+      const token =
+        localStorage.getItem("access_token") ||
+        localStorage.getItem("token") || // 레거시 호환
+        sessionStorage.getItem("access_token") ||
+        authUtils.getCookieValue("access_token") ||
+        authUtils.getCookieValue("token");
+
+      if (token) {
+        console.log("🔍 토큰 찾음:", token.substring(0, 20) + "...");
+      } else {
+        console.log("❌ 토큰을 찾을 수 없음");
+      }
+
+      return token;
+    }
+    return null;
+  },
+
+  // 쿠키에서 값 가져오기
+  getCookieValue: (name) => {
+    const match = document.cookie.match(
+      new RegExp("(^| )" + name + "=([^;]+)")
+    );
+    return match ? match[2] : null;
+  },
+
+  // 사용자 정보 저장
+  setUser: (user) => {
+    if (typeof window !== "undefined") {
+      const userStr = JSON.stringify(user);
+      localStorage.setItem("user", userStr);
+      sessionStorage.setItem("user", userStr);
+      console.log("✅ 사용자 정보 저장:", user);
+    }
+  },
+
+  // 사용자 정보 가져오기
+  getUser: () => {
+    if (typeof window !== "undefined") {
+      const userStr =
+        localStorage.getItem("user") || sessionStorage.getItem("user");
+      if (userStr) {
+        try {
+          return JSON.parse(userStr);
+        } catch (e) {
+          console.error("사용자 정보 파싱 실패:", e);
+        }
+      }
+    }
+    return null;
+  },
+
+  // 로그인 처리
+  login: async (email, password) => {
+    try {
+      // 1. 기존 데이터 정리
+      authUtils.clearAllAuth();
+
+      // 2. 로그인 API 호출
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // 3. 토큰과 사용자 정보 저장
+        authUtils.setToken(data.access_token);
+        authUtils.setUser(data.user);
+
+        console.log("✅ 로그인 성공");
+        return { success: true, user: data.user };
+      } else {
+        console.error("❌ 로그인 실패:", data);
+        return { success: false, error: data.detail };
+      }
+    } catch (error) {
+      console.error("❌ 로그인 오류:", error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // 로그아웃
+  logout: () => {
+    authUtils.clearAllAuth();
+    console.log("✅ 로그아웃 완료");
+  },
+
   // 토큰 저장
   setToken: (token) => {
     if (typeof window !== "undefined") {

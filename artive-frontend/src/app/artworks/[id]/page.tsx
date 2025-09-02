@@ -11,6 +11,8 @@ import ImageModal from "@/components/artwork-detail/ImageModal";
 import AddHistoryModal from "@/components/artwork-detail/AddHistoryModal";
 import EditDescriptionModal from "@/components/artwork-detail/EditDescriptionModal";
 
+import { authUtils } from "@/utils/auth";
+
 interface Artist {
   id: number;
   username: string;
@@ -103,7 +105,7 @@ export default function ArtworkDetailPage() {
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = authUtils.getToken();
         if (!token) {
           console.log("❌ 토큰이 없습니다");
           return;

@@ -20,8 +20,6 @@ const ArtworkDetailHeader: React.FC<ArtworkDetailHeaderProps> = ({
   showTitle,
   isOwner,
   artworkId,
-  userId,
-  artistId,
   onDelete,
   onEdit,
   galleryName,

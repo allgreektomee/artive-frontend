@@ -212,16 +212,16 @@ const MetadataCard: React.FC<MetadataCardProps> = ({
       className={`
       ${
         isSmallCard
-          ? "flex-[0_0_30%] sm:flex-[0_0_23%]"
-          : "flex-[0_0_45%] sm:flex-[0_0_35%]"
-      }
-      bg-white rounded-xl shadow-sm border border-gray-100 p-3 sm:p-4
+          ? "w-[80px] sm:w-[100px] md:w-[120px]" // 고정 너비로 변경
+          : "flex-1 min-w-[120px] sm:min-w-[150px]"
+      } 
+      bg-white rounded-xl shadow-sm border border-gray-100 p-2.5 sm:p-3 md:p-4
     `}
     >
       <div className="flex items-center space-x-2 sm:space-x-3">
         <div
           className={`
-          w-8 h-8 sm:w-10 sm:h-10 
+          ${isSmallCard ? "w-7 h-7 sm:w-8 sm:h-8" : "w-8 h-8 sm:w-10 sm:h-10"}
           rounded-lg ${color} 
           flex items-center justify-center flex-shrink-0
         `}
@@ -229,10 +229,10 @@ const MetadataCard: React.FC<MetadataCardProps> = ({
           {icon}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-xs text-gray-500">{label}</p>
+          <p className="text-[10px] sm:text-xs text-gray-500">{label}</p>
           <p
             className={`
-            ${isSmallCard ? "text-xs" : "text-xs sm:text-sm"} 
+            ${isSmallCard ? "text-[11px] sm:text-xs" : "text-xs sm:text-sm"} 
             font-semibold text-gray-900 truncate
           `}
           >
@@ -248,77 +248,81 @@ const MetadataCard: React.FC<MetadataCardProps> = ({
 const ArtworkMetadata = () => {
   return (
     <div className="flex flex-wrap gap-2 sm:gap-3">
-      {/* Medium - 작은 카드 */}
-      <MetadataCard
-        icon={
-          <svg
-            className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" />
-          </svg>
-        }
-        label="Medium"
-        value="미크릴"
-        color="bg-purple-100"
-      />
+      <div className="flex gap-2">
+        {/* Medium - 작은 카드 */}
+        <MetadataCard
+          icon={
+            <svg
+              className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-600"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" />
+            </svg>
+          }
+          label="Medium"
+          value="아크릴"
+          color="bg-purple-100"
+        />
 
-      {/* Year - 작은 카드 */}
-      <MetadataCard
-        icon={
-          <svg
-            className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fillRule="evenodd"
-              d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
-              clipRule="evenodd"
-            />
-          </svg>
-        }
-        label="Year"
-        value="2025"
-        color="bg-indigo-100"
-      />
+        {/* Year - 작은 카드 */}
+        <MetadataCard
+          icon={
+            <svg
+              className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fillRule="evenodd"
+                d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                clipRule="evenodd"
+              />
+            </svg>
+          }
+          label="Year"
+          value="2025"
+          color="bg-indigo-100"
+        />
+      </div>
 
-      {/* Size - 큰 카드 */}
-      <MetadataCard
-        icon={
-          <svg
-            className="w-4 h-4 sm:w-5 sm:h-5 text-green-600"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path d="M5.5 16a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 16h-8z" />
-          </svg>
-        }
-        label="Size"
-        value="10호 53 x 45.5"
-        color="bg-green-100"
-      />
+      <div className="flex gap-2 flex-1">
+        {/* Size - 큰 카드 */}
+        <MetadataCard
+          icon={
+            <svg
+              className="w-4 h-4 sm:w-5 sm:h-5 text-green-600"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path d="M5.5 16a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 16h-8z" />
+            </svg>
+          }
+          label="Size"
+          value="10호 53 x 45.5"
+          color="bg-green-100"
+        />
 
-      {/* Artist - 큰 카드 */}
-      <MetadataCard
-        icon={
-          <svg
-            className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fillRule="evenodd"
-              d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-              clipRule="evenodd"
-            />
-          </svg>
-        }
-        label="Artist"
-        value="JAE YOUNG PARK"
-        color="bg-orange-100"
-      />
+        {/* Artist - 큰 카드 */}
+        <MetadataCard
+          icon={
+            <svg
+              className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                clipRule="evenodd"
+              />
+            </svg>
+          }
+          label="Artist"
+          value="JAE YOUNG PARK"
+          color="bg-orange-100"
+        />
+      </div>
     </div>
   );
 };
