@@ -12,7 +12,7 @@ import AddHistoryModal from "@/components/artwork-detail/AddHistoryModal";
 import EditDescriptionModal from "@/components/artwork-detail/EditDescriptionModal";
 
 import { authUtils } from "@/utils/auth";
-import { authUtils } from "@/utils/auth";
+
 interface Artist {
   id: number;
   username: string;
