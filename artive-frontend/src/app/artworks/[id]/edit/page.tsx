@@ -225,6 +225,23 @@ export default function EditArtworkPage() {
         return;
       }
 
+      // 현재 사용자 정보 가져오기
+      let currentUserName = "";
+      try {
+        const userResponse = await fetch(`${backEndUrl}/api/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          currentUserName = userData.name || "";
+        }
+      } catch (err) {
+        console.log("사용자 정보 가져오기 실패, 계속 진행");
+      }
+
       let finalImageUrl = form.thumbnail_url;
       if (form.thumbnail_url && isTemp) {
         try {
@@ -255,6 +272,7 @@ export default function EditArtworkPage() {
       const submitData = {
         ...form,
         thumbnail_url: finalImageUrl,
+        artist_name: currentUserName, // 현재 사용자 이름 추가
         started_at: form.started_at
           ? new Date(form.started_at).toISOString()
           : null,
@@ -282,7 +300,7 @@ export default function EditArtworkPage() {
         if (response.status === 401) {
           localStorage.removeItem("token");
           localStorage.removeItem("user");
-          router.push("/auth/login");
+          router.push("/login");
           return;
         }
         setError(data.detail || "작품 수정에 실패했습니다.");

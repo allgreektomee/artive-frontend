@@ -686,6 +686,45 @@ const ProfileManagement: React.FC = () => {
             </div>
           </button>
         ))}
+        {/* 로그아웃 버튼 추가 */}
+        <button
+          onClick={() => {
+            if (confirm("로그아웃 하시겠습니까?")) {
+              authUtils.logout();
+              router.push("/login");
+            }
+          }}
+          className="w-full p-4 rounded-2xl text-left transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] bg-white text-gray-900 shadow-sm hover:shadow-md border border-red-100"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center text-xl bg-red-50">
+                🚪
+              </div>
+              <div>
+                <div className="font-semibold text-lg text-red-600">
+                  로그아웃
+                </div>
+                <div className="text-sm text-gray-500">
+                  계정에서 로그아웃합니다
+                </div>
+              </div>
+            </div>
+            <svg
+              className="w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </div>
+        </button>
       </div>
     </div>
   );

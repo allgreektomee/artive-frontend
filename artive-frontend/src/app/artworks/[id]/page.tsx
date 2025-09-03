@@ -303,7 +303,13 @@ export default function ArtworkDetailPage() {
 
   // 이벤트 핸들러들
   const handleBack = () => {
-    window.history.back();
+    if (artwork?.artist?.slug) {
+      router.push(`/${artwork.artist.slug}`);
+    } else if (currentUser?.slug) {
+      router.push(`/${currentUser.slug}`);
+    } else {
+      router.push("/"); // fallback
+    }
   };
 
   const handleImageClick = (
