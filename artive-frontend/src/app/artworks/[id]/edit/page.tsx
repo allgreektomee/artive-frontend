@@ -221,7 +221,7 @@ export default function EditArtworkPage() {
     try {
       const token = authUtils.getToken();
       if (!token) {
-        router.push("/auth/login");
+        router.push("/login");
         return;
       }
 
@@ -295,7 +295,10 @@ export default function EditArtworkPage() {
 
       if (response.ok) {
         // 성공 시 작품 상세 페이지로 이동
-        router.push(`/${slug}/artworks/${artworkId}`);
+        const redirectPath = slug
+          ? `/${slug}/artworks/${artworkId}`
+          : `/artworks/${artworkId}`;
+        router.push(redirectPath);
       } else {
         if (response.status === 401) {
           localStorage.removeItem("token");
