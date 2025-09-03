@@ -138,92 +138,32 @@ export default function BlogListPage() {
     }
   };
 
-  // const fetchPosts = async (isLoadMore = false) => {
-  //   try {
-  //     if (!isLoadMore) {
-  //       setIsLoading(true);
-  //     } else {
-  //       setLoadingMore(true);
-  //     }
-
-  //     setError(null);
-
-  //     const pageToFetch = isLoadMore ? currentPage + 1 : 1;
-  //     const params = new URLSearchParams({
-  //       user: userSlug,
-  //       page: pageToFetch.toString(),
-  //       limit: postsPerPage.toString(),
-  //       is_published: "true",
-  //     });
-
-  //     if (selectedType !== "ALL") {
-  //       params.append("post_type", selectedType);
-  //     }
-
-  //     if (searchTerm) {
-  //       params.append("search", searchTerm);
-  //     }
-
-  //     const response = await fetch(`${backendUrl}/api/blog/posts?${params}`, {
-  //       method: "GET",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //     });
-
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       let filteredPosts = data.posts || [];
-
-  //       // Exclude studio posts for non-owners
-  //       if (!isOwner) {
-  //         filteredPosts = filteredPosts.filter(
-  //           (post: BlogPost) => post.post_type !== "STUDIO"
-  //         );
-  //       }
-
-  //       if (isLoadMore) {
-  //         setPosts((prev) => [...prev, ...filteredPosts]);
-  //         setCurrentPage(pageToFetch);
-  //       } else {
-  //         setPosts(filteredPosts);
-  //         setCurrentPage(1);
-  //       }
-
-  //       setTotalPages(data.pages || 1);
-
-  //       // Send total posts count to layout
-  //       const event = new CustomEvent("blogPostsUpdate", {
-  //         detail: { total: data.total || 0 },
-  //       });
-  //       window.dispatchEvent(event);
-  //     } else {
-  //       setError("Failed to load blog posts.");
-  //     }
-  //   } catch (error) {
-  //     console.error("Failed to fetch blog posts:", error);
-  //     setError("Failed to load blog posts.");
-  //   } finally {
-  //     setIsLoading(false);
-  //     setLoadingMore(false);
-  //   }
-  // };
   const fetchPosts = async (isLoadMore = false) => {
-    console.log("=== 블로그 로딩 시작 ===");
-    console.time("전체 로딩 시간");
-
     try {
-      setIsLoading(true);
+      if (!isLoadMore) {
+        setIsLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
 
+      setError(null);
+
+      const pageToFetch = isLoadMore ? currentPage + 1 : 1;
       const params = new URLSearchParams({
         user: userSlug,
-        page: "1",
-        limit: "10",
+        page: pageToFetch.toString(),
+        limit: postsPerPage.toString(),
         is_published: "true",
       });
 
-      console.log("요청 URL:", `${backendUrl}/api/blog/posts?${params}`);
-      console.time("API 호출");
+      // selectedType에 따라 필터링 추가
+      if (selectedType !== "ALL") {
+        params.append("post_type", selectedType);
+      }
+
+      if (searchTerm) {
+        params.append("search", searchTerm);
+      }
 
       const response = await fetch(`${backendUrl}/api/blog/posts?${params}`, {
         method: "GET",
@@ -232,26 +172,35 @@ export default function BlogListPage() {
         },
       });
 
-      console.timeEnd("API 호출");
-      console.time("응답 파싱");
+      if (response.ok) {
+        const data = await response.json();
+        let filteredPosts = data.posts || [];
 
-      const data = await response.json();
-      console.timeEnd("응답 파싱");
+        // STUDIO 포스트는 소유자만 볼 수 있음
+        if (!isOwner) {
+          filteredPosts = filteredPosts.filter(
+            (post: BlogPost) => post.post_type !== "STUDIO"
+          );
+        }
 
-      console.log("받은 데이터:", data);
-      console.log("포스트 개수:", data.posts?.length);
+        if (isLoadMore) {
+          setPosts((prev) => [...prev, ...filteredPosts]);
+          setCurrentPage(pageToFetch);
+        } else {
+          setPosts(filteredPosts);
+          setCurrentPage(1);
+        }
 
-      // content 크기 확인
-      if (data.posts?.[0]) {
-        console.log("첫 포스트 content 길이:", data.posts[0].content?.length);
+        setTotalPages(data.pages || 1);
+      } else {
+        setError("Failed to load blog posts.");
       }
-
-      setPosts(data.posts || []);
     } catch (error) {
-      console.error("에러:", error);
+      console.error("Failed to fetch blog posts:", error);
+      setError("Failed to load blog posts.");
     } finally {
       setIsLoading(false);
-      console.timeEnd("전체 로딩 시간");
+      setLoadingMore(false);
     }
   };
 
