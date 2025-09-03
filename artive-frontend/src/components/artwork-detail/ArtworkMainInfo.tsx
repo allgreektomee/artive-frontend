@@ -197,7 +197,7 @@ const ArtworkMainInfo: React.FC<ArtworkMainInfoProps> = ({
               {getDetailIcon("medium")}
               <div className="min-w-0">
                 <div className="text-xs text-gray-500 font-medium">Medium</div>
-                <div className="font-semibold text-gray-900 text-xs sm:text-sm truncate">
+                <div className="font-semibold text-gray-900 text-sm truncate">
                   {artwork.medium}
                 </div>
               </div>
@@ -209,10 +209,8 @@ const ArtworkMainInfo: React.FC<ArtworkMainInfoProps> = ({
             <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-md transition-all duration-300">
               {getDetailIcon("year")}
               <div className="min-w-0">
-                <div className="font-semibold text-gray-900 text-sm truncate">
-                  Year
-                </div>
-                <div className="font-semibold text-gray-900 text-xs sm:text-sm">
+                <div className="text-xs text-gray-500 font-medium">Year</div>
+                <div className="font-semibold text-gray-900 text-sm">
                   {artwork.year}
                 </div>
               </div>
