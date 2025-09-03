@@ -189,73 +189,55 @@ const ArtworkMainInfo: React.FC<ArtworkMainInfoProps> = ({
         </div>
 
         {/* 모바일: Title과 카드 형태 메타정보 */}
-        <div className="space-y-8 lg:hidden">
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 leading-tight">
-              {artwork.title}
-            </h1>
-
-            {/* 모바일에서 카드 형태로 표시 */}
-            <div className="grid grid-cols-2 gap-4 mb-8">
-              {/* Medium */}
-              {artwork.medium && (
-                <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-md transition-all duration-300">
-                  {getDetailIcon("medium")}
-                  <div className="min-w-0">
-                    <div className="text-xs text-gray-500 font-medium">
-                      Medium
-                    </div>
-                    <div className="font-semibold text-gray-900 text-xs sm:text-sm truncate">
-                      {artwork.medium}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Size */}
-              {artwork.size && (
-                <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-md transition-all duration-300">
-                  {getDetailIcon("size")}
-                  <div className="min-w-0">
-                    <div className="text-xs text-gray-500 font-medium">
-                      Size
-                    </div>
-                    <div className="font-semibold text-gray-900 text-xs sm:text-sm truncate">
-                      {artwork.size}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Year */}
-              {artwork.year && (
-                <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-md transition-all duration-300">
-                  {getDetailIcon("year")}
-                  <div className="min-w-0">
-                    <div className="text-xs text-gray-500 font-medium">
-                      Year
-                    </div>
-                    <div className="font-semibold text-gray-900 text-xs sm:text-sm">
-                      {artwork.year}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Artist */}
-              <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-md transition-all duration-300">
-                {getDetailIcon("artist")}
-                <div className="min-w-0">
-                  <div className="text-xs text-gray-500 font-medium">
-                    Artist
-                  </div>
-                  <div className="font-semibold text-gray-900 text-xs sm:text-sm truncate">
-                    {artwork.artist?.name ||
-                      artwork.artist_name ||
-                      "Unknown Artist"}
-                  </div>
+        {/* 첫째 줄: Medium, Year */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          {/* Medium */}
+          {artwork.medium && (
+            <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-md transition-all duration-300">
+              {getDetailIcon("medium")}
+              <div className="min-w-0">
+                <div className="text-xs text-gray-500 font-medium">Medium</div>
+                <div className="font-semibold text-gray-900 text-xs sm:text-sm truncate">
+                  {artwork.medium}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Year */}
+          {artwork.year && (
+            <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-md transition-all duration-300">
+              {getDetailIcon("year")}
+              <div className="min-w-0">
+                <div className="text-xs text-gray-500 font-medium">Year</div>
+                <div className="font-semibold text-gray-900 text-xs sm:text-sm">
+                  {artwork.year}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 둘째 줄: Size 전체 너비 */}
+        {artwork.size && (
+          <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-md transition-all duration-300 mb-4">
+            {getDetailIcon("size")}
+            <div className="min-w-0 flex-1">
+              <div className="text-xs text-gray-500 font-medium">Size</div>
+              <div className="font-semibold text-gray-900 text-xs sm:text-sm">
+                {artwork.size}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 셋째 줄: Artist 전체 너비 */}
+        <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-md transition-all duration-300 mb-8">
+          {getDetailIcon("artist")}
+          <div className="min-w-0 flex-1">
+            <div className="text-xs text-gray-500 font-medium">Artist</div>
+            <div className="font-semibold text-gray-900 text-xs sm:text-sm">
+              {artwork.artist?.name || artwork.artist_name || "Unknown Artist"}
             </div>
           </div>
         </div>
