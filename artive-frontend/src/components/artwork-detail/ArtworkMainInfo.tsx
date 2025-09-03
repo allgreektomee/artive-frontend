@@ -218,25 +218,30 @@ const ArtworkMainInfo: React.FC<ArtworkMainInfoProps> = ({
           )}
         </div>
 
-        {/* Size */}
-        {artwork.size && (
-          <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-md transition-all duration-300">
-            {getDetailIcon("size")}
-            <div className="min-w-0 flex-1">
-              <div className="font-semibold text-gray-900 text-sm ">
-                <span className="text-gray-500">Size</span> • {artwork.size}
+        {/* 둘째, 셋째 줄: Size, Artist */}
+        <div className="grid grid-cols-1 gap-4 mb-8">
+          {/* Size */}
+          {artwork.size && (
+            <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-md transition-all duration-300">
+              {getDetailIcon("size")}
+              <div className="min-w-0 flex-1">
+                <div className="font-semibold text-gray-900 text-base">
+                  <span className="text-gray-500">Size</span> • {artwork.size}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Artist */}
-        <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-md transition-all duration-300 mb-8">
-          {getDetailIcon("artist")}
-          <div className="min-w-0 flex-1">
-            <div className="font-semibold text-gray-900 text-sm ">
-              <span className="text-gray-500">Artist</span> •{" "}
-              {artwork.artist?.name || artwork.artist_name || "Unknown Artist"}
+          {/* Artist */}
+          <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-md transition-all duration-300">
+            {getDetailIcon("artist")}
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold text-gray-900 text-base">
+                <span className="text-gray-500">Artist</span> •{" "}
+                {artwork.artist?.name ||
+                  artwork.artist_name ||
+                  "Unknown Artist"}
+              </div>
             </div>
           </div>
         </div>
