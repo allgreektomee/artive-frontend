@@ -218,25 +218,24 @@ const ArtworkMainInfo: React.FC<ArtworkMainInfoProps> = ({
           )}
         </div>
 
-        {/* 둘째 줄: Size 전체 너비 */}
+        {/* Size */}
         {artwork.size && (
-          <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-md transition-all duration-300 mb-4">
+          <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-md transition-all duration-300">
             {getDetailIcon("size")}
             <div className="min-w-0 flex-1">
-              <div className="text-xs text-gray-500 font-medium">Size</div>
               <div className="font-semibold text-gray-900 text-xs sm:text-sm">
-                {artwork.size}
+                Size {artwork.size}
               </div>
             </div>
           </div>
         )}
 
-        {/* 셋째 줄: Artist 전체 너비 */}
-        <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-md transition-all duration-300 mb-8">
+        {/* Artist */}
+        <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-md transition-all duration-300">
           {getDetailIcon("artist")}
           <div className="min-w-0 flex-1">
-            <div className="text-xs text-gray-500 font-medium">Artist</div>
             <div className="font-semibold text-gray-900 text-xs sm:text-sm">
+              Artist{" "}
               {artwork.artist?.name || artwork.artist_name || "Unknown Artist"}
             </div>
           </div>
