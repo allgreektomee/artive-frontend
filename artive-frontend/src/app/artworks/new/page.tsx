@@ -23,6 +23,7 @@ export default function NewArtworkPage() {
 
   const [form, setForm] = useState({
     title: "",
+    artist_name: "", // 추가
     description: "",
     medium: "",
     size: "",
@@ -51,6 +52,19 @@ export default function NewArtworkPage() {
     if (!token) {
       router.push("/auth/login");
       return;
+    }
+    // 현재 사용자 이름으로 아티스트명 초기화
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        setForm((prev) => ({
+          ...prev,
+          artist_name: user.name || "",
+        }));
+      } catch (e) {
+        console.error("사용자 정보 파싱 오류:", e);
+      }
     }
   }, [router]);
 
@@ -401,6 +415,7 @@ export default function NewArtworkPage() {
           <ArtworkBasicInfo
             form={{
               title: form.title,
+              artist_name: form.artist_name, // 추가
               description: form.description,
               medium: form.medium,
               size: form.size,
