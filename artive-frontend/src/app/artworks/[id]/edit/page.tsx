@@ -28,6 +28,7 @@ export default function EditArtworkPage() {
 
   const [form, setForm] = useState({
     title: "",
+    artist_name: "", // 추가
     description: "",
     medium: "",
     size: "",
@@ -74,6 +75,7 @@ export default function EditArtworkPage() {
       // 폼 데이터 설정
       setForm({
         title: data.title || "",
+        artist_name: data.artist_name || "", // 추가
         description: data.description || "",
         medium: data.medium || "",
         size: data.size || "",
@@ -396,6 +398,7 @@ export default function EditArtworkPage() {
           <ArtworkBasicInfo
             form={{
               title: form.title,
+              artist_name: form.artist_name,
               description: form.description,
               medium: form.medium,
               size: form.size,

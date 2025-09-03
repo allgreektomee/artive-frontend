@@ -24,6 +24,7 @@ import {
 interface ArtworkBasicInfoProps {
   form: {
     title: string;
+    artist_name: string; // 추가
     description: string;
     medium: string;
     size: string;
@@ -45,8 +46,8 @@ const ArtworkBasicInfo: React.FC<ArtworkBasicInfoProps> = ({
   form,
   onChange,
   loading = false,
-  onLinksChange, // ✅ props에서 받기
-  onYoutubeUrlsChange, // ✅ props에서 받기
+  onLinksChange,
+  onYoutubeUrlsChange,
 }) => {
   const [links, setLinks] = useState<LinkItem[]>([]);
   const [youtubeUrls, setYoutubeUrls] = useState<string[]>([]);
@@ -97,23 +98,21 @@ const ArtworkBasicInfo: React.FC<ArtworkBasicInfoProps> = ({
     onChange(name, value);
   };
 
-  // ✅ 링크 추가 - 수정됨
   const addLink = () => {
     if (newLink.url) {
       const updatedLinks = [...links, newLink];
       setLinks(updatedLinks);
-      onLinksChange?.(updatedLinks); // 부모로 전달
+      onLinksChange?.(updatedLinks);
       setNewLink({ title: "", url: "" });
       setShowLinkInput(false);
     }
   };
 
-  // ✅ 유튜브 추가 - 수정됨
   const addYoutube = () => {
     if (newYoutubeUrl && isValidYoutubeUrl(newYoutubeUrl)) {
       const updatedUrls = [...youtubeUrls, newYoutubeUrl];
       setYoutubeUrls(updatedUrls);
-      onYoutubeUrlsChange?.(updatedUrls); // 부모로 전달
+      onYoutubeUrlsChange?.(updatedUrls);
       setNewYoutubeUrl("");
       setShowYoutubeInput(false);
     } else {
@@ -121,12 +120,10 @@ const ArtworkBasicInfo: React.FC<ArtworkBasicInfoProps> = ({
     }
   };
 
-  // 유튜브 URL 검증
   const isValidYoutubeUrl = (url: string) => {
     return /(?:youtube\.com\/watch\?v=|youtu\.be\/)/.test(url);
   };
 
-  // 유튜브 ID 추출
   const getYoutubeId = (url: string) => {
     const match = url.match(
       /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/
@@ -134,7 +131,6 @@ const ArtworkBasicInfo: React.FC<ArtworkBasicInfoProps> = ({
     return match ? match[1] : null;
   };
 
-  // 에디터에 링크 추가
   const addLinkToEditor = () => {
     const previousUrl = editor?.getAttributes("link").href;
     const url = window.prompt("URL을 입력하세요:", previousUrl);
@@ -179,6 +175,26 @@ const ArtworkBasicInfo: React.FC<ArtworkBasicInfoProps> = ({
             disabled={loading}
             className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:border-blue-500 disabled:bg-gray-100"
             placeholder="작품의 제목을 입력하세요"
+          />
+        </div>
+
+        {/* 아티스트명 */}
+        <div className="md:col-span-2">
+          <label
+            htmlFor="artist_name"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
+            아티스트명
+          </label>
+          <input
+            type="text"
+            id="artist_name"
+            name="artist_name"
+            value={form.artist_name}
+            onChange={handleChange}
+            disabled={loading}
+            className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:border-blue-500 disabled:bg-gray-100"
+            placeholder="아티스트 이름을 입력하세요"
           />
         </div>
 
@@ -615,7 +631,7 @@ const ArtworkBasicInfo: React.FC<ArtworkBasicInfoProps> = ({
                             (_, i) => i !== index
                           );
                           setLinks(updatedLinks);
-                          onLinksChange?.(updatedLinks); // ✅ 부모로 전달
+                          onLinksChange?.(updatedLinks);
                         }}
                         className="ml-2 text-red-500 hover:text-red-700 p-1"
                       >
@@ -654,7 +670,7 @@ const ArtworkBasicInfo: React.FC<ArtworkBasicInfoProps> = ({
                               (_, i) => i !== index
                             );
                             setYoutubeUrls(updatedUrls);
-                            onYoutubeUrlsChange?.(updatedUrls); // ✅ 부모로 전달
+                            onYoutubeUrlsChange?.(updatedUrls);
                           }}
                           className="ml-2 text-red-500 hover:text-red-700 p-1"
                         >
