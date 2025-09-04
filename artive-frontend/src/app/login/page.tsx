@@ -23,7 +23,12 @@ export default function LoginPage() {
     setLoading(true);
 
     const res = await authUtils.login(form.email, form.password);
-    if (!res) return;
+
+    if (res.success) {
+      // 성공시 갤러리로 이동
+      router.push(`/${res.user.slug}`);
+      return;
+    }
 
     // 403 상태 코드 체크 (이메일 미인증)
     if (res.status === 403) {
