@@ -15,8 +15,6 @@ export default function LoginPage() {
     setError("");
   };
 
-  const backEndUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
@@ -24,35 +22,23 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
-    const res = await fetch(`${backEndUrl}/api/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify(form),
-    }).catch((error) => {
-      console.error("Network error:", error);
-      setError("서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.");
-      setLoading(false);
-      return null;
-    });
-
+    const res = await authUtils.login(form.email, form.password);
     if (!res) return;
 
-    const responseData = await res.json().catch(() => null);
-
-    // 로그인 성공
-    if (res.ok && responseData) {
-      localStorage.setItem("access_token", responseData.access_token);
-      localStorage.setItem("user", JSON.stringify(responseData.user));
-      router.push(`/${responseData.user.slug}`);
+    // 403 상태 코드 체크 (이메일 미인증)
+    if (res.status === 403) {
+      setError("이메일 인증이 필요합니다.");
+      setLoading(false);
       return;
     }
 
-    // 로그인 실패
-    setError(responseData?.detail || "로그인에 실패했습니다.");
+    // 401 상태 코드 체크 (인증 실패)
+    if (res.status === 401) {
+      setError("이메일 또는 비밀번호가 올바르지 않습니다.");
+      setLoading(false);
+      return;
+    }
+
     setLoading(false);
   };
 
