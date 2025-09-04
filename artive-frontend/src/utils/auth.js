@@ -183,4 +183,7 @@ export const authUtils = {
       return null;
     }
   },
+  getToken: () => {
+    return authUtils.getAccessToken();
+  },
 };
