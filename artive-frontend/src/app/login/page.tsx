@@ -26,9 +26,13 @@ export default function LoginPage() {
 
     if (res.success) {
       // 성공시 갤러리로 이동
+      console.log("로그인 성공, 이동할 경로:", `/${res.user.slug}`);
+      console.log("사용자 정보:", res.user);
       router.push(`/${res.user.slug}`);
       return;
     }
+
+    console.log("로그인 결과:", res); // 이것도 추가
 
     // 403 상태 코드 체크 (이메일 미인증)
     if (res.status === 403) {
