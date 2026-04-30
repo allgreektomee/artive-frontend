@@ -163,7 +163,7 @@ export const authUtils = {
   // 로그아웃
   logout: () => {
     authUtils.clearAuth();
-    window.location.href = "/auth/login";
+    window.location.href = "/login";
   },
 
   // 현재 사용자 정보 가져오기

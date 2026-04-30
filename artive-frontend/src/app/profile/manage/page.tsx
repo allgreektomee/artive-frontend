@@ -691,7 +691,6 @@ const ProfileManagement: React.FC = () => {
           onClick={() => {
             if (confirm("로그아웃 하시겠습니까?")) {
               authUtils.logout();
-              router.push("/login");
             }
           }}
           className="w-full p-4 rounded-2xl text-left transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] bg-white text-gray-900 shadow-sm hover:shadow-md border border-red-100"
