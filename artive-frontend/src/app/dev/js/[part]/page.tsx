@@ -1,37 +1,14 @@
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { DevMarkdown } from "@/components/dev/DevMarkdown";
-import { getPart, readOutlineMarkdown } from "@/lib/dev-outline";
+import { notFound, redirect } from "next/navigation";
 
 type PageProps = {
   params: Promise<{ part: string }>;
 };
 
-export default async function DevJavaScriptPartPage({ params }: PageProps) {
-  const { part: raw } = await params;
-  const n = Number(raw);
-  if (![1, 2, 3].includes(n)) notFound();
-
-  const md = readOutlineMarkdown();
-  const section = getPart(md, n as 1 | 2 | 3);
-  if (!section) notFound();
-
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-3 text-sm">
-        <Link
-          href="/dev/js"
-          className="font-medium text-zinc-600 underline-offset-4 hover:text-zinc-900 hover:underline"
-        >
-          ← JavaScript 목차
-        </Link>
-        <span className="text-zinc-300">|</span>
-        <span className="text-zinc-500">{section.headingLine}</span>
-      </div>
-
-      <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <DevMarkdown source={section.body} />
-      </div>
-    </div>
-  );
+/** 예전 `/dev/js/1` 형태 → `/dev?tab=js&outline=1` */
+export default async function DevJsPartLegacyRedirect({ params }: PageProps) {
+  const { part } = await params;
+  if (part === "1" || part === "2" || part === "3") {
+    redirect(`/dev?tab=js&outline=${part}`);
+  }
+  notFound();
 }
