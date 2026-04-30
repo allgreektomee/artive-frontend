@@ -7,7 +7,7 @@ type PageProps = {
   params: Promise<{ part: string }>;
 };
 
-export default async function DevPartPage({ params }: PageProps) {
+export default async function DevJavaScriptPartPage({ params }: PageProps) {
   const { part: raw } = await params;
   const n = Number(raw);
   if (![1, 2, 3].includes(n)) notFound();
@@ -20,10 +20,10 @@ export default async function DevPartPage({ params }: PageProps) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3 text-sm">
         <Link
-          href="/dev"
+          href="/dev/js"
           className="font-medium text-zinc-600 underline-offset-4 hover:text-zinc-900 hover:underline"
         >
-          ← 목차 카드
+          ← JavaScript 목차
         </Link>
         <span className="text-zinc-300">|</span>
         <span className="text-zinc-500">{section.headingLine}</span>

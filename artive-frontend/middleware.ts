@@ -2,16 +2,16 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 /**
- * `/dev` 문서는 메인 프로덕션 호스트에 노출하지 않는다.
- * - `next dev`(NODE_ENV=development): 허용
- * - 호스트가 `dev.` 로 시작 (예: dev.artivefor.me): 허용
- * - localhost / 127.0.0.1: 허용
- * - `DEV_DOCS_PUBLIC=true` 일 때만 프로덕션에서도 허용 (비상용)
+ * `/dev` 학습·목차 구역 접근 허용 호스트
+ * - `artivefor.me` 및 `*.artivefor.me` (예: www.artivefor.me): 공식 사이트에서 제공
+ * - `next dev`, localhost, `dev.*` 서브도메인: 개발용
+ * - 그 외 배포 호스트(Vercel 미리보기 등): `DEV_DOCS_PUBLIC=true` 일 때만 허용
  */
 function hostAllowsDevDocs(host: string): boolean {
   const h = host.split(":")[0]?.toLowerCase() ?? "";
   if (h === "localhost" || h.startsWith("127.0.0.1")) return true;
   if (h.startsWith("dev.")) return true;
+  if (h === "artivefor.me" || h.endsWith(".artivefor.me")) return true;
   return false;
 }
 
